@@ -32,23 +32,34 @@ task skills before it writes code.
 
 ## Quick start
 
-**Claude Code** — add the marketplace once, then install everything with a single command:
+**One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
+coding agent you already use and installs the router plus all 62 skills into the right place:
+
+```bash
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills
+```
+
+Add `--list` to preview first, `-g` to install for every project, or `-a <agent>` to target a
+specific tool (`-a cursor`, `-a claude-code`, `-a gemini-cli`, …). The same `SKILL.md` files load
+natively in Claude Code, Cursor, Windsurf, Cline, Codex, Gemini CLI, GitHub Copilot, Kiro, and
+[dozens more](docs/COMPATIBILITY.md) — there's nothing to convert.
+
+**Claude Code plugin (alternative).** This repo is also a Claude Code plugin marketplace, so you
+can install it with Claude's own commands:
 
 ```bash
 claude plugin marketplace add AbhishekBarali/awesome-gamedev-agent-skills
 claude plugin install gamedev@awesome-gamedev-agent-skills
 ```
 
-That's it — the router and all 62 skills are now available. Build in only one engine? Install a
-smaller bundle instead — `router` plus your engine:
+Building in only one engine? Install a smaller bundle — `router` plus your engine:
 
 ```bash
 claude plugin install router@awesome-gamedev-agent-skills
 claude plugin install godot@awesome-gamedev-agent-skills    # or: unity · unreal · web-engines · other-engines
 ```
 
-**Any other agent** (Kiro, Gemini CLI, Codex, Cursor, Windsurf, Cline) or prefer to copy the
-files by hand? One-line and per-agent instructions are in
+Prefer to copy the files by hand, or want the exact per-tool paths? See
 **[`docs/INSTALLATION.md`](docs/INSTALLATION.md)**.
 
 Then just talk to your agent — see below.
@@ -206,20 +217,23 @@ primitives.
 
 ## Agent compatibility
 
-Every skill is a plain `SKILL.md` folder in the open [Agent Skills](https://agentskills.io)
-format — the same format Claude Code, Gemini CLI, and Codex CLI load natively. For those agents,
-installing a skill is just putting its folder in the skills directory:
+Every skill here is a plain `SKILL.md` folder in the [Agent Skills](https://agentskills.io) open
+standard — metadata plus a Markdown playbook the agent reads on demand. The same file loads
+**natively** in Claude Code, Claude, Cursor, Windsurf, Cline, OpenAI Codex, Gemini CLI, GitHub
+Copilot, Kiro, VS Code, and [many more](https://agentskills.io/clients). There are no
+editor-specific rule files to maintain and nothing to convert.
 
-| Agent | Put skills in |
-|-------|---------------|
-| Claude Code · Claude Agent SDK | `.claude/skills/<name>/` |
-| Claude.ai | upload the skill folder (zipped) |
-| Kiro | `.kiro/skills/<name>/` |
-| Gemini CLI · Codex CLI | `.agents/skills/<name>/` (the shared path both read) |
+The easiest install is the universal CLI, which detects your agent and writes the skills to its
+skills directory:
 
-Editor tools (Cursor, Windsurf, Cline) load **rules files** instead of `SKILL.md`. There's no
-automated converter yet, so for now you adapt a skill by hand — drop the `SKILL.md` body into
-the editor's rule file. The target paths and the full mapping are in
+```bash
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills
+```
+
+Or drop a skill's `<name>/` folder into your agent's skills directory yourself — commonly
+`.claude/skills/`, `.agents/skills/` (the shared path Codex, Gemini, Copilot, and Cursor all read),
+`.cursor/skills/`, `.windsurf/skills/`, `.cline/skills/`, or `.kiro/skills/`. The exact per-agent
+paths, triggers, and the handful of optional fields that vary by agent are in
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 ## Demo

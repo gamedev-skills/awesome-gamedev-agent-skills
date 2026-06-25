@@ -1,98 +1,126 @@
 # Compatibility
 
-The portable core of every skill in this repository is the **Agent Skills open standard**
-(`SKILL.md`). One canonical skill folder serves the agents that consume the standard natively;
-three rules-based editors are supported through **generated adapters**. This page documents
-where each agent looks for skills and how it triggers them. For copy-paste install commands,
-see [`INSTALLATION.md`](INSTALLATION.md).
+Every skill in this repository is a plain `SKILL.md` folder in the
+[Agent Skills](https://agentskills.io) open standard: YAML frontmatter (`name` + `description`)
+followed by a Markdown playbook, with optional `references/`, `scripts/`, and `assets/`. The
+standard was created by Anthropic and released as an open format; it is now read **natively** by a
+large and growing set of AI coding agents and IDEs. There is no editor-specific rule file to
+maintain and nothing to convert — the same file installs everywhere.
 
-## Support matrix
+For step-by-step install commands, see [`INSTALLATION.md`](INSTALLATION.md).
 
-| Agent | Native skills? | Skill format | Project install path | User / global path | Trigger | Adapter needed? |
-|-------|:--------------:|--------------|----------------------|--------------------|---------|:---------------:|
-| **Claude Code** | ✅ | `SKILL.md` | `.claude/skills/<name>/` | `~/.claude/skills/<name>/` | auto (Skill tool) · `/skills` menu | ❌ |
-| **Claude Agent SDK** | ✅ (filesystem) | `SKILL.md` | `.claude/skills/<name>/` | `~/.claude/skills/<name>/` | auto via `skills` option (set `setting_sources`) | ❌ |
-| **Claude.ai** | ✅ (zip upload) | `SKILL.md` at zip root | — (per-account upload) | — | auto in chat | ❌ (zip the folder; `description` ≤ 200 chars) |
-| **Kiro** | ✅ | `SKILL.md` | `.kiro/skills/<name>/` | `~/.kiro/skills/<name>/` | auto · `/skill-name` | ❌ |
-| **Gemini CLI** | ✅ | `SKILL.md` | `.agents/skills/<name>/` (or `.gemini/skills/`) | `~/.agents/skills/` (or `~/.gemini/skills/`) | `activate_skill` + consent | ❌ |
-| **Codex CLI** | ✅ | `SKILL.md` | `.agents/skills/<name>/` | `~/.agents/skills/` | `$skill` · `/skills` · implicit | ❌ |
-| **Cursor** | ❌ | `.mdc` rule | `.cursor/rules/<name>.mdc` | Settings → Rules | Agent Requested (description) · globs · `@name` | ✅ generate |
-| **Windsurf** | ❌ | `.md` rule | `.windsurf/rules/<name>.md` | `global_rules.md` | `model_decision` · `glob` · `@name` | ✅ generate (respect char budget) |
-| **Cline** | ❌ | `.md` / `.txt` rule | `.clinerules/<name>.md` | `Documents/Cline/Rules/` | `paths` glob · manual toggle | ✅ generate (fold description into body) |
+## TL;DR
 
-**Native drop-in summary.** A single `SKILL.md` tree serves **Claude Code, Kiro, Gemini CLI,
-and Codex CLI** (plus the Claude Agent SDK, and Claude.ai via zip upload). The one directory
-that Gemini CLI **and** Codex CLI both read is **`.agents/skills/<name>/SKILL.md`** — use it as
-the universal CLI location. Claude Code reads `.claude/skills/`; Kiro reads `.kiro/skills/`.
-Only **Cursor, Windsurf, and Cline** require generated adapters.
+- **A skill is just a folder with a `SKILL.md`.** Agents preload only `name` + `description`, then
+  read the body when a request matches, then read bundled files on demand (progressive disclosure).
+- **It's broadly supported.** Claude Code, Claude, Cursor, Windsurf, Cline, OpenAI Codex, Gemini
+  CLI, GitHub Copilot, Kiro, VS Code, Roo Code, Junie, Trae, Factory, Tabnine, OpenCode, Goose and
+  [many others](https://agentskills.io/clients) load the standard directly.
+- **One installer covers all of them.** `npx skills add AbhishekBarali/awesome-gamedev-agent-skills`
+  detects the agents you have installed and copies the skills (router included) to the right place.
+- **The skills here use only the portable core**, so a single tree works in every agent — no
+  per-tool variants.
 
-## Verified install paths
+## Install in one line
 
-Checked 2026-06-25 against this repository. The router plus one skill per engine family were
-installed into each native agent's documented location and confirmed to load — valid
-frontmatter, `name` equals the folder, `description` present:
+The [`skills` CLI](https://www.npmjs.com/package/skills) is the package manager for the Agent
+Skills ecosystem. It auto-detects your agent(s) and writes skills to each one's directory:
 
-| Agent | Path tested | Skills installed | Result |
-|-------|-------------|------------------|--------|
-| **Kiro** | `.kiro/skills/<name>/` | `router`, `godot-2d-movement`, `unity-csharp-scripting`, `unreal-cpp-gameplay`, `phaser-core`, `love2d-core` | all 6 load (name==folder, description present) |
-| **Claude Code** (v0.20.2) | `.claude/skills/<name>/` | same six | all 6 load; `claude --help` confirms skills resolve via `/skill-name` |
+```bash
+# install the router + all 62 skills into whatever agent(s) you have
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills
 
-The six cover every engine family (Godot, Unity, Unreal, web, other) plus the router.
-`scripts/validate-skills.py` passes on all 63 files (62 skills + router), so the same files
-satisfy each agent's load contract once copied to its skills directory. **CLIs detected on the
-test machine:** Claude Code, Gemini CLI, Cursor, Kiro (Codex CLI absent — not exercised; it
-shares Gemini's `.agents/skills/` path). Live auto-trigger on a real prompt in a fresh session
-is the manual step in [`INSTALLATION.md`](INSTALLATION.md#verify-after-installing).
+# preview without installing
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills --list
 
-## The portable-core rule
-
-A committed `SKILL.md` contains **only** portable, agent-agnostic content:
-
-- **Frontmatter:** `name`, `description` (required) plus optional `license`, `compatibility`,
-  and `metadata` (`engine` / `category` / `difficulty`). Nothing else.
-- **Body:** the open-standard Markdown playbook (when-to-use, workflow, patterns, pitfalls,
-  references), with optional `references/`, `scripts/`, and `assets/`.
-
-The following agent-specific keys are **forbidden** in a committed `SKILL.md` (the validator
-rejects them); they belong only in generated adapters:
-
-```
-when_to_use   argument-hint   disable-model-invocation   user-invocable   model
-paths         hooks           shell                      context          globs
-alwaysApply   trigger
+# target a specific agent, and/or install globally for every project
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills -a cursor -g
 ```
 
-`allowed-tools` is part of the open standard but honored only by Claude Code; this repo omits
-it by default. Keeping the core clean is what lets one file install everywhere — agent quirks
-are applied at adapter-generation time, never baked into the source.
+This repo ships a `.claude-plugin/marketplace.json`, which the CLI also reads, so the master
+[`router/`](../router) skill is discovered alongside the catalog under `skills/`. Claude Code users
+can alternatively use the native plugin commands (see [`INSTALLATION.md`](INSTALLATION.md)).
 
-## Adapters (Cursor / Windsurf / Cline)
+## Where each agent looks for skills
 
-These editors use a *rules* system rather than skills. Adapters are **generated** from the
-canonical `SKILL.md` and treated as build artifacts — never hand-edited, never a parallel copy
-of the skill. The mapping:
+Skills install per-project (committed with your repo) or globally (every project). Paths can change
+as tools evolve, so the `skills` CLI is the most reliable installer; the table below lists the
+documented project locations and how each agent triggers a skill. Each row links to that agent's
+own skills documentation.
 
-| From `SKILL.md` | → Cursor `.mdc` | → Windsurf `.md` | → Cline `.md` |
-|-----------------|-----------------|------------------|---------------|
-| `name` | filename + `@id` | filename + `@id` | filename |
-| `description` | `description:` (mode *Agent Requested*) | `description:` (`trigger: model_decision`) | **prepended into the body** (no description field) |
-| file-scoped skill | `globs:` (Auto Attached) | `trigger: glob` + `globs:` | `paths:` |
-| router / always-on skill | `alwaysApply: true` | `trigger: always_on` | no frontmatter |
-| body | verbatim (rewrite refs as `@path`) | verbatim (enforce char budget; spill depth to references) | description + verbatim body |
+| Agent | Project skills directory | How it triggers | Docs |
+|-------|--------------------------|-----------------|------|
+| **Claude Code** | `.claude/skills/` | auto by description · `/skills` | [docs](https://code.claude.com/docs/en/skills) |
+| **Claude** (claude.ai) | upload the skill as a `.zip` | auto in chat | [docs](https://support.claude.com/) |
+| **Cursor** | `.agents/skills/` or `.cursor/skills/` | auto by description · `/skill-name` | [docs](https://cursor.com/docs/skills) |
+| **Windsurf** (Cascade) | `.windsurf/skills/` | auto by description · `/skill-name` | [docs](https://docs.windsurf.com/) |
+| **Cline** | `.cline/skills/` (also reads `.claude/skills/`) | auto (`use_skill`) · `/skill-name` · *enable in Settings* | [docs](https://docs.cline.bot/customization/skills) |
+| **OpenAI Codex** | `.agents/skills/` | `$skill` · `/skills` · implicit | [docs](https://developers.openai.com/codex/skills) |
+| **Gemini CLI** | `.agents/skills/` or `.gemini/skills/` | activation + consent · `/skills` | [docs](https://geminicli.com/docs/cli/skills/) |
+| **GitHub Copilot** | `.agents/skills/` | auto by description | [docs](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) |
+| **Kiro** | `.kiro/skills/` (+ `~/.kiro/skills/`) | auto by description · `/skill-name` | [docs](https://kiro.dev/docs/cli/skills/) |
+| **Others** (VS Code, Roo Code, Junie, Trae, Factory, Tabnine, OpenCode, Goose, …) | see each tool | varies | [client list](https://agentskills.io/clients) |
 
-The default mode mirrors how `SKILL.md` itself triggers: description-driven (Cursor *Agent
-Requested*, Windsurf *model_decision*). The master router maps to an always-on rule.
+`.agents/skills/` is the shared, cross-agent convention that many tools read, which is why one copy
+there can serve several agents at once. The `skills` CLI maps each agent to its correct location
+automatically, so you rarely need to track these by hand.
 
-**Fidelity caveats:**
+> **Kiro note.** The default Kiro agent auto-loads skills from `.kiro/skills/` and
+> `~/.kiro/skills/` with no extra setup. A **custom** agent must opt in via its `resources`, e.g.
+> `"resources": ["skill://.kiro/skills/**/SKILL.md"]`.
 
-- **Cline** has no description-driven trigger, so the adapter folds the description into the top
-  of the body to preserve *what + when*.
-- **Windsurf** enforces a per-file character budget; the generator trims or pushes depth into
-  referenced files. Author bodies lean so they survive the conversion.
+> **Cline note.** Skills are an experimental feature — enable them under
+> **Settings → Features → Enable Skills** before they appear.
 
-## Why this works
+## The only real "compatibility" wrinkle: optional fields
 
-The open standard formalizes progressive disclosure (metadata → body → resources) and a small,
-fixed frontmatter contract. Because the four CLI agents and the Claude surfaces all read that
-same contract, a correct `SKILL.md` is portable by construction; the editors that don't read it
-yet are reached by deterministic generation rather than by maintaining nine copies of every skill.
+A **basic skill** — `name`, `description`, a Markdown body, and optional `scripts/`/`references/`/
+`assets/` — works in every skills-compatible agent. The differences between agents live entirely in
+a few **optional, advanced** frontmatter fields:
+
+| Optional field | Honored by | Notes |
+|----------------|-----------|-------|
+| `allowed-tools` | most agents (e.g. Claude Code, Codex, Cursor, Cline) | **not** honored by Kiro; ignored where unsupported |
+| `hooks` | Claude Code, Cline, Kiro | per-agent lifecycle hooks |
+| `context: fork` | Claude Code only | runs the skill in a forked context |
+
+Because these are optional, an agent that doesn't support one simply ignores it — it does not break
+the skill. **Every committed skill in this repo deliberately uses only the portable core** (below),
+so the same file is valid and useful in every agent, and the validator (`scripts/validate-skills.py`)
+keeps it that way.
+
+## What's in a committed `SKILL.md` (the portable core)
+
+- **Frontmatter:** `name` (1–64 chars; lowercase, digits, hyphens; equals the folder name) and
+  `description` (≤1024 chars; says *what it does* **and** *when to use it*). Optionally `license`,
+  `compatibility`, and a flat `metadata` map (we use `engine` / `category` / `difficulty`).
+- **Body:** the open-standard playbook — when-to-use, workflow, patterns, pitfalls, references —
+  kept under ~500 lines, with depth pushed into `references/`.
+
+The validator rejects agent-specific frontmatter keys (`allowed-tools`, `paths`,
+`disable-model-invocation`, `globs`, `alwaysApply`, `trigger`, `hooks`, `model`, …). Some agents
+(e.g. Cursor) accept several of these, but keeping them out of the source is what lets one file run
+unchanged in all of them; an agent-specific field is set at install time, never baked into the
+shared skill.
+
+## Verify after installing
+
+1. List installed skills — `npx skills list`, or `/skills` inside agents that expose it.
+2. Ask a prompt that should route — e.g. *"set up a tilemap with autotiling in Godot"* — and
+   confirm the router loads the matching skill(s) before it edits code.
+
+## Why this is portable
+
+The standard formalizes two things: **progressive disclosure** (metadata → body → resources) and a
+tiny required frontmatter contract (`name` + `description`). Any agent that implements the standard
+can load any compliant skill, so a correct `SKILL.md` is portable by construction — the broad
+adoption above is what turns "write it once" into "runs everywhere."
+
+---
+
+*Sources (checked 2026-06-25): the Agent Skills [specification](https://agentskills.io/specification)
+and [client list](https://agentskills.io/clients); the [`skills` CLI](https://www.npmjs.com/package/skills);
+and the official skills docs for [Cursor](https://cursor.com/docs/skills),
+[Cline](https://docs.cline.bot/customization/skills), [Codex](https://developers.openai.com/codex/skills),
+and [Kiro](https://kiro.dev/docs/cli/skills/). Content was rephrased for compliance with licensing
+restrictions.*

@@ -82,8 +82,9 @@ metadata:                          # optional; a flat string→string map
 
 ### 2.2 Forbidden frontmatter keys (hard reject)
 
-These are agent-specific keys that belong in **generated adapters**, never in a committed
-`SKILL.md`. The validator fails the build if any appear:
+These are agent-specific keys that must never appear in a committed `SKILL.md`. Some agents
+(Cursor, for example) accept a few of them, but keeping them out of the source is exactly what
+makes one file portable across every agent. The validator fails the build if any appear:
 
 ```
 when_to_use   argument-hint   disable-model-invocation   user-invocable   model
@@ -91,10 +92,10 @@ paths         hooks           shell                      context          globs
 alwaysApply   trigger
 ```
 
-`allowed-tools` is part of the open standard (experimental, honored only by Claude Code) but
-this repo **omits it by default**; the validator emits a **warning** if present. Keeping the
-core free of these keys is exactly what lets one file install across every agent (see
-[`COMPATIBILITY.md`](COMPATIBILITY.md) for how adapters are generated for Cursor/Windsurf/Cline).
+`allowed-tools` is part of the open standard (experimental, honored by most agents but not all —
+Kiro, for instance, ignores it); this repo **omits it by default** and the validator emits a
+**warning** if present. Keeping the core free of these keys is exactly what lets one file install
+across every agent (see [`COMPATIBILITY.md`](COMPATIBILITY.md)).
 
 ### 2.3 Cross-surface portability note (claude.ai)
 
@@ -173,8 +174,8 @@ heart of the standard. Every rule above and rubric item below traces back to one
 - **L8 — Make composition explicit.** Provide "Related skills" cross-references and clear
   hand-offs between skills used together (player controller → input + state machine +
   animation). The master router composes them; you make composition legible.
-- **L9 — Be portable by construction.** Keep the `SKILL.md` core agent-neutral; isolate any
-  agent-specific detail in generated adapters, not the source file.
+- **L9 — Be portable by construction.** Keep the `SKILL.md` core agent-neutral so it loads
+  unchanged in every agent; never embed agent-specific keys in the source file.
 - **L10 — Treat trust & safety as first-class.** Scope each skill to what it needs, avoid
   undocumented network calls in `scripts/`, prefer bundled references over live fetches where
   staleness matters, ship no secrets, and write everything originally from primary sources.
@@ -212,13 +213,15 @@ heart of the standard. Every rule above and rubric item below traces back to one
 The `SKILL.md` open standard is the portable core. The full per-agent breakdown lives in
 [`COMPATIBILITY.md`](COMPATIBILITY.md); the rules an author must internalize:
 
-- **Native consumers** (drop the folder in): Claude Code (`.claude/skills/`), Claude Agent SDK,
-  Claude.ai (zip upload), Kiro (`.kiro/skills/`), Gemini CLI & Codex CLI (`.agents/skills/`).
-  The one directory all CLI agents can share is **`.agents/skills/<name>/SKILL.md`**.
-- **Adapter-required editors** (rules-based, not skill-based): Cursor (`.cursor/rules/*.mdc`),
-  Windsurf (`.windsurf/rules/*.md`), Cline (`.clinerules/`). We **generate** adapters from the
-  canonical `SKILL.md`; we never hand-fork a skill or embed editor-specific keys in the core.
-- Keep the body agent-neutral. Anything agent-specific is applied at adapter-generation time.
+- **Skills load natively across the ecosystem.** Claude Code (`.claude/skills/`), Claude.ai (zip
+  upload), Cursor, Windsurf, Cline, Codex, Gemini CLI, GitHub Copilot, Kiro (`.kiro/skills/`),
+  VS Code and many more read `SKILL.md` directly. `.agents/skills/<name>/SKILL.md` is the shared
+  directory several CLI agents read.
+- **Install with the `skills` CLI** (`npx skills add …`) — it detects the agent and writes to the
+  right path. There is no rule-file conversion: nothing to generate, nothing to hand-fork.
+- **Keep the body agent-neutral.** A basic skill (name + description + body + optional resources)
+  works everywhere; the only cross-agent differences are optional fields (`allowed-tools`, `hooks`,
+  `context: fork`), which this repo deliberately omits.
 
 ---
 

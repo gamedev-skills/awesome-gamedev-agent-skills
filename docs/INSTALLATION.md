@@ -1,8 +1,9 @@
 # Installation
 
-How to install these skills into each supported agent. The compatibility details (paths,
-triggers, adapters) live in [`COMPATIBILITY.md`](COMPATIBILITY.md); this page is the
-practical how-to.
+How to install these skills into any supported agent. The compatibility details (per-agent paths,
+triggers, and optional fields) live in [`COMPATIBILITY.md`](COMPATIBILITY.md); this page is the
+practical how-to. The fastest route for every agent is the
+[universal `skills` CLI](#universal-installer-any-agent).
 
 ## The one rule
 
@@ -24,6 +25,30 @@ is the dispatcher). Copy it in alongside the others so the agent can route reque
 
 > The examples below use one skill (`godot-tilemap`) and POSIX shell. On Windows PowerShell,
 > replace `cp -R src dest` with `Copy-Item -Recurse src dest` and `mkdir -p` with `mkdir`.
+
+## Universal installer (any agent)
+
+The [`skills` CLI](https://www.npmjs.com/package/skills) is the package manager for the Agent
+Skills ecosystem. It detects the agents installed on your machine and copies the skills (the
+router plus all 62) into each one's skills directory — no clone required:
+
+```bash
+# install into whatever agent(s) you have
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills
+
+# preview the skill list without installing anything
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills --list
+
+# target one agent · install globally for all projects · grab a subset
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills -a cursor
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills -g
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills -s godot-tilemap -s platformer
+```
+
+Companions: `npx skills list` (what's installed), `npx skills update` (pull latest), and
+`npx skills remove` (uninstall). This is the recommended path for Cursor, Windsurf, Cline, Codex,
+Gemini CLI, GitHub Copilot, Kiro, and most other agents. The sections below cover each agent's
+native or manual route if you'd rather not use the CLI.
 
 ## Claude Code (plugin — recommended)
 
@@ -97,13 +122,13 @@ mkdir -p .agents/skills        # repo-local; or ~/.agents/skills for user-global
 cp -R skills/godot/godot-tilemap .agents/skills/
 ```
 
-Gemini CLI can also install a skill straight from this repo, no clone needed:
+Gemini CLI and Codex can also be targeted by the universal CLI, no clone needed:
 
 ```bash
-gemini skills install https://github.com/AbhishekBarali/awesome-gamedev-agent-skills.git --path skills/godot/godot-tilemap
+npx skills add AbhishekBarali/awesome-gamedev-agent-skills -a gemini-cli   # or: -a codex
 ```
 
-- **Gemini CLI:** verify with `gemini skills list` or `/skills`; activation prompts for consent.
+- **Gemini CLI:** manage and verify with `/skills`; activation prompts for consent.
 - **Codex CLI:** list with `/skills`, or mention `$godot-tilemap`; implicit activation by
   description also works.
 
@@ -132,21 +157,26 @@ options = ClaudeAgentOptions(
 
 Keep `description` ≤ 200 characters so it is not truncated by the upload UI.
 
-## Cursor / Windsurf / Cline (generated adapters)
+## Cursor / Windsurf / Cline (native skills)
 
-These editors use rules files rather than `SKILL.md`, so a skill is converted to the editor's
-rule format (see the mapping in [`COMPATIBILITY.md`](COMPATIBILITY.md)). The adapter generator
-is delivered with the tooling sessions; the intended interface is:
+These editors read `SKILL.md` natively — there is no rule-file conversion. The simplest install is
+the universal CLI (`npx skills add AbhishekBarali/awesome-gamedev-agent-skills -a cursor`; swap in
+`windsurf` or `cline`). To place files by hand:
 
 ```bash
-scripts/adapters/generate-rules --target cursor   --out .cursor/rules
-scripts/adapters/generate-rules --target windsurf --out .windsurf/rules
-scripts/adapters/generate-rules --target cline    --out .clinerules
+# Cursor — project; use ~/.cursor/skills for global. Cursor also reads .agents/skills and .claude/skills
+mkdir -p .cursor/skills && cp -R skills/godot/godot-tilemap .cursor/skills/
+
+# Windsurf (Cascade) — global lives at ~/.codeium/windsurf/skills/
+mkdir -p .windsurf/skills && cp -R skills/godot/godot-tilemap .windsurf/skills/
+
+# Cline — also reads .claude/skills/ ; enable via Settings → Features → Enable Skills
+mkdir -p .cline/skills && cp -R skills/godot/godot-tilemap .cline/skills/
 ```
 
-Until then, a skill can be adapted by hand: create the rule file at the path in the matrix,
-copy the `SKILL.md` body in, and (for Cline) prepend the `description` to the body so the model
-still sees what the skill is and when to use it.
+Copy `router` into the same directory so the agent can route requests. Each editor surfaces skills
+by description and via `/skill-name`; the per-agent paths are in
+[`COMPATIBILITY.md`](COMPATIBILITY.md).
 
 ## Verify after installing
 
