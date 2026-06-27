@@ -257,14 +257,38 @@ The exact per-agent paths, triggers, and the handful of optional fields that var
 
 ## Demo
 
-<!-- TODO: record a short terminal capture of the router resolving a prompt and replace the
-     line below with: ![router demo](docs/assets/router-demo.gif)
-     Suggested clip: in a Godot project, prompt "add a double jump to my player" and show the
-     router selecting godot-2d-movement + platformer before editing code. Keep it under ~15s. -->
+One plain-English request goes in; the minimal right skills come out, then version-pinned code.
+Here's the shape of a single exchange (illustrative):
 
-_A short router demo GIF will live here. To record one: open a project an agent can see, ask a
-plain-language game-dev question, and capture the router announcing which skills it loads and
-why._
+```text
+> add a double jump to my player
+
+Detected Godot (project.godot). Loading godot-2d-movement for the controller
+and platformer for jump feel — skipping the other 64 skills.
+```
+
+```gdscript
+extends CharacterBody2D
+
+@export var speed := 220.0
+@export var jump_velocity := -380.0
+@export var max_jumps := 2
+
+var _jumps_left := max_jumps
+
+func _physics_process(delta: float) -> void:
+    if not is_on_floor():
+        velocity += get_gravity() * delta   # get_gravity() is Godot 4.3+
+    else:
+        _jumps_left = max_jumps
+
+    if Input.is_action_just_pressed("ui_accept") and _jumps_left > 0:
+        velocity.y = jump_velocity
+        _jumps_left -= 1
+
+    velocity.x = Input.get_axis("ui_left", "ui_right") * speed
+    move_and_slide()
+```
 
 ## Repository layout
 
