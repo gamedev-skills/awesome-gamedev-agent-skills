@@ -312,3 +312,5 @@ python scripts/validate-skills.py
 ## License
 
 [Apache-2.0](LICENSE). See [`NOTICE`](NOTICE) for attribution and trademark notes.
+
+- **[Context Kit](https://github.com/JDDavenport/context-kit)** — Personal Context Artifacts: 4 Markdown templates + 5 Claude Code skills for giving AI agents deep personal context. MIT-licensed, one-command install.
