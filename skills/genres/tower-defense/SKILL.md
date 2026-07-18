@@ -25,7 +25,7 @@ balance levers (DPS vs. HP vs. income) that decide whether a TD is tense or triv
   if too many enemies leak through.
 - Use when designing wave composition/pacing, tower targeting priorities, or the gold economy.
 
-**When *not* to use:** the player directly controls a shooter → `fps-shooter`. Free-form base
+**When _not_ to use:** the player directly controls a shooter → `fps-shooter`. Free-form base
 building with needs → `survival-crafting`. For the pathfinding algorithm itself, use `game-ai`.
 
 ## Core loop
@@ -47,16 +47,16 @@ and can I afford the answer?
 
 ## Design knobs
 
-| Knob | Effect | Notes |
-|------|--------|-------|
-| Enemy HP growth/wave | upgrade pressure | Geometric ~1.1–1.2× (refs). |
-| Income vs. HP curves | difficulty | Player should *almost* afford each wave. |
-| Tower DPS / range / cost | tower identity | Cheap+wide vs. expensive+tall. |
-| Targeting priority | optimal placement | Changes play more than raw stats. |
-| Enemy variety | counters one-build wins | Fast / armored / flying / swarm / boss. |
-| Leak penalty | stakes | Cost lives *and* lost bounty. |
-| Upgrade vs. build economy | strategy depth | Diminishing upgrade returns. |
-| Wave pacing | tension curve | Spike → breather → spike, not monotonic. |
+| Knob                      | Effect                  | Notes                                    |
+| ------------------------- | ----------------------- | ---------------------------------------- |
+| Enemy HP growth/wave      | upgrade pressure        | Geometric ~1.1–1.2× (refs).              |
+| Income vs. HP curves      | difficulty              | Player should _almost_ afford each wave. |
+| Tower DPS / range / cost  | tower identity          | Cheap+wide vs. expensive+tall.           |
+| Targeting priority        | optimal placement       | Changes play more than raw stats.        |
+| Enemy variety             | counters one-build wins | Fast / armored / flying / swarm / boss.  |
+| Leak penalty              | stakes                  | Cost lives _and_ lost bounty.            |
+| Upgrade vs. build economy | strategy depth          | Diminishing upgrade returns.             |
+| Wave pacing               | tension curve           | Spike → breather → spike, not monotonic. |
 
 ## Patterns
 
@@ -81,9 +81,11 @@ def run_wave(wave):
 def acquire_target(tower, enemies, mode="first"):
     in_range = [e for e in enemies if distance(tower.pos, e.pos) <= tower.range]
     if not in_range: return None
-    if mode == "first":    return max(in_range, key=lambda e: e.progress)
+    if mode == "first":    return max(in_range, key=lambda e: e.progress)   # furthest along path (stop leaks)
+    if mode == "last":     return min(in_range, key=lambda e: e.progress)   # least progress (guard the entrance)
     if mode == "closest":  return min(in_range, key=lambda e: distance(tower.pos, e.pos))
-    if mode == "strongest":return max(in_range, key=lambda e: e.hp)
+    if mode == "strongest":return max(in_range, key=lambda e: e.hp)         # burn down tanks first
+    if mode == "weakest":  return min(in_range, key=lambda e: e.hp)         # secure kills / last-hit bounty
     return in_range[0]
 ```
 

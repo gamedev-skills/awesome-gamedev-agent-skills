@@ -26,8 +26,8 @@ hard-wired into scenes or singletons. Targets **Unity 6 (6000.0 LTS)**.
   build a runtime registry of active objects — without a `static`/singleton manager.
 - Use when the project has `*.asset` data files backed by `: ScriptableObject` classes.
 
-**When *not* to use:** per-instance runtime state that differs per GameObject (that belongs on
-a MonoBehaviour) — a ScriptableObject asset is *shared* by everyone who references it. Saving
+**When _not_ to use:** per-instance runtime state that differs per GameObject (that belongs on
+a MonoBehaviour) — a ScriptableObject asset is _shared_ by everyone who references it. Saving
 player progress to disk → `save-systems`. Plain DTOs that never need to be an asset can just be
 `[System.Serializable]` classes.
 
@@ -39,7 +39,7 @@ player progress to disk → `save-systems`. Plain DTOs that never need to be an 
    piece of data referenced by `[SerializeField]` fields.
 3. **Reference, don't copy.** MonoBehaviours hold a reference to the asset; they all see the
    same data, so changing the asset changes every consumer.
-4. **For decoupling**, model *signals* and *shared variables* as ScriptableObjects: a
+4. **For decoupling**, model _signals_ and _shared variables_ as ScriptableObjects: a
    "FloatVariable" the HUD reads and the player writes; an "event channel" the player raises
    and many systems listen to. Neither side references the other.
 5. **Reset runtime mutations** in `OnEnable` if the asset is mutated during play, because edits
@@ -99,9 +99,14 @@ temp.damage = 25;
 
 - **Editing an SO at runtime persists in the Editor** — values you change during Play stay
   changed on the asset after you stop. Keep mutable runtime state in `[NonSerialized]` fields
-  reset in `OnEnable`, or it will surprise you. (In a *build*, asset edits do not persist
+  reset in `OnEnable`, or it will surprise you. (In a _build_, asset edits do not persist
   across launches.)
-- **Expecting per-object state** — every reference points to the *same* asset. If two enemies
+- **Disabled Domain Reload skips your `OnEnable` reset** — with **Enter Play Mode Options**
+  enabled and **Reload Domain** off (a Unity 6 fast-iteration setting), already-loaded SOs are
+  _not_ re-created when you press Play, so `OnEnable` never fires and `runtimeValue` keeps its
+  value from the previous session. Reset explicitly from an `ISerializationCallbackReceiver` or
+  a scene-load hook instead of relying on `OnEnable` alone.
+- **Expecting per-object state** — every reference points to the _same_ asset. If two enemies
   need different current HP, store HP on the MonoBehaviour, not the shared SO.
 - **No frame lifecycle** — ScriptableObjects have `OnEnable`/`OnDisable`/`OnDestroy` but no
   `Update`. Don't expect per-frame callbacks.
@@ -121,5 +126,5 @@ temp.damage = 25;
 ## Related skills
 
 - `unity-csharp-scripting` — the MonoBehaviours that consume these assets.
-- `save-systems` — persisting state to disk (what SOs are *not* for).
+- `save-systems` — persisting state to disk (what SOs are _not_ for).
 - `card-game` / `rpg` / `survival-crafting` — genres that lean on SO-driven data.
