@@ -111,6 +111,10 @@ func go_to_level_2() -> void:
   An autoload can't depend on the main scene existing yet.
 - **`instance()` was renamed** to `instantiate()` in Godot 4. `preload` runs at parse
   time (path must be constant); `load` runs at runtime (path can be a variable).
+- **`change_scene_to_file()` is deferred**, not immediate — Godot swaps and frees the old
+  scene at the end of the current frame. Any code after the call still runs against the *old*
+  tree, and `get_tree().current_scene` isn't the new scene until next frame. Don't read the new
+  scene's nodes on the same line; do it from the new scene's `_ready()`.
 
 ## References
 
