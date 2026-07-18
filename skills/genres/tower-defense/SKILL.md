@@ -81,9 +81,11 @@ def run_wave(wave):
 def acquire_target(tower, enemies, mode="first"):
     in_range = [e for e in enemies if distance(tower.pos, e.pos) <= tower.range]
     if not in_range: return None
-    if mode == "first":    return max(in_range, key=lambda e: e.progress)
+    if mode == "first":    return max(in_range, key=lambda e: e.progress)   # furthest along path (stop leaks)
+    if mode == "last":     return min(in_range, key=lambda e: e.progress)   # least progress (guard the entrance)
     if mode == "closest":  return min(in_range, key=lambda e: distance(tower.pos, e.pos))
-    if mode == "strongest":return max(in_range, key=lambda e: e.hp)
+    if mode == "strongest":return max(in_range, key=lambda e: e.hp)         # burn down tanks first
+    if mode == "weakest":  return min(in_range, key=lambda e: e.hp)         # secure kills / last-hit bounty
     return in_range[0]
 ```
 
