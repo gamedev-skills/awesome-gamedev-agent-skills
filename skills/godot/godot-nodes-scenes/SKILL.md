@@ -26,7 +26,7 @@ without crashing on freed or missing nodes. Targets **Godot 4.3+**.
 - Use when debugging `get_node()` / `$Path` returning `null`, or "Attempt to call on a
   previously freed instance".
 
-**When *not* to use:** GDScript language/syntax → `godot-gdscript`; signal-based
+**When _not_ to use:** GDScript language/syntax → `godot-gdscript`; signal-based
 decoupling → `godot-signals-groups`; physics bodies/collisions → `godot-physics`.
 
 ## Core workflow
@@ -37,7 +37,7 @@ decoupling → `godot-signals-groups`; physics bodies/collisions → `godot-phys
 2. **Make a scene reusable** by giving its root a script and exposing `@export` config.
    Save it; it becomes a `PackedScene` you can instance many times.
 3. **Instance at runtime** with `preload`/`load` → `scene.instantiate()` →
-   `add_child(instance)`. Set position/state *after* adding (or before, both work).
+   `add_child(instance)`. Set position/state _after_ adding (or before, both work).
 4. **Access nodes safely.** Use `@onready var x = $Path` for fixed children; use unique
    names (`%Name`) for nodes deep in the tree; never assume a node still exists.
 5. **Use autoloads for global state/services** (game state, audio, scene switching) —
@@ -106,13 +106,13 @@ func go_to_level_2() -> void:
 - **`free()` mid-frame can crash** other code still using the node. Prefer
   `queue_free()` (deletes at end of frame) and check `is_instance_valid(node)`.
 - **Setting child state before `add_child()`** is fine, but `_ready()` on the child only
-  runs *after* it enters the tree — don't expect its `@onready` vars before that.
+  runs _after_ it enters the tree — don't expect its `@onready` vars before that.
 - **Autoload order matters**: autoloads are added before the main scene, in list order.
   An autoload can't depend on the main scene existing yet.
 - **`instance()` was renamed** to `instantiate()` in Godot 4. `preload` runs at parse
   time (path must be constant); `load` runs at runtime (path can be a variable).
 - **`change_scene_to_file()` is deferred**, not immediate — Godot swaps and frees the old
-  scene at the end of the current frame. Any code after the call still runs against the *old*
+  scene at the end of the current frame. Any code after the call still runs against the _old_
   tree, and `get_tree().current_scene` isn't the new scene until next frame. Don't read the new
   scene's nodes on the same line; do it from the new scene's `_ready()`.
 
