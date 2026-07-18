@@ -92,7 +92,8 @@ public void FillFloor(Tilemap map, TileBase tile, int width, int height)
 
 ```csharp
 tilemap.SetTile(cell, null);   // null erases the tile at that cell
-tilemap.RefreshAllTiles();     // re-evaluate rule/animated tiles after a bulk change
+tilemap.RefreshTile(cell);     // re-evaluate just this cell's rule/animated neighbors (cheap)
+// RefreshAllTiles() re-evaluates the ENTIRE map — reserve it for full regenerations, not per-edit.
 ```
 
 ## Pitfalls
@@ -105,8 +106,9 @@ tilemap.RefreshAllTiles();     // re-evaluate rule/animated tiles after a bulk c
   not a world position. Always convert with `WorldToCell` / `CellToWorld`.
 - **Tiles render behind/in front of sprites unexpectedly** — set each `TilemapRenderer`'s
   Sorting Layer and Order in Layer; multiple tilemaps need explicit ordering.
-- **Rule/animated tiles don't update after script edits** — call `RefreshAllTiles()` (or
-  `RefreshTile(cell)`) after bulk `SetTilesBlock` writes.
+- **Rule/animated tiles don't update after script edits** — refresh after writes, but prefer
+  the targeted `RefreshTile(cell)` for a few edits; `RefreshAllTiles()` re-evaluates every tile
+  on the map and stalls large levels. Reserve the full refresh for whole-map regenerations.
 - **Painting onto the wrong layer** — the active target Tilemap in the Tile Palette determines
   where paint lands; check the "Active Tilemap" dropdown.
 
