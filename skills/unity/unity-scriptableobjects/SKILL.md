@@ -101,6 +101,11 @@ temp.damage = 25;
   changed on the asset after you stop. Keep mutable runtime state in `[NonSerialized]` fields
   reset in `OnEnable`, or it will surprise you. (In a *build*, asset edits do not persist
   across launches.)
+- **Disabled Domain Reload skips your `OnEnable` reset** — with **Enter Play Mode Options**
+  enabled and **Reload Domain** off (a Unity 6 fast-iteration setting), already-loaded SOs are
+  *not* re-created when you press Play, so `OnEnable` never fires and `runtimeValue` keeps its
+  value from the previous session. Reset explicitly from an `ISerializationCallbackReceiver` or
+  a scene-load hook instead of relying on `OnEnable` alone.
 - **Expecting per-object state** — every reference points to the *same* asset. If two enemies
   need different current HP, store HP on the MonoBehaviour, not the shared SO.
 - **No frame lifecycle** — ScriptableObjects have `OnEnable`/`OnDisable`/`OnDestroy` but no
