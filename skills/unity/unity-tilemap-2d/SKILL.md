@@ -29,7 +29,7 @@ Palette, colliders, and runtime painting. Targets **Unity 6 (6000.0 LTS)**.
   collision to the map, using auto-tiling Rule Tiles, or generating/editing tiles from script.
 - Use when scenes contain a `Grid` with `Tilemap` children, or `*.asset` tile/palette files.
 
-**When *not* to use:** level *design* practice (pacing, blockout, layout principles) →
+**When _not_ to use:** level _design_ practice (pacing, blockout, layout principles) →
 `level-design`. 3D tile/grid placement → Unity's own 3D tooling (ProBuilder / grid brushes; no dedicated skill here). The platformer character that
 moves over the tiles → `platformer` / `unity-physics`.
 
@@ -42,7 +42,7 @@ moves over the tiles → `platformer` / `unity-physics`.
    create `Tile` assets, then paint with the brush tools.
 3. **Add collision** to the solid layer: `TilemapCollider2D`. For one merged collider (far
    cheaper and gap-free), also add `CompositeCollider2D` (+ a `Rigidbody2D` set to **Static**)
-   and enable *Used By Composite* on the tilemap collider.
+   and enable _Used By Composite_ on the tilemap collider.
 4. **Auto-tile with Rule Tiles** (2D Tilemap Extras) so edges/corners pick the right sprite
    automatically instead of hand-placing every variant.
 5. **Edit at runtime via script** with cell coordinates (`Vector3Int`): `SetTile`, `GetTile`,
@@ -101,8 +101,8 @@ tilemap.RefreshTile(cell);     // re-evaluate just this cell's rule/animated nei
 - **`RuleTile` type not found** — it's not built in. Install the **2D Tilemap Extras** package
   (`com.unity.2d.tilemap.extras`) via Package Manager.
 - **A collider per tile tanks performance / leaves seams** — add a `CompositeCollider2D` with a
-  static `Rigidbody2D` and *Used By Composite* to merge the whole layer into one smooth shape.
-- **Confusing world and cell coordinates** — `SetTile`/`GetTile` take a `Vector3Int` *cell*,
+  static `Rigidbody2D` and _Used By Composite_ to merge the whole layer into one smooth shape.
+- **Confusing world and cell coordinates** — `SetTile`/`GetTile` take a `Vector3Int` _cell_,
   not a world position. Always convert with `WorldToCell` / `CellToWorld`.
 - **Tiles render behind/in front of sprites unexpectedly** — set each `TilemapRenderer`'s
   Sorting Layer and Order in Layer; multiple tilemaps need explicit ordering.
