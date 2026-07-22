@@ -312,3 +312,9 @@ python scripts/validate-skills.py
 ## License
 
 [Apache-2.0](LICENSE). See [`NOTICE`](NOTICE) for attribution and trademark notes.
+
+## Companion Resources (Fan-Maintained)
+
+- [Meccha Chameleon Atlas](https://mecchachameleon.art/) — Fan-maintained hide-spots reference, paint-match notes, and seeker counter-tips for the paint-based hide-and-seek game Meccha Chameleon. Unofficial, not affiliated with the developer.
+
+- [MECCHA CHAMELEON](https://mecchachameleon.art/) — A Steam hide-and-seek mimicry game and fan-made companion site.
