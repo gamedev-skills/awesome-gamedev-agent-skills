@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Studio Workflow"
+  short_description: "Inspect, modify, and verify living Roblox places"
+  default_prompt: "Use $roblox-studio-workflow to inspect and safely change this Roblox project."

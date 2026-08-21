@@ -103,8 +103,10 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
   `unreal-niagara`; ship `unreal-packaging`.
 - **Web** (`skills/web-engines/`): `phaser-core`, `phaser-arcade-physics`; `pixijs-rendering`;
   `threejs-scene-setup`, `threejs-gltf-loading`, `threejs-materials-lighting`.
-- **Other** (`skills/other-engines/`): `bevy-ecs`, `pygame-core`, `love2d-core`, `roblox-luau`,
-  `roblox-datastores`.
+- **Other** (`skills/other-engines/`): `bevy-ecs`, `pygame-core`, `love2d-core`; Roblox foundation
+  `roblox-luau`, persistence `roblox-datastores`, UI `roblox-ui`, remotes/security
+  `roblox-networking`, character lifecycle `roblox-characters`, simulation/queries
+  `roblox-physics`, and in-Studio operation `roblox-studio-workflow`.
 
 ### 3b. Disciplines — load **with** the engine skill (concept ↔ engine API)
 
@@ -124,6 +126,12 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
 | camera follow, deadzone, look-ahead, orbit, first-person | `camera-systems` | `godot-2d-movement` / `godot-3d-essentials` / Cinemachine |
 | HUD, menu, UI layout, scaling, safe area, focus nav | `game-ui-ux` | `godot-ui-control` / Unity UI (UGUI/UI Toolkit) |
 | low FPS, optimize, draw calls, GC spike, pooling, profiler | `performance-optimization` | engine profiler + `physics-tuning` |
+
+For Roblox, compose cross-engine concepts with the focused engine skill: HUD/menu requests use
+`roblox-ui` + `game-ui-ux` (+ `input-systems` for gameplay bindings); remote exploit or
+replication requests use `roblox-networking` + `roblox-luau`; respawn/rig requests use
+`roblox-characters`; physical simulation/query requests use `roblox-physics` (+
+`physics-tuning` for stability); direct place editing also uses `roblox-studio-workflow`.
 
 ### 3c. Genres — **compose** engine + disciplines (bind `*` to the detected engine)
 

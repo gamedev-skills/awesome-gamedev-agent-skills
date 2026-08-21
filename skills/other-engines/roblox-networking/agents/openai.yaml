@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Networking"
+  short_description: "Build secure Roblox client-server protocols"
+  default_prompt: "Use $roblox-networking to design and test this Roblox network boundary."

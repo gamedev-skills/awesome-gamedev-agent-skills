@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox UI"
+  short_description: "Build responsive production Roblox interfaces"
+  default_prompt: "Use $roblox-ui to implement and verify this Roblox interface."

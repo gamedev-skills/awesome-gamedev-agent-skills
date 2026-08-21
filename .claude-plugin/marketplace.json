@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 67 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 72 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
@@ -52,6 +52,11 @@
         "./skills/other-engines/love2d-core",
         "./skills/other-engines/roblox-luau",
         "./skills/other-engines/roblox-datastores",
+        "./skills/other-engines/roblox-ui",
+        "./skills/other-engines/roblox-networking",
+        "./skills/other-engines/roblox-characters",
+        "./skills/other-engines/roblox-physics",
+        "./skills/other-engines/roblox-studio-workflow",
         "./skills/disciplines/create-game-assets",
         "./skills/disciplines/game-ai",
         "./skills/disciplines/procedural-gen",
@@ -161,13 +166,18 @@
       "name": "other-engines",
       "source": "./",
       "strict": false,
-      "description": "Bevy, pygame, LÖVE, and Roblox engine skills.",
+      "description": "Bevy, pygame, LÖVE, and production-focused Roblox engine skills.",
       "skills": [
         "./skills/other-engines/bevy-ecs",
         "./skills/other-engines/pygame-core",
         "./skills/other-engines/love2d-core",
         "./skills/other-engines/roblox-luau",
-        "./skills/other-engines/roblox-datastores"
+        "./skills/other-engines/roblox-datastores",
+        "./skills/other-engines/roblox-ui",
+        "./skills/other-engines/roblox-networking",
+        "./skills/other-engines/roblox-characters",
+        "./skills/other-engines/roblox-physics",
+        "./skills/other-engines/roblox-studio-workflow"
       ]
     },
     {

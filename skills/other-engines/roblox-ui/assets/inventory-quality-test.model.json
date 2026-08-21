@@ -1,0 +1,330 @@
+{
+  "ClassName": "ScreenGui",
+  "Properties": {
+    "ResetOnSpawn": false,
+    "ScreenInsets": "CoreUISafeInsets",
+    "ZIndexBehavior": "Sibling"
+  },
+  "Children": [
+    {
+      "Name": "Root",
+      "ClassName": "Frame",
+      "Properties": {
+        "AnchorPoint": [0.5, 0.5],
+        "Position": {"UDim2": [[0.5, 0], [0.5, 0]]},
+        "Size": {"UDim2": [[0.82, 0], [0.78, 0]]},
+        "BackgroundColor3": [0.0706, 0.0824, 0.102],
+        "BorderSizePixel": 0
+      },
+      "Children": [
+        {
+          "ClassName": "UISizeConstraint",
+          "Properties": {
+            "MinSize": [320, 360],
+            "MaxSize": [1120, 720]
+          }
+        },
+        {
+          "ClassName": "UICorner",
+          "Properties": {"CornerRadius": {"UDim": [0, 10]}}
+        },
+        {
+          "ClassName": "UIStroke",
+          "Properties": {
+            "Color": [0.1804, 0.2118, 0.2588],
+            "Thickness": 1,
+            "Transparency": 0.2
+          }
+        },
+        {
+          "ClassName": "UIPadding",
+          "Properties": {
+            "PaddingTop": {"UDim": [0, 20]},
+            "PaddingBottom": {"UDim": [0, 16]},
+            "PaddingLeft": {"UDim": [0, 20]},
+            "PaddingRight": {"UDim": [0, 20]}
+          }
+        },
+        {
+          "Name": "Header",
+          "ClassName": "Frame",
+          "Properties": {
+            "Size": {"UDim2": [[1, 0], [0, 56]]},
+            "BackgroundTransparency": 1
+          },
+          "Children": [
+            {
+              "Name": "Title",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "Size": {"UDim2": [[0.65, 0], [1, 0]]},
+                "BackgroundTransparency": 1,
+                "Text": "INVENTORY",
+                "TextColor3": [0.9412, 0.949, 0.9647],
+                "TextSize": 24,
+                "Font": "GothamBold",
+                "TextXAlignment": "Left"
+              }
+            },
+            {
+              "Name": "Capacity",
+              "ClassName": "TextLabel",
+              "Properties": {
+                "AnchorPoint": [1, 0.5],
+                "Position": {"UDim2": [[1, 0], [0.5, 0]]},
+                "Size": {"UDim2": [[0, 120], [0, 28]]},
+                "BackgroundTransparency": 1,
+                "Text": "18 / 24 slots",
+                "TextColor3": [0.5686, 0.6157, 0.6902],
+                "TextSize": 14,
+                "Font": "Gotham",
+                "TextXAlignment": "Right"
+              }
+            }
+          ]
+        },
+        {
+          "Name": "Content",
+          "ClassName": "Frame",
+          "Properties": {
+            "Position": {"UDim2": [[0, 0], [0, 64]]},
+            "Size": {"UDim2": [[1, 0], [1, -120]]},
+            "BackgroundTransparency": 1
+          },
+          "Children": [
+            {
+              "Name": "CategoryList",
+              "ClassName": "Frame",
+              "Properties": {
+                "Size": {"UDim2": [[0, 132], [1, 0]]},
+                "BackgroundTransparency": 1
+              },
+              "Children": [
+                {
+                  "ClassName": "UIListLayout",
+                  "Properties": {
+                    "Padding": {"UDim": [0, 6]},
+                    "SortOrder": "LayoutOrder"
+                  }
+                },
+                {
+                  "Name": "All",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "Size": {"UDim2": [[1, 0], [0, 38]]},
+                    "BackgroundColor3": [0.1373, 0.1725, 0.2314],
+                    "BorderSizePixel": 0,
+                    "Text": "All items",
+                    "TextColor3": [0.9412, 0.949, 0.9647],
+                    "TextSize": 14,
+                    "Font": "GothamMedium",
+                    "TextXAlignment": "Left",
+                    "SelectionOrder": 1
+                  }
+                },
+                {
+                  "Name": "Weapons",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "Size": {"UDim2": [[1, 0], [0, 38]]},
+                    "BackgroundTransparency": 1,
+                    "Text": "Weapons",
+                    "TextColor3": [0.6745, 0.7098, 0.7647],
+                    "TextSize": 14,
+                    "Font": "Gotham",
+                    "TextXAlignment": "Left",
+                    "SelectionOrder": 2
+                  }
+                },
+                {
+                  "Name": "Consumables",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "Size": {"UDim2": [[1, 0], [0, 38]]},
+                    "BackgroundTransparency": 1,
+                    "Text": "Consumables",
+                    "TextColor3": [0.6745, 0.7098, 0.7647],
+                    "TextSize": 14,
+                    "Font": "Gotham",
+                    "TextXAlignment": "Left",
+                    "SelectionOrder": 3
+                  }
+                }
+              ]
+            },
+            {
+              "Name": "ItemGrid",
+              "ClassName": "ScrollingFrame",
+              "Properties": {
+                "Position": {"UDim2": [[0, 148], [0, 0]]},
+                "Size": {"UDim2": [[0.58, -148], [1, 0]]},
+                "BackgroundTransparency": 1,
+                "BorderSizePixel": 0,
+                "AutomaticCanvasSize": "Y",
+                "CanvasSize": {"UDim2": [[0, 0], [0, 0]]},
+                "ScrollBarThickness": 4
+              },
+              "Children": [
+                {
+                  "ClassName": "UIGridLayout",
+                  "Properties": {
+                    "CellSize": {"UDim2": [[0.5, -6], [0, 112]]},
+                    "CellPadding": {"UDim2": [[0, 12], [0, 12]]},
+                    "SortOrder": "LayoutOrder"
+                  }
+                },
+                {
+                  "Name": "FieldKnife",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "BackgroundColor3": [0.102, 0.1216, 0.1529],
+                    "BorderSizePixel": 0,
+                    "Text": "FIELD KNIFE\nLight · Equipped",
+                    "TextColor3": [0.9176, 0.9294, 0.949],
+                    "TextSize": 14,
+                    "Font": "GothamMedium",
+                    "TextWrapped": true,
+                    "SelectionOrder": 10
+                  },
+                  "Children": [
+                    {
+                      "ClassName": "UIStroke",
+                      "Properties": {"Color": [0.2902, 0.5137, 0.7765], "Thickness": 2}
+                    }
+                  ]
+                },
+                {
+                  "Name": "Medkit",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "BackgroundColor3": [0.102, 0.1216, 0.1529],
+                    "BorderSizePixel": 0,
+                    "Text": "MEDKIT\nRestores 50 health",
+                    "TextColor3": [0.9176, 0.9294, 0.949],
+                    "TextSize": 14,
+                    "Font": "GothamMedium",
+                    "TextWrapped": true,
+                    "SelectionOrder": 11
+                  }
+                },
+                {
+                  "Name": "SignalFlare",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "BackgroundColor3": [0.102, 0.1216, 0.1529],
+                    "BorderSizePixel": 0,
+                    "Text": "SIGNAL FLARE\n3 remaining",
+                    "TextColor3": [0.9176, 0.9294, 0.949],
+                    "TextSize": 14,
+                    "Font": "GothamMedium",
+                    "TextWrapped": true,
+                    "SelectionOrder": 12
+                  }
+                },
+                {
+                  "Name": "Rope",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "BackgroundColor3": [0.102, 0.1216, 0.1529],
+                    "BorderSizePixel": 0,
+                    "Text": "CLIMBING ROPE\nUtility",
+                    "TextColor3": [0.9176, 0.9294, 0.949],
+                    "TextSize": 14,
+                    "Font": "GothamMedium",
+                    "TextWrapped": true,
+                    "SelectionOrder": 13
+                  }
+                }
+              ]
+            },
+            {
+              "Name": "DetailsPanel",
+              "ClassName": "Frame",
+              "Properties": {
+                "AnchorPoint": [1, 0],
+                "Position": {"UDim2": [[1, 0], [0, 0]]},
+                "Size": {"UDim2": [[0.38, -12], [1, 0]]},
+                "BackgroundColor3": [0.0902, 0.1059, 0.1333],
+                "BorderSizePixel": 0
+              },
+              "Children": [
+                {
+                  "ClassName": "UIPadding",
+                  "Properties": {
+                    "PaddingTop": {"UDim": [0, 18]},
+                    "PaddingBottom": {"UDim": [0, 18]},
+                    "PaddingLeft": {"UDim": [0, 18]},
+                    "PaddingRight": {"UDim": [0, 18]}
+                  }
+                },
+                {
+                  "Name": "ItemName",
+                  "ClassName": "TextLabel",
+                  "Properties": {
+                    "Size": {"UDim2": [[1, 0], [0, 32]]},
+                    "BackgroundTransparency": 1,
+                    "Text": "Field Knife",
+                    "TextColor3": [0.9412, 0.949, 0.9647],
+                    "TextSize": 20,
+                    "Font": "GothamBold",
+                    "TextXAlignment": "Left"
+                  }
+                },
+                {
+                  "Name": "Description",
+                  "ClassName": "TextLabel",
+                  "Properties": {
+                    "Position": {"UDim2": [[0, 0], [0, 44]]},
+                    "Size": {"UDim2": [[1, 0], [0, 92]]},
+                    "BackgroundTransparency": 1,
+                    "Text": "A balanced utility blade. Quick to ready and quiet in close quarters.",
+                    "TextColor3": [0.6745, 0.7098, 0.7647],
+                    "TextSize": 14,
+                    "Font": "Gotham",
+                    "TextWrapped": true,
+                    "TextXAlignment": "Left",
+                    "TextYAlignment": "Top"
+                  }
+                },
+                {
+                  "Name": "Equip",
+                  "ClassName": "TextButton",
+                  "Properties": {
+                    "AnchorPoint": [0, 1],
+                    "Position": {"UDim2": [[0, 0], [1, 0]]},
+                    "Size": {"UDim2": [[1, 0], [0, 44]]},
+                    "BackgroundColor3": [0.2902, 0.5137, 0.7765],
+                    "BorderSizePixel": 0,
+                    "Text": "Equip item",
+                    "TextColor3": [1, 1, 1],
+                    "TextSize": 15,
+                    "Font": "GothamBold",
+                    "SelectionOrder": 20
+                  },
+                  "Children": [
+                    {"ClassName": "UICorner", "Properties": {"CornerRadius": {"UDim": [0, 6]}}}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "Footer",
+          "ClassName": "TextLabel",
+          "Properties": {
+            "AnchorPoint": [0, 1],
+            "Position": {"UDim2": [[0, 0], [1, 0]]},
+            "Size": {"UDim2": [[1, 0], [0, 36]]},
+            "BackgroundTransparency": 1,
+            "Text": "A Select     B Close     LB/RB Categories",
+            "TextColor3": [0.4902, 0.5373, 0.6078],
+            "TextSize": 13,
+            "Font": "Gotham",
+            "TextXAlignment": "Left"
+          }
+        }
+      ]
+    }
+  ]
+}

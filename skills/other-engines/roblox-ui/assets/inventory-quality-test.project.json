@@ -1,0 +1,12 @@
+{
+  "name": "RobloxUIQualityTest",
+  "tree": {
+    "$className": "DataModel",
+    "StarterGui": {
+      "$className": "StarterGui",
+      "InventoryGui": {
+        "$path": "inventory-quality-test.model.json"
+      }
+    }
+  }
+}
