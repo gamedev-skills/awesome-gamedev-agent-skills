@@ -71,7 +71,7 @@ and `../docs/VERSION-SUPPORT.md`.
 
 After the engine, read the request for task signals (three **additive** categories):
 
-- **disciplines** (cross-engine concepts): `create-game-assets`, `game-ai`, `procedural-gen`, `dialogue-systems`,
+- **disciplines** (cross-engine concepts): `create-game-assets`, `game-ai`, `ai-behavior-trees-utility-ai`, `procedural-gen`, `dialogue-systems`,
   `save-systems`, `audio-design`, `shader-programming`, `physics-tuning`, `level-design`,
   `input-systems`, `game-feel`, `camera-systems`, `game-ui-ux`, `performance-optimization`.
   Triggered by concept words ("sprite sheet", "art direction", "texture", "pathfinding",
@@ -112,6 +112,7 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
 |-------------------|------------------|-------------------------|
 | art direction, game assets, sprites, tilesets, textures, icons, 3D props | `create-game-assets` | engine importer/rendering skill; `imagegen` when available |
 | enemy AI, behavior tree, pathfinding, steering | `game-ai` | `unity-navmesh` / `unreal-behavior-trees` / Godot nav |
+| BT runtime, blackboard, decorator, selector/sequence, utility AI, response curve, consideration | `ai-behavior-trees-utility-ai` | `game-ai` (model choice) / `unreal-behavior-trees` (engine assets) |
 | procedural, noise, seed, dungeon generator | `procedural-gen` | engine tilemap/grid skill |
 | dialogue, Yarn, Ink, conversation tree | `dialogue-systems` | engine UI skill |
 | save/load, slots, persistence | `save-systems` | `roblox-datastores` / engine IO |

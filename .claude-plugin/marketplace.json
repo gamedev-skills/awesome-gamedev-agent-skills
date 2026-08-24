@@ -66,6 +66,7 @@
         "./skills/disciplines/game-ui-ux",
         "./skills/disciplines/camera-systems",
         "./skills/disciplines/performance-optimization",
+        "./skills/disciplines/ai-behavior-trees-utility-ai",
         "./skills/genres/platformer",
         "./skills/genres/roguelike",
         "./skills/genres/rpg",
@@ -189,7 +190,8 @@
         "./skills/disciplines/game-feel",
         "./skills/disciplines/game-ui-ux",
         "./skills/disciplines/camera-systems",
-        "./skills/disciplines/performance-optimization"
+        "./skills/disciplines/performance-optimization",
+        "./skills/disciplines/ai-behavior-trees-utility-ai"
       ]
     },
     {
