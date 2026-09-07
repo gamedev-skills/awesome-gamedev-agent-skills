@@ -241,7 +241,7 @@ standard — the format Anthropic launched as Claude Skills — metadata plus a 
 agent reads on demand.
 
 The same file loads **natively** across the ecosystem: Claude Code, Claude, Cursor, Windsurf,
-Cline, OpenAI Codex, Gemini CLI, GitHub Copilot, Kiro, Antigravity, VS Code, and
+Cline, OpenAI Codex, Gemini CLI, GitHub Copilot, Kiro, Oh My Pi, Antigravity, VS Code, and
 [many more](https://agentskills.io/clients). There are no editor-specific rule files to maintain
 and nothing to convert.
 
@@ -262,6 +262,7 @@ npx skills add gamedev-skills/awesome-gamedev-agent-skills
 | Windsurf | `.windsurf/skills/` |
 | Cline | `.cline/skills/` |
 | Kiro | `.kiro/skills/` |
+| Oh My Pi (omp) | `.omp/skills/` _(also reads `.agents/skills/`)_ |
 
 The exact per-agent paths, triggers, and the handful of optional fields that vary by agent are in
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
