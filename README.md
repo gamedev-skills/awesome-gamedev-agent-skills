@@ -7,16 +7,16 @@
        alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 67 skills and a router across 10 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**68 game-dev skills for your AI coding agent — install once, and a router loads the
+**73 game-dev skills for your AI coding agent — install once, and a router loads the
 right skill for whatever you're building.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-68%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-73%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **68 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **73 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -40,7 +40,7 @@ task skills before it writes code.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 68 skills into the right place:
+coding agent you already use and installs the router plus all 73 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -280,7 +280,7 @@ Here's the shape of a single exchange (illustrative):
 > add a double jump to my player
 
 Detected Godot (project.godot). Loading godot-2d-movement for the controller
-and platformer for jump feel — skipping the other 66 skills.
+and platformer for jump feel — skipping the other 71 skills.
 ```
 
 ```gdscript
@@ -309,7 +309,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        68 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        73 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template
