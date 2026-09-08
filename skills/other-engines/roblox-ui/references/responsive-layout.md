@@ -33,8 +33,10 @@ author's primary monitor. This reference targets Roblox's rolling platform APIs.
 
 For interactive `ScreenGui` content, retain `ScreenInsets = CoreUISafeInsets` unless the design
 has a measured reason not to. Decorative backgrounds may intentionally bleed into `None`, but put
-interactive descendants in a separate inset-aware `ScreenGui` or safe root. `GuiService:GetInsetArea()`
-provides actual inset rectangles when custom positioning needs them.
+interactive descendants in a separate inset-aware `ScreenGui` or safe root.
+`GuiService:GetInsetArea(Enum.ScreenInsets.CoreUISafeInsets)` returns the actual inset rectangle when
+custom positioning needs it — the `ScreenInsets` argument is required, and which inset set you ask
+for is the point of the call. `GuiService.TopbarInset` gives the topbar rectangle on its own.
 
 Mobile tests must include the bottom-left movement control and bottom-right jump/action region.
 Console tests must consider viewing distance and overscan, not just a desktop window enlarged to TV

@@ -11,8 +11,9 @@ Read this before claiming a change was tested in Studio.
 - **Device Emulator**: resolutions, orientation, DPI/device constraints, touch simulation, and
   streaming behavior under representative device conditions.
 - **Controller Emulator**: input mappings and gamepad UI navigation.
-- **Studio-only scripted testing services**: automation where the installed Studio/API and project
-  tooling expose observable results; do not invent a headless workflow.
+- **`TestService`**: Studio-only scripted assertions (`TestService:Check()`, `Require()`,
+  `Message()`, `Fail()`) surfaced in the Output/TestService pane. Use it where the installed
+  Studio/API and project tooling expose observable results; do not invent a headless workflow.
 
 ## Evidence record
 

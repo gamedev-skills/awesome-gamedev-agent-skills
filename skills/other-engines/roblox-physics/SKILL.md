@@ -99,8 +99,10 @@ end
 ```
 
 Bounds queries use bounding boxes and can include multiple parts from one target; deduplicate and
-perform exact/gameplay checks as needed. For exact geometry use the appropriate precise overlap API
-only when its additional cost is justified.
+perform exact/gameplay checks as needed. For exact geometry use `WorldRoot:GetPartsInPart(part, overlapParams)`
+only when its additional cost is justified. Note `OverlapParams.RespectCanCollide` decides whether a
+query honours `CanCollide` or `CanQuery` — set it deliberately, or it silently overrides the flag
+policy below. `OverlapParams.Tolerance` controls contact slop.
 
 ## Assemblies, force, and ownership
 
@@ -123,7 +125,7 @@ only when its additional cost is justified.
 |---|---|---|
 | welded mechanism will not move | one part anchored | inspect full assembly; anchor only intentional world roots |
 | force behaves too strongly/weakly | assembly mass ignored | inspect `AssemblyMass`; tune force/impulse by intended acceleration |
-| hit misses fast projectile | discrete touch sampling/tunneling | swept ray/shape query and `physics-tuning`; do not rely only on `.Touched` |
+| hit misses fast projectile | discrete touch sampling/tunneling | swept query — `WorldRoot:Blockcast()`, `Spherecast()`, or `Shapecast()` — plus `physics-tuning`; do not rely only on `.Touched` |
 | ray hits shooter/effects | filters/collision group absent | reuse explicit params and query group |
 | same target damaged many times | overlap returned multiple body parts | deduplicate by target model and enforce attack ID/cooldown |
 | exploit fires impossible touch | client owns relevant physics | server query/context validation; deliberate ownership |

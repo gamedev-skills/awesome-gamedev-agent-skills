@@ -35,9 +35,10 @@ When a modal opens:
 4. keep directional navigation inside the modal;
 5. on close, restore the prior object or a stable fallback.
 
-Use `GuiService:AddSelectionParent`/`AddSelectionTuple` only after checking current API status;
-some older selection-group methods are deprecated. Prefer explicit navigation properties and
-current selection APIs when they solve the screen.
+To keep directional navigation inside the modal, set `GuiBase2d.SelectionGroup = true` on the modal
+root and set its `SelectionBehaviorUp`/`Down`/`Left`/`Right` to `Enum.SelectionBehavior.Stop`. The
+older `GuiService:AddSelectionParent()`/`AddSelectionTuple()`/`RemoveSelectionGroup()` methods are
+all deprecated — do not use them in new work.
 
 ## Context actions
 

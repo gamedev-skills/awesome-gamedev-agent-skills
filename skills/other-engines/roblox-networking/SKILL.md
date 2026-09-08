@@ -127,7 +127,10 @@ replication. Log aggregate abuse signals, not one warning per rejected packet.
 - With instance streaming, a valid server Instance may not exist on a client. Send a stable ID and
   tolerate absence; do not wait forever for optional streamed content.
 - High-rate cosmetic data may use `UnreliableRemoteEvent`; make each sample self-contained because
-  delivery and order are not guaranteed. Keep payloads well below its documented size limit.
+  delivery and order are not guaranteed. Payloads over **1000 bytes are dropped** (Studio Output
+  reports the overage). `RemoteEvent` and `UnreliableRemoteEvent` also share a throttle of roughly
+  **500 calls/second per client**, counted across all remotes of that type — which is what a
+  legitimate player hits before any attacker does.
 - Predict only latency-sensitive reversible presentation. Include a client sequence/command ID;
   the server returns authoritative state and acknowledgement; the client corrects smoothly. Never
   let prediction award damage, currency, inventory, or progression.

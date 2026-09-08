@@ -34,8 +34,9 @@ trust belongs to `roblox-networking`; camera logic belongs to `camera-systems`.
 4. **Resolve required components defensively.** Wait with a timeout where replication warrants it;
    validate `Humanoid`, root, `Animator`, and rig assumptions. Abort if that character is no longer
    current before applying delayed work.
-5. **Choose movement ownership.** Use Humanoid movement for standard avatars; use modern assembly
-   velocity, impulses, or constraints only for mechanics that need physical control. Keep gameplay
+5. **Choose movement ownership.** Use Humanoid movement for standard avatars; use
+   `AssemblyLinearVelocity`, `BasePart:ApplyImpulse()`, or a `LinearVelocity`/`AlignPosition`
+   constraint only for mechanics that need physical control. Keep gameplay
    authority and network ownership implications explicit.
 6. **Own animation lifecycle.** Load via the rig's `Animator`; store tracks/connections; use named
    markers for gameplay timing only with server validation; stop/disconnect on character cleanup.
@@ -59,12 +60,16 @@ local function clearCharacter()
 end
 
 local function bindCharacter(character: Model)
+    -- Guard BEFORE teardown. A stale invocation (see the CharacterAdded/defer race below) must not
+    -- clear a binding that is already current, or nothing ends up bound at all.
+    if player.Character ~= character then return end
     clearCharacter()
     currentCharacter = character
     local thisGeneration = generation
     local humanoid = character:WaitForChild("Humanoid", 10)
     local root = character:WaitForChild("HumanoidRootPart", 10)
-    if not humanoid or not root or player.Character ~= character then return end
+    -- Re-check after the yields: a respawn during WaitForChild bumps generation and makes this call stale.
+    if not humanoid or not root or generation ~= thisGeneration then return end
 
     table.insert(connections, humanoid.Died:Connect(function()
         if generation ~= thisGeneration then return end
