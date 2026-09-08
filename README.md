@@ -4,19 +4,19 @@
 
 <p align="center">
   <img src="docs/assets/banner.png" width="820"
-       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 72 skills and a router across 10 engines, including an art-direction and asset-production workflow.">
+       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 67 skills and a router across 10 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**72 game-dev skills for your AI coding agent — install once, and a router loads the
+**68 game-dev skills for your AI coding agent — install once, and a router loads the
 right skill for whatever you're building.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-72%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-68%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **72 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **68 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -40,7 +40,7 @@ task skills before it writes code.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 72 skills into the right place:
+coding agent you already use and installs the router plus all 68 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -117,7 +117,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-72 skills across 8 categories — each links to its `SKILL.md` below.
+73 skills across 8 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -185,13 +185,13 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`love2d-core`](skills/other-engines/love2d-core/SKILL.md) | LÖVE `load/update/draw` loop, dt-driven motion, input, states (LÖVE 11.5) |
 | [`roblox-luau`](skills/other-engines/roblox-luau/SKILL.md) | Roblox Luau scripting: services, instances, client/server model |
 | [`roblox-datastores`](skills/other-engines/roblox-datastores/SKILL.md) | Persistent data with `DataStoreService`: sessions, limits, ordered stores |
-| [`roblox-ui`](skills/other-engines/roblox-ui/SKILL.md) | Production Roblox UI: responsive Instances, safe insets, input/focus, lifecycle, visual quality |
-| [`roblox-networking`](skills/other-engines/roblox-networking/SKILL.md) | Server-authoritative remotes, validation, rate limits, replication, streaming, prediction |
-| [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | Respawn-safe characters, Humanoids, rigs, movement, animations, tools, cleanup |
+| [`roblox-ui`](skills/other-engines/roblox-ui/SKILL.md) | Roblox UI: `ScreenGui` layout, responsive scaling, safe areas, gamepad/touch navigation |
+| [`roblox-networking`](skills/other-engines/roblox-networking/SKILL.md) | Remotes, server-authoritative validation, rate limiting, replication boundaries |
+| [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | Character lifecycle: spawn/respawn scopes, `Humanoid`, rigs, `Animator` tracks |
 | [`roblox-physics`](skills/other-engines/roblox-physics/SKILL.md) | Assemblies, constraints, collision/query policy, raycasts, forces, network ownership |
 | [`roblox-studio-workflow`](skills/other-engines/roblox-studio-workflow/SKILL.md) | Explorer-first place editing, structure preservation, multi-context Studio verification |
 
-### Disciplines — 14 ([`skills/disciplines/`](skills/disciplines/))
+### Disciplines — 15 ([`skills/disciplines/`](skills/disciplines/))
 
 Cross-engine concepts that load alongside the detected engine skill.
 
@@ -199,6 +199,7 @@ Cross-engine concepts that load alongside the detected engine skill.
 |-------|-------|
 | [`create-game-assets`](skills/disciplines/create-game-assets/SKILL.md) | Art direction and production pipeline for cohesive sprites, tiles, textures, icons, UI art, and 3D assets |
 | [`game-ai`](skills/disciplines/game-ai/SKILL.md) | NPC decision-making: FSMs, behavior trees, steering, pathfinding |
+| [`ai-behavior-trees-utility-ai`](skills/disciplines/ai-behavior-trees-utility-ai/SKILL.md) | Production behavior-tree runtime (Blackboard, composites, decorators, leaves) + Utility AI (curves, considerations, evaluator) + hybrid AI |
 | [`procedural-gen`](skills/disciplines/procedural-gen/SKILL.md) | Noise, RNG, seeds, grid/dungeon/terrain generation |
 | [`dialogue-systems`](skills/disciplines/dialogue-systems/SKILL.md) | Branching dialogue/narrative: nodes, conditions, variables (Yarn/Ink) |
 | [`save-systems`](skills/disciplines/save-systems/SKILL.md) | Serialize/restore game state: formats, slots, versioning, autosave |
@@ -279,7 +280,7 @@ Here's the shape of a single exchange (illustrative):
 > add a double jump to my player
 
 Detected Godot (project.godot). Loading godot-2d-movement for the controller
-and platformer for jump feel — skipping the other 65 skills.
+and platformer for jump feel — skipping the other 66 skills.
 ```
 
 ```gdscript
@@ -308,7 +309,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        72 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        68 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template
