@@ -24,8 +24,9 @@ Roblox engine and Studio.
   places, or a Rojo `*.project.json`, and code calls `game:GetService(...)`.
 
 **When *not* to use:** persisting data across sessions → `roblox-datastores`.
-Generic Lua questions unrelated to the Roblox API. Engine-agnostic input/save
-architecture → `input-systems` / `save-systems`.
+Remote protocol architecture, exploit hardening, rate limits, high-frequency replication, and
+multi-client abuse testing → `roblox-networking`. Generic Lua questions unrelated to the Roblox
+API. Engine-agnostic input/save architecture → `input-systems` / `save-systems`.
 
 ## Core workflow
 
@@ -189,5 +190,7 @@ print(GameConfig.MaxHealth)
 ## Related skills
 
 - `roblox-datastores` — persist player data across sessions (server-only).
+- `roblox-networking` — production remote contracts, server validation, rate limits, replication,
+  streaming, prediction, and multi-client testing.
 - `save-systems` — engine-agnostic persistence concepts.
 - `game-ai` / `input-systems` — portable AI and input patterns to implement in Luau.

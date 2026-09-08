@@ -117,7 +117,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-68 skills across 8 categories — each links to its `SKILL.md` below.
+73 skills across 8 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -176,7 +176,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | Loading glTF/GLB + skinned animation (`GLTFLoader`/`AnimationMixer`) |
 | [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Materials (PBR), lights, shadows, environment maps |
 
-#### Other engines — 5 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Roblox
+#### Other engines — 10 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Roblox
 
 | Skill | Scope |
 |-------|-------|
@@ -185,6 +185,11 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`love2d-core`](skills/other-engines/love2d-core/SKILL.md) | LÖVE `load/update/draw` loop, dt-driven motion, input, states (LÖVE 11.5) |
 | [`roblox-luau`](skills/other-engines/roblox-luau/SKILL.md) | Roblox Luau scripting: services, instances, client/server model |
 | [`roblox-datastores`](skills/other-engines/roblox-datastores/SKILL.md) | Persistent data with `DataStoreService`: sessions, limits, ordered stores |
+| [`roblox-ui`](skills/other-engines/roblox-ui/SKILL.md) | Roblox UI: `ScreenGui` layout, responsive scaling, safe areas, gamepad/touch navigation |
+| [`roblox-networking`](skills/other-engines/roblox-networking/SKILL.md) | Remotes, server-authoritative validation, rate limiting, replication boundaries |
+| [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | Character lifecycle: spawn/respawn scopes, `Humanoid`, rigs, `Animator` tracks |
+| [`roblox-physics`](skills/other-engines/roblox-physics/SKILL.md) | Assemblies, constraints, collision/query policy, raycasts, forces, network ownership |
+| [`roblox-studio-workflow`](skills/other-engines/roblox-studio-workflow/SKILL.md) | Explorer-first place editing, structure preservation, multi-context Studio verification |
 
 ### Disciplines — 15 ([`skills/disciplines/`](skills/disciplines/))
 
