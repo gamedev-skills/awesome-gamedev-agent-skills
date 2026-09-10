@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Physics"
+  short_description: "Build secure Roblox physics and queries"
+  default_prompt: "Use $roblox-physics to implement and verify this Roblox physics system."

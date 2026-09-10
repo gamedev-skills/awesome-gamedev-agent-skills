@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox Characters"
+  short_description: "Build respawn-safe Roblox character systems"
+  default_prompt: "Use $roblox-characters to implement and stress-test this character system."
