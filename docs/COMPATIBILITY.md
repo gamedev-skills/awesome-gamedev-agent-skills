@@ -15,7 +15,8 @@ For step-by-step install commands, see [`INSTALLATION.md`](INSTALLATION.md).
   read the body when a request matches, then read bundled files on demand (progressive disclosure).
 - **It's broadly supported.** Claude Code, Claude, Cursor, Windsurf, Cline, OpenAI Codex, Gemini
   CLI, GitHub Copilot, Kiro, Antigravity, VS Code, Roo Code, Junie, Trae, Factory, Tabnine, OpenCode, Goose and
-  [many others](https://agentskills.io/clients) load the standard directly.
+  [many others](https://agentskills.io/clients) load the standard directly. Oh My Pi (omp) does
+  too, though it is not yet listed in that client showcase.
 - **One installer covers all of them.** `npx skills add gamedev-skills/awesome-gamedev-agent-skills`
   detects the agents you have installed and copies the skills (router included) to the right place.
 - **The skills here use only the portable core**, so a single tree works in every agent — no
@@ -61,6 +62,7 @@ own skills documentation.
 | **GitHub Copilot** | `.agents/skills/` | auto by description | [docs](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) |
 | **Antigravity** (Google) | `.agents/skills/` (default; also global `~/.gemini/config/skills/`) | auto by description | [docs](https://antigravity.google/docs/skills) |
 | **Kiro** | `.kiro/skills/` (+ `~/.kiro/skills/`) | auto by description · `/skill-name` | [docs](https://kiro.dev/docs/cli/skills/) |
+| **Oh My Pi** (omp) | `.omp/skills/` (project; walks up) · `~/.omp/agent/skills/` (global) | auto by description · `/skill:<name>` | [docs](https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md) |
 | **Others** (VS Code, Roo Code, Junie, Trae, Factory, Tabnine, OpenCode, Goose, …) | see each tool | varies | [client list](https://agentskills.io/clients) |
 
 `.agents/skills/` is the shared, cross-agent convention that many tools read, which is why one copy

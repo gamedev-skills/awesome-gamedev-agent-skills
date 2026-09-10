@@ -113,6 +113,30 @@ The default agent auto-loads skills from both locations. A **custom** agent must
 
 Trigger automatically by description match, or explicitly with `/skill-name`.
 
+## Oh My Pi (omp)
+
+omp discovers skills natively — no conversion. Copy each skill's `<name>/` folder
+(flattened, as above) into the native project or user directory:
+
+```bash
+# project-local (committed; omp walks up to find .omp/skills/)
+mkdir -p .omp/skills
+cp -R skills/godot/godot-tilemap .omp/skills/
+cp -R router .omp/skills/router   # the dispatcher — install it too
+
+# …or every skill (names are globally unique, so flattening is safe)
+find skills -name SKILL.md -type f -exec dirname {} \; | while read -r d; do
+  cp -R "$d" .omp/skills/
+done
+```
+
+For all projects, copy into `~/.omp/agent/skills/` instead. omp also reads the
+shared `.agents/skills/` path, so one copy there serves omp alongside Codex,
+Gemini CLI, and Copilot.
+
+Skills trigger automatically by description, or explicitly with `/skill:<name>` when
+`skills.enableSkillCommands` is on.
+
 ## Gemini CLI & Codex CLI (shared location)
 
 Both read `.agents/skills/`, so one copy serves both:

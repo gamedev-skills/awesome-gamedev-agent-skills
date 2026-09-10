@@ -85,6 +85,7 @@ AGENTS: dict[str, tuple[str, str, str]] = {
     "github-copilot": ("GitHub Copilot", ".agents/skills/", "Shared path used by several agents."),
     "windsurf": ("Windsurf", ".windsurf/skills/", ""),
     "cline": ("Cline", ".cline/skills/", "Skills are experimental; enable them under Settings -> Features."),
+    "omp": ("Oh My Pi", ".omp/skills/", "Also reads the shared .agents/skills/ path; user-global skills live in ~/.omp/agent/skills/."),
 }
 
 

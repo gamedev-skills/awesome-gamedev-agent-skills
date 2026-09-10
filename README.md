@@ -247,7 +247,8 @@ agent reads on demand.
 
 The same file loads **natively** across the ecosystem: Claude Code, Claude, Cursor, Windsurf,
 Cline, OpenAI Codex, Gemini CLI, GitHub Copilot, Kiro, Antigravity, VS Code, and
-[many more](https://agentskills.io/clients). There are no editor-specific rule files to maintain
+[many more](https://agentskills.io/clients). Oh My Pi (omp) reads the same format natively as
+well. There are no editor-specific rule files to maintain
 and nothing to convert.
 
 **Install with one command.** The universal CLI detects your agent and writes the skills to the
@@ -267,6 +268,7 @@ npx skills add gamedev-skills/awesome-gamedev-agent-skills
 | Windsurf | `.windsurf/skills/` |
 | Cline | `.cline/skills/` |
 | Kiro | `.kiro/skills/` |
+| Oh My Pi (omp) | `.omp/skills/` _(also reads `.agents/skills/`)_ |
 
 The exact per-agent paths, triggers, and the handful of optional fields that vary by agent are in
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
