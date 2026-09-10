@@ -241,8 +241,9 @@ standard — the format Anthropic launched as Claude Skills — metadata plus a 
 agent reads on demand.
 
 The same file loads **natively** across the ecosystem: Claude Code, Claude, Cursor, Windsurf,
-Cline, OpenAI Codex, Gemini CLI, GitHub Copilot, Kiro, Oh My Pi, Antigravity, VS Code, and
-[many more](https://agentskills.io/clients). There are no editor-specific rule files to maintain
+Cline, OpenAI Codex, Gemini CLI, GitHub Copilot, Kiro, Antigravity, VS Code, and
+[many more](https://agentskills.io/clients). Oh My Pi (omp) reads the same format natively as
+well. There are no editor-specific rule files to maintain
 and nothing to convert.
 
 **Install with one command.** The universal CLI detects your agent and writes the skills to the

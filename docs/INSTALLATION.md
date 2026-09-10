@@ -134,7 +134,8 @@ For all projects, copy into `~/.omp/agent/skills/` instead. omp also reads the
 shared `.agents/skills/` path, so one copy there serves omp alongside Codex,
 Gemini CLI, and Copilot.
 
-Skills trigger automatically by description, or explicitly with `/skill:<name>`.
+Skills trigger automatically by description, or explicitly with `/skill:<name>` when
+`skills.enableSkillCommands` is on.
 
 ## Gemini CLI & Codex CLI (shared location)
 
