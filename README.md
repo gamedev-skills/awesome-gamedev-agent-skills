@@ -122,6 +122,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 ### Engines
 
 #### Godot — 15 ([`skills/godot/`](skills/godot/)) · Godot 4.7
+- [Continuum-AI-Corp/OrcaReplay](https://github.com/Continuum-AI-Corp/OrcaReplay) — record & replay AI coding-agent runs offline.
 
 | Skill | Scope |
 |-------|-------|
