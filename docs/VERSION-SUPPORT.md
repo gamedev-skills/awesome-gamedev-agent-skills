@@ -1,6 +1,7 @@
 # Version support
 
-Checked **2026-09-25**. These are authoring baselines for **new projects**, not forced upgrade
+Checked **2026-09-25** (Bevy row re-checked **2026-10-09** for the 0.20 release). These are
+authoring baselines for **new projects**, not forced upgrade
 targets. Existing projects keep the version declared by their manifest, lockfile, or engine
 metadata unless the user explicitly asks for migration.
 
@@ -13,7 +14,7 @@ metadata unless the user explicitly asks for migration.
 | Phaser | 4.2 | `package.json` + lockfile; [Phaser downloads](https://phaser.io/download/phaser4) and [3→4 migration](https://phaser.io/news/2026/04/migrating-from-phaser-3-to-phaser-4-what-you-need-to-know) |
 | PixiJS | 8.21 | `package.json` + lockfile; [PixiJS releases](https://pixijs.com/blog) |
 | three.js | r186 | `package.json` + lockfile; [three.js releases](https://github.com/mrdoob/three.js/releases) |
-| Bevy | 0.19 | `Cargo.toml` + `Cargo.lock`; [Bevy 0.19](https://bevy.org/news/bevy-0-19/) and [migration guide](https://bevy.org/learn/migration-guides/0-18-to-0-19/) |
+| Bevy | 0.20 | `Cargo.toml` + `Cargo.lock`; [Bevy 0.20](https://bevy.org/news/bevy-0-20/) and [migration guide](https://bevy.org/learn/migration-guides/0-19-to-0-20/) |
 | pygame-ce | 2.5.8 | Python dependency/lockfile; [pygame-ce releases](https://github.com/pygame-community/pygame-ce/releases) |
 | LÖVE | 11.5 | `conf.lua` / `main.lua`; [LÖVE releases](https://love2d.org/wiki/Version_History) |
 | Roblox | rolling platform APIs | Rojo project / place files; [Creator Hub](https://create.roblox.com/docs) |
