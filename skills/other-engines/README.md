@@ -1,6 +1,6 @@
 # Other engine skills
 
-Ten Agent Skills for Bevy 0.19, pygame-ce 2.5.8, LÖVE 11.5, and Roblox. Roblox coverage includes
+Ten Agent Skills for Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, and Roblox. Roblox coverage includes
 Luau, persistence, UI, networking, characters, physics, and Studio workflow.
 
 Each subdirectory is one skill. Existing projects keep their pinned engine or
