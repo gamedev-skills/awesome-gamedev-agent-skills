@@ -4,19 +4,19 @@
 
 <p align="center">
   <img src="docs/assets/awesome-gamedev-agent-skills-banner.png" width="820"
-       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 77 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
+       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 78 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**77 game-dev skills for your AI coding agent — install once, and a router loads the
+**78 game-dev skills for your AI coding agent — install once, and a router loads the
 right skill for whatever you're building.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-77%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-78%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **77 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **78 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -40,7 +40,7 @@ task skills before it writes code.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 77 skills into the right place:
+coding agent you already use and installs the router plus all 78 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -120,7 +120,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-77 skills across 9 categories — each links to its `SKILL.md` below.
+78 skills across 9 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -242,7 +242,7 @@ primitives.
 | [`survival-crafting`](skills/genres/survival-crafting/SKILL.md) | Resource gathering, inventory, crafting, needs, base building |
 | [`puzzle`](skills/genres/puzzle/SKILL.md) | Grid/board state, match/rule resolution, undo, level progression |
 
-### Workflows — 4 ([`skills/workflows/`](skills/workflows/))
+### Workflows — 5 ([`skills/workflows/`](skills/workflows/))
 
 | Skill | Scope |
 |-------|-------|
@@ -250,6 +250,7 @@ primitives.
 | [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | Greybox a playable vertical slice quickly; cut scope; validate the fun |
 | [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | Steamworks onboarding: app/depots, store page, builds, release checklist |
 | [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | Publish/update on itch.io: project page, channels, `butler` uploads |
+| [`game-docs`](skills/workflows/game-docs/SKILL.md) | GDD + `ARCHITECTURE.md` + per-feature design/implementation/testing docs, kept in sync with the code |
 
 ## Agent compatibility
 
@@ -323,7 +324,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        77 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        78 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template

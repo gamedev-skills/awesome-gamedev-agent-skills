@@ -30,7 +30,7 @@ Skills ecosystem. It needs Node.js 22.20 or later, auto-detects your agent(s), a
 symlinks each agent's skills directory to one shared copy (`--copy` writes independent copies):
 
 ```bash
-# install the router + all 77 skills into whatever agent(s) you have
+# install the router + all 78 skills into whatever agent(s) you have
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
 
 # preview without installing

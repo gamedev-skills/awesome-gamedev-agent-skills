@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Docs"
+  short_description: "Write and sync a GDD with per-feature design docs"
+  default_prompt: "Use $game-docs to set up or update the GDD, architecture and feature docs for my game so they match the code."

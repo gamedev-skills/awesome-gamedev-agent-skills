@@ -30,7 +30,7 @@ is the dispatcher). Copy it in alongside the others so the agent can route reque
 
 The [`skills` CLI](https://www.npmjs.com/package/skills) is the package manager for the Agent
 Skills ecosystem. It detects the agents installed on your machine and installs the skills (the
-router plus all 77) into each one's skills directory — no clone required. It needs Node.js 22.20
+router plus all 78) into each one's skills directory — no clone required. It needs Node.js 22.20
 or later. Interactive runs ask which skills and agents to use; by default each agent directory is
 a symlink to one shared copy (add `--copy` for independent copies, `-y` to skip the prompts):
 
@@ -63,7 +63,7 @@ so you can install it without cloning or copying files. Add the marketplace once
 claude plugin marketplace add gamedev-skills/awesome-gamedev-agent-skills
 ```
 
-Easiest — install the router and all 77 skills in one command:
+Easiest — install the router and all 78 skills in one command:
 
 ```bash
 claude plugin install gamedev@awesome-gamedev-agent-skills

@@ -128,6 +128,7 @@ a real folder at `skills/<category>/<name>/SKILL.md`. Trigger words (`says:`) an
 | `prototype-fast` | prototype fast, vertical slice, MVP game, greybox |
 | `steam-publish` | publish on Steam, Steamworks, store page, depot/build upload, Steam Deck compatibility review; `steam_appid.txt` |
 | `itch-publish` | publish on itch, itch.io page, `butler push`, upload build; `.itch.toml` |
+| `game-docs` | GDD, game design doc, spec out / write up a feature, update or sync the docs, record a design decision, new game idea; `docs/GDD.md`, `features/*/design.md` |
 
 ## Binding gaps (be honest; do not fabricate a skill)
 
