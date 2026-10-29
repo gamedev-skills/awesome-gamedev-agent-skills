@@ -97,8 +97,8 @@ var myHealth = new Consideration("myHealth",
 
 ## Scored actions and the compensation factor
 
-A `UtilityAction` scores as its `weight` times the **combined** considerations. Multiplying factors
-is standard (a single near-zero consideration should veto the action), but naive multiplication
+A `UtilityAction` scores as its `weight` times the **combined** considerations. An exactly-zero
+consideration vetoes the action; near-zero is only a low preference. Naive multiplication
 over-punishes as you add considerations. Apply Dave Mark's **compensation factor** so more
 considerations don't unfairly drag the score down.
 
@@ -134,6 +134,10 @@ The evaluator scores every action and selects one. Offer three strategies: **arg
 **weighted-random** over raw scores. Add **hysteresis** (an inertia bonus for the current action)
 so agents commit instead of flip-flopping on near-ties.
 
+Both selectors exclude non-positive raw scores before adding inertia or computing softmax weights.
+If no action qualifies, they clear the current action and return `null`; the caller must handle
+this no-action result. Use an exactly-zero consideration for a hard constraint.
+
 ```csharp
 public sealed class UtilityEvaluator
 {
@@ -149,6 +153,7 @@ public sealed class UtilityEvaluator
         foreach (var a in _actions)
         {
             float s = a.Score(bb);
+            if (s <= 0f) continue;                      // inertia cannot revive a vetoed action
             if (a == _current) s += inertiaBonus;      // stickiness to avoid jitter
             if (s > bestScore) { bestScore = s; best = a; }
         }
@@ -163,21 +168,32 @@ public sealed class UtilityEvaluator
     {
         var weights = new float[_actions.Count];  // allocate once as a field on hot paths
         float maxScore = float.NegativeInfinity;
+        int lastEligible = -1;
         for (int i = 0; i < _actions.Count; i++)
         {
             weights[i] = _actions[i].Score(bb);
+            if (weights[i] <= 0f) { weights[i] = 0f; continue; }
+            lastEligible = i;
             if (weights[i] > maxScore) maxScore = weights[i];
         }
-        float t = System.MathF.Max(temperature, 1e-4f), sum = 0f;
+        if (lastEligible == -1) { _current = null; return null; }
+        float t = System.MathF.Max(temperature, 1e-4f);
+        double sum = 0;
+        int lastWeighted = -1;
         for (int i = 0; i < weights.Length; i++)
         {
+            if (weights[i] <= 0f) continue;
             weights[i] = System.MathF.Exp((weights[i] - maxScore) / t);
             sum += weights[i];
+            if (weights[i] > 0f) lastWeighted = i;
         }
-        float roll = (float)rng.NextDouble() * sum;
+        double roll = rng.NextDouble() * sum;          // retain precision near the exclusive upper bound
         for (int i = 0; i < weights.Length; i++)
-            if ((roll -= weights[i]) <= 0f) { _current = _actions[i]; return _actions[i]; }
-        _current = _actions[^1];
+        {
+            if (weights[i] <= 0f) continue;            // also skip zero when the random roll is zero
+            if ((roll -= weights[i]) < 0f) { _current = _actions[i]; return _actions[i]; }
+        }
+        _current = _actions[lastWeighted];            // never fall back to an underflowed zero weight
         return _current;
     }
 }

@@ -61,13 +61,27 @@ with cellular automata.
 
 ```python
 # Drunkard's walk: a digger wanders, carving floor, until enough is open.
-def drunkard(W, H, rng, target_ratio=0.45):
+def drunkard(W, H, rng, target_ratio=0.45, max_steps=None):
+    if W < 3 or H < 3 or not 0 <= target_ratio <= 1:
+        raise ValueError("need W,H >= 3 and target_ratio in [0,1]")
+    goal = int(W*H*target_ratio)             # fraction of the whole map, including its border
+    capacity = (W-2)*(H-2)
+    if goal > capacity:
+        raise ValueError("target exceeds the carveable interior")
+    if max_steps is None:
+        max_steps = capacity * 100
+    if max_steps < 0:
+        raise ValueError("max_steps must be non-negative")
     grid = [[0]*W for _ in range(H)]
-    x, y = W//2, H//2; carved = 0; goal = int(W*H*target_ratio)
-    while carved < goal:
+    x, y = W//2, H//2; carved = 0
+    for _ in range(max_steps):
+        if carved == goal: return grid
         if grid[y][x] == 0: grid[y][x] = 1; carved += 1
-        x = clamp(x + rng.choice([-1,0,1]), 1, W-2)   # random step, stay in bounds
-        y = clamp(y + rng.choice([-1,0,1]), 1, H-2)
+        dx, dy = rng.choice([(1,0), (-1,0), (0,1), (0,-1)])
+        x = min(max(x + dx, 1), W-2)        # cardinal steps keep carved floor 4-connected
+        y = min(max(y + dy, 1), H-2)
+    if carved < goal:
+        raise RuntimeError("target not reached within max_steps")
     return grid
 
 # Cellular automata smoothing: a cell becomes wall if most neighbors are walls.
@@ -82,6 +96,12 @@ def smooth(grid, W, H, steps=4):
         grid = new
     return grid
 ```
+
+`target_ratio` counts the whole map; the solid border cannot be carved. Impossible
+targets fail immediately. A feasible target can still exhaust the random walk's
+step budget: report that failure or retry with an explicit new seed/budget rather
+than treating a partial cave as a finished map. Smoothing can split regions, so
+validate connectivity again after applying it.
 
 ## D. Wave function collapse (tile adjacency rules)
 
@@ -100,18 +120,10 @@ def wfc(W, H, weights, allowed, rng, max_restarts=20):
     for _ in range(max_restarts):
         cells = [[set(weights) for _ in range(W)] for _ in range(H)]
         failed = False
+        # Validate the initial domains too: singleton grids still have adjacency constraints.
+        stack = [(x, y) for y in range(H) for x in range(W)]
         while not failed:
-            # Observe: an undecided cell with the fewest options; break ties with the rng.
-            open_cells = [(len(cells[y][x]), x, y) for y in range(H) for x in range(W)
-                          if len(cells[y][x]) > 1]
-            if not open_cells:
-                return [[next(iter(c)) for c in row] for row in cells]
-            fewest = min(n for n, _, _ in open_cells)
-            _, x, y = rng.choice([c for c in open_cells if c[0] == fewest])
-            opts = sorted(cells[y][x])                   # sorted: set order is not stable
-            cells[y][x] = {rng.choices(opts, [weights[t] for t in opts])[0]}
             # Propagate: shrink neighbours to tiles some remaining option still allows.
-            stack = [(x, y)]
             while stack and not failed:
                 cx, cy = stack.pop()
                 for d, (dx, dy) in enumerate(DIRS):
@@ -126,12 +138,22 @@ def wfc(W, H, weights, allowed, rng, max_restarts=20):
                             break
                         cells[ny][nx] = narrowed
                         stack.append((nx, ny))
+            if failed: break
+            # Observe only after propagation, including on the first iteration.
+            open_cells = [(len(cells[y][x]), x, y) for y in range(H) for x in range(W)
+                          if len(cells[y][x]) > 1]
+            if not open_cells:
+                return [[next(iter(c)) for c in row] for row in cells]
+            fewest = min(n for n, _, _ in open_cells)
+            _, x, y = rng.choice([c for c in open_cells if c[0] == fewest])
+            opts = sorted(cells[y][x])                   # sorted: set order is not stable
+            cells[y][x] = {rng.choices(opts, [weights[t] for t in opts])[0]}
+            stack = [(x, y)]
     raise RuntimeError("no solution within max_restarts")
 ```
 
-- Rules must be symmetric: if B may sit east of A, A must be allowed west of B.
-  One-sided rules are only enforced when propagation happens to run from that
-  side, so the finished grid can break them.
+- Author symmetric rules: if B may sit east of A, A must be allowed west of B.
+  Both directed constraints are propagated; conflicting rules can make the grid unsatisfiable.
 - Option count is the simplest "entropy"; the weighted Shannon entropy of the
   remaining options is the usual refinement. Either way the grid grows outward
   from the first collapse, so tile **weights** decide the overall mix.

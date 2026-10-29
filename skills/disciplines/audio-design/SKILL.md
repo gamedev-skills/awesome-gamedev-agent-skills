@@ -143,11 +143,15 @@ func song_time() -> float:
             - AudioServer.get_output_latency())
 
 func current_beat() -> int:
-    return int(song_time() / SECONDS_PER_BEAT)
+    return floori(song_time() / SECONDS_PER_BEAT)  # negative means beat 0 is not audible yet
 
 # Quantize an action to the NEXT beat boundary instead of firing immediately.
 func time_until_next_beat() -> float:
-    return SECONDS_PER_BEAT - fmod(song_time(), SECONDS_PER_BEAT)
+    var time := song_time()
+    if time < 0.0:
+        return -time                             # pre-roll: wait for the first audible beat
+    return SECONDS_PER_BEAT - fposmod(time, SECONDS_PER_BEAT)
+# At an exact non-negative beat boundary, NEXT means one full beat later.
 ```
 
 Unity 6.3 LTS: read `AudioSettings.dspTime` and schedule with `AudioSource.PlayScheduled(dspTime)`

@@ -25,8 +25,10 @@ application/product_name="My Game"
 codesign/enable=false
 ```
 
-Sensitive values (keystore passwords, encryption keys) live in `export_presets.cfg` too —
-keep them out of public repos or inject them in CI rather than committing.
+Godot 4.7 stores ordinary, shareable export settings in `export_presets.cfg` and
+confidential options (keystore passwords, encryption keys) in
+`.godot/export_credentials.cfg`. Keep the credentials file out of version control;
+provide it securely or inject the required secrets in CI rather than committing them.
 
 ## Useful command-line flags
 

@@ -10,11 +10,14 @@ servers loading and later saving the same key can lose writes. A *session lock*
 makes a key owned by one server at a time:
 
 1. On load, `UpdateAsync` the key to stamp it with this server's `JobId` and a
-   timestamp, but only if it's unlocked or the lock is stale (older than, say, the
-   `BindToClose` budget).
+   timestamp, but only if it's unlocked or its lease has expired. Set the lease duration
+   to accommodate the save/refresh interval and expected shutdown delays.
 2. If it's locked by a live server, retry a few times, then either kick the player
    or load read-only.
-3. On save/leave, clear the lock as part of the same `UpdateAsync`.
+3. On every save, verify the stored owner inside the callback and refresh its lease
+   together with the data. Cancel the write if ownership was lost; a stale server must
+   not resume saving. Keep ownership across periodic saves, then release it atomically
+   with the final save when the player leaves.
 
 `UpdateAsync` is the right primitive because its callback sees the current value, so
 the check-and-set is atomic per request. (Production code often uses a vetted
@@ -110,7 +113,8 @@ each requested key counts against the ordered read budget.
   a `DataStoreGetOptions` with `UseCache = false` (it costs a real request).
 - Practical rules: save on leave / `BindToClose` and on a periodic timer (e.g. every
   60–120s), **not** on every value change. Coalesce many small changes into one
-  write. Use `UpdateAsync` so concurrent writers don't clobber.
+  write. Use `UpdateAsync` with a merge policy or verified session ownership; returning
+  a stale snapshot unchanged can still overwrite another writer's progress.
 - Treat every Async call as fallible: `pcall` + bounded retry with backoff. See
   `https://create.roblox.com/docs/cloud-services/data-stores/error-codes-and-limits`
   for the exact current numeric limits, which change over time.

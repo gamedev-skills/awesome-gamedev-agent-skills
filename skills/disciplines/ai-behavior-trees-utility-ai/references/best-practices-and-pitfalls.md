@@ -79,8 +79,8 @@ top-level behavior — it is harder to debug and easy to make thrash.
 - **Make randomness reproducible.** Seed the `System.Random` used by softmax/weighted-random per
   agent so a misbehaving agent can be replayed. Never use a shared global RNG across agents.
 - **Assert the `Reset()` contract.** A common bug is a `Running` action (`Wait`, `Repeat`, cover
-  reservation) that isn't reset when its branch is abandoned. If timed actions "finish instantly"
-  after re-entry, a missing `Reset()` is the cause.
+  reservation) that isn't reset on completion or when its branch is abandoned. If timed actions
+  "finish instantly" after re-entry, a missing `Reset()` is the cause.
 
 ## Pitfall quick-reference
 

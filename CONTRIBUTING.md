@@ -81,6 +81,12 @@ python scripts/generate-site.py     # writes _site/ (git-ignored)
 python scripts/check-site.py        # per-page title/description/canonical checks
 ```
 
+For a later rebuild, use `python scripts/generate-site.py --clean`. Non-empty output
+is refused without this flag, and `--clean` only replaces directories carrying the
+generator's `.gamedev-skills-site` marker. Use a new or empty directory for `--out`;
+the repository, its ancestors, filesystem roots, and symlink outputs are rejected.
+Everything inside a marked output directory is disposable when you use `--clean`.
+
 CI runs the validator, the tests and both site steps on every pull request.
 
 ## Updating the router when you add a skill

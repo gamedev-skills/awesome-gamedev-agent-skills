@@ -101,8 +101,11 @@ Unity -batchmode -nographics \
   an uncaught exception also exits with 1, but `-quit` after a `Debug.LogError` returns 0.
 - One platform per Editor launch: run the command again with another `-buildTarget` for the
   next platform instead of switching inside the method.
-- Activate the Unity license in batch mode (`-username`/`-password`/`-serial` or a license
-  file) as a separate step before building on a clean runner.
+- Activate the Unity license in a separate step before building on a clean runner, using
+  the provisioning flow supported by your license type. Unity's credential flags
+  (`-username`/`-password`/`-serial`) can expose values through process arguments or logs;
+  do not commit literal credentials or paste them into shell history. Limit activation
+  secrets to that step and protect any license files the flow creates.
 
 ### Building a saved Build Profile with no script
 

@@ -7,7 +7,8 @@ Depth companion to `godot-nodes-scenes`.
 - `$Child`, `$Child/Grandchild` — relative path sugar for `get_node(...)`.
 - `$"Node With Spaces"` — quote paths containing spaces or starting with a number.
 - `%UniqueName` — a scene-unique node. Mark a node "Access as Unique Name" in the editor;
-  the reference then works no matter where the node sits in that scene's subtree.
+  the reference survives hierarchy changes within the same scene/owner. It still uses
+  the node's name, so update the reference if that name changes.
 - `get_node("../Sibling")` — `..` walks up to the parent.
 - `get_tree().root` — the `Window` at the very top; the current scene is
   `get_tree().current_scene`.

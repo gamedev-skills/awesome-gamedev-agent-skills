@@ -112,8 +112,9 @@ public partial class Spawner : Node2D
     public void Shoot(Vector2 at)
     {
         var b = _bullet.Instantiate<Node2D>();       // typed instantiate
-        b.GlobalPosition = at;
-        AddChild(b);
+        // World input -> this future parent's local space, before _Ready() can run.
+        b.Position = ToLocal(at);                   // same canvas, non-top-level Node2D
+        AddChild(b);                                // _Ready() sees the final position
     }
 }
 ```

@@ -76,7 +76,13 @@ Players.PlayerAdded:Connect(function(player)
 end)
 ```
 
-### 2. Save with UpdateAsync (multi-server safe)
+### 2. Snapshot save with UpdateAsync (requires session ownership)
+
+The load/save snippets illustrate the API, not a complete multi-server profile system.
+`UpdateAsync` alone does not protect a stale in-memory snapshot: this callback ignores
+`old`, so a second session can overwrite newer progress. Before using this load/save pair
+in production, implement session ownership on load and verify it inside every save callback
+(or use an appropriate profile library). Read `references/sessions-and-limits.md` first.
 
 ```lua
 -- UpdateAsync reads the latest value, then writes what the callback returns.
@@ -91,7 +97,8 @@ local function savePlayer(player)
 
     local ok, err = pcall(function()
         store:UpdateAsync(key, function(old)
-            -- merge/decide here; return nil to cancel the write
+            -- Snapshot-only example: production code must verify session ownership here.
+            -- Return nil if this session no longer owns the key.
             return newData
         end)
     end)

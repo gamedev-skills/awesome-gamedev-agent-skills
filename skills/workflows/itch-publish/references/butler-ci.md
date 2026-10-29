@@ -20,24 +20,28 @@ Where to get the key:
 Store it as a CI secret. **Never** print it; a key leaked into a public build log is
 compromised — revoke it immediately on the API keys page.
 
-## 2. Installing butler in CI (use `broth`, not the page link)
+## 2. Installing a reviewed butler release in CI
 
-The `itchio.itch.io/butler` download links **expire**, so they can't be hard-coded. Use the
-permanent **broth** URLs, which always serve the latest stable build of a channel:
+Pin the official release and its expected SHA-256 together. This Linux amd64 example
+uses the asset from [butler v15.32.0](https://github.com/itchio/butler/releases/tag/v15.32.0).
+Review both constants when updating it; do not fetch a replacement checksum from a
+mutable endpoint in the same install step and treat that as independent verification.
 
 ```bash
-# Example: latest stable Linux amd64 butler. Substitute the channel for your runner OS.
-curl -L -o butler.zip "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
-unzip butler.zip
+set -euo pipefail
+BUTLER_VERSION=15.32.0
+BUTLER_SHA256=5db7b053fc9b578b86ffaf3520a12b952eb95c9225171cc5720dfbc9fe4574b3
+curl -fL -o butler.zip "https://github.com/itchio/butler/releases/download/v${BUTLER_VERSION}/butler-linux-amd64.zip"
+printf '%s  %s\n' "$BUTLER_SHA256" butler.zip | sha256sum -c -
+unzip -q butler.zip
 chmod +x butler
 ./butler -V        # prints version; confirms it runs
 ```
 
-Common broth channels: `linux-amd64`, `linux-arm64`, `windows-amd64`, `darwin-amd64`,
-`darwin-arm64`, `darwin-universal` (the list at `broth.itch.zone/butler` is authoritative).
-The `-head` channels are bleeding-edge; the others are stable. `.../<channel>/LATEST`
-returns the current version number as plain text. The zip also contains two 7-zip helper
-libraries — harmless, and not required for `butler push`.
+For another OS/architecture, select its asset and digest from the same official release.
+Broth's permanent channel URLs are useful for discovery, but `LATEST` changes over time
+and is not a reproducible CI pin. Keep installation and build steps free of publishing
+credentials; the uploader itself still needs to be trusted even when the key is step-scoped.
 
 ## 3. GitHub Actions example
 
@@ -49,24 +53,29 @@ on:
 jobs:
   butler:
     runs-on: ubuntu-latest
-    env:
-      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}   # set in repo secrets; never echoed
     steps:
       - uses: actions/checkout@v4
       # ... your build steps produce ./build/windows, ./build/linux, etc. ...
       - name: Install butler
         run: |
-          curl -L -o butler.zip "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
-          unzip butler.zip && chmod +x butler
+          set -euo pipefail
+          BUTLER_VERSION=15.32.0
+          BUTLER_SHA256=5db7b053fc9b578b86ffaf3520a12b952eb95c9225171cc5720dfbc9fe4574b3
+          curl -fL -o butler.zip "https://github.com/itchio/butler/releases/download/v${BUTLER_VERSION}/butler-linux-amd64.zip"
+          printf '%s  %s\n' "$BUTLER_SHA256" butler.zip | sha256sum -c -
+          unzip -q butler.zip
+          chmod +x butler
       - name: Push builds
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}   # available only to the uploader
         run: |
           VERSION="${GITHUB_REF_NAME#v}"     # tag v1.2.0 -> 1.2.0
           ./butler push ./build/windows leafy/my-game:windows --userversion "$VERSION"
           ./butler push ./build/linux   leafy/my-game:linux   --userversion "$VERSION"
 ```
 
-GitLab CI is equivalent: set `BUTLER_API_KEY` as a masked CI/CD variable and run the same
-install + `butler push` commands in a job script.
+For GitLab CI, scope a protected, masked `BUTLER_API_KEY` to the publishing job and keep
+ordinary build jobs without it. Use the same pinned install and verification sequence.
 
 ## 4. `butler push` flag reference (checked against butler v15.32.0)
 

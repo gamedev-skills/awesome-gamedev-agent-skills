@@ -120,13 +120,16 @@ void main() {
 
 ```glsl
 // Rim = 1 where the surface is edge-on to the camera (silhouette glow).
-in vec3 world_normal;        // normalized, world space (from the vertex stage)
-in vec3 view_dir;            // normalized, surface -> camera, world space
+in vec3 world_normal;        // world space, interpolated from the vertex stage
+in vec3 view_dir;            // surface -> camera, world space
 uniform float power = 3.0;
 uniform vec3 rim_color;
 out vec4 frag;
 void main() {
-    float f = pow(1.0 - clamp(dot(world_normal, view_dir), 0.0, 1.0), power);
+    // Interpolation does not preserve unit length, even with normalized vertex outputs.
+    vec3 normal = normalize(world_normal);
+    vec3 view = normalize(view_dir);
+    float f = pow(1.0 - clamp(dot(normal, view), 0.0, 1.0), power);
     frag = vec4(rim_color * f, 1.0);   // add to lighting; f peaks at the silhouette
 }
 // Correctness: normal and view_dir MUST be in the same space and normalized.

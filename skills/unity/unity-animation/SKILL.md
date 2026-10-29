@@ -30,8 +30,9 @@ tool. 2D sprite frame animation also uses the Animator but with sprite keyframes
    set its rig to **Humanoid** so it has an Avatar (enables retargeting and IK).
 2. **Define parameters** on the controller — `Float` (Speed), `Bool` (IsGrounded), `Int`,
    `Trigger` (Jump) — and states with transitions whose *conditions* read those parameters.
-3. **Set parameters from script**, never poke states directly: `SetFloat`, `SetBool`,
-   `SetInteger`, `SetTrigger`. The state machine resolves transitions for you.
+3. **Drive ordinary locomotion with parameters**: `SetFloat`, `SetBool`, `SetInteger`,
+   `SetTrigger`. Let controller conditions resolve transitions; use `CrossFade`/`Play` when
+   an explicit scripted transition is intended (see the pattern below).
 4. **Blend continuous motion with a Blend Tree** (one `Float` like Speed drives idle↔walk↔run)
    instead of many discrete states + transitions.
 5. **Layer additive/override motion** (e.g. an upper-body "aim" layer with an Avatar Mask) and

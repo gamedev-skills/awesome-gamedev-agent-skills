@@ -110,27 +110,32 @@ const ROOMS := {
     "vista":   { "exits": [ { "to": "boss", "needs": "red_key" } ] },
 }
 
-# Grow the reachable set until nothing new opens: collect what each reached room
-# grants, then follow every exit whose `needs` is already held. Assumes keys are
-# never used up and doors never re-lock; model consumable keys as counts.
+# Search (room, held keys) states: keys from mutually exclusive one-way branches
+# must not be combined. Keys are never consumed and doors never re-lock; model
+# consumable keys as counts and persistent door changes as additional state.
 func goal_reachable(rooms: Dictionary, start: String, goal: String) -> bool:
-    var have := {}                                 # keys/abilities collected
-    var reached := {start: true}
-    var changed := true
-    while changed:
-        changed = false
-        for room in reached.keys():
-            var info: Dictionary = rooms.get(room, {})
-            var grant = info.get("grants")
-            if grant != null and not have.has(grant):
-                have[grant] = true
-                changed = true
-            for exit in info.get("exits", []):
-                var open: bool = not exit.has("needs") or have.has(exit["needs"])
-                if open and not reached.has(exit["to"]):
-                    reached[exit["to"]] = true
-                    changed = true
-    return reached.has(goal)
+    var pending: Array[Dictionary] = [{"room": start, "keys": {}}]
+    var visited := {}                             # room -> distinct keysets already explored
+    while not pending.is_empty():
+        var state: Dictionary = pending.pop_back()
+        var room: String = state["room"]
+        var have: Dictionary = state["keys"].duplicate()
+        var info: Dictionary = rooms.get(room, {})
+        var grant = info.get("grants")
+        if grant != null:
+            have[grant] = true
+        var keysets: Array = visited.get(room, [])
+        if keysets.has(have):
+            continue                              # cycles stop only at an equivalent state
+        keysets.append(have)
+        visited[room] = keysets
+        if room == goal:
+            return true
+        for exit in info.get("exits", []):
+            var open: bool = not exit.has("needs") or have.has(exit["needs"])
+            if open:
+                pending.append({"room": exit["to"], "keys": have})
+    return false
 # goal_reachable(ROOMS, "entry", "boss") is FALSE for the table above: no room
 # grants "red_key". That is exactly the soft-lock this check exists to catch.
 # Run it in a test or editor tool whenever the room graph changes.

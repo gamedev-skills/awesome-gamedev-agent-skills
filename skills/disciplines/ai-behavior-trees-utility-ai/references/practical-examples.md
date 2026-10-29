@@ -126,6 +126,7 @@ UtilityEvaluator BuildVillagerBrain()
 void UpdateVillager(UtilityEvaluator brain, Blackboard bb)
 {
     var choice = brain.SelectBest(bb, inertiaBonus: 0.05f);
+    if (choice == null) return; // no available action; preserve the game's idle behavior
     Dispatch(choice.Name);      // route "Eat"/"Sleep"/... to your gameplay handlers
 }
 ```
@@ -151,7 +152,9 @@ public sealed class UtilitySelectorNode : Leaf
     {
         var choice = _evaluator.SelectBest(bb, _inertia);
         if (choice != _running) { _running?.Behavior?.Reset(); _running = choice; }  // switched: clean up
-        return _running?.Behavior?.Tick(bb, dt) ?? Status.Failure;
+        var s = _running?.Behavior?.Tick(bb, dt) ?? Status.Failure;
+        if (s != Status.Running) Reset();             // the chosen subtree may be entered again
+        return s;
     }
 
     public override void Reset() { _running?.Behavior?.Reset(); _running = null; }

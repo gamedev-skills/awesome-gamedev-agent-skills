@@ -167,10 +167,15 @@ first. It needs Python 3.10+ and nothing else, and never logs in or uploads.
 ```bat
 REM Run from the SDK. Bootstrap once, then build. Use a build account, not your admin login.
 tools\ContentBuilder\builder\steamcmd.exe ^
-  +login <build_account> <password> ^
+  +login <build_account> ^
   +run_app_build ..\scripts\app_build_1000.vdf ^
   +quit
 ```
+
+For the first login, enter the password and Steam Guard code at SteamCMD's interactive
+prompts. Later runs can reuse the protected login token; see
+`references/steampipe-build-scripts.md` for CI setup. Do not put passwords in command-line
+arguments, where shell history, process listings or logs may expose them.
 
 ```text
 What happens: steamcmd self-updates -> logs in -> for each depot, hashes files into ~1 MB

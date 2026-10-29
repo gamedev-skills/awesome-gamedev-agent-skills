@@ -93,6 +93,17 @@ class Issue:
 # ---------------------------------------------------------------- text helpers
 
 
+def display_text(value: str) -> str:
+    """Keep source-controlled strings inside one terminal line; JSON keeps raw values."""
+    escapes = {"\n": "\\n", "\r": "\\r", "\t": "\\t",
+               "\u2028": "\\u2028", "\u2029": "\\u2029"}
+    return "".join(
+        escapes.get(ch, f"\\x{ord(ch):02x}")
+        if ch in escapes or ord(ch) < 0x20 or 0x7f <= ord(ch) <= 0x9f else ch
+        for ch in value
+    )
+
+
 def read_text(path: Path) -> str:
     """Read a text file, tolerating a UTF-8 BOM, CRLF line endings and bad bytes."""
     data = path.read_bytes()
@@ -1212,10 +1223,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--max-issues must be 0 or more")
     root = Path(args.project_dir).expanduser()
     if not root.is_dir():
-        print(f"error: {args.project_dir} is not a folder", file=sys.stderr)
+        print(f"error: {display_text(args.project_dir)} is not a folder", file=sys.stderr)
         return 2
     if not (root / "project.godot").is_file():
-        print(f"error: {args.project_dir} is not a Godot project (no project.godot found there)",
+        print(f"error: {display_text(args.project_dir)} is not a Godot project (no project.godot found there)",
               file=sys.stderr)
         return 2
     root = root.resolve()
@@ -1247,8 +1258,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         for issue in shown:
             where = f"{issue.file}:{issue.line}" if issue.line else issue.file
-            print(f"{issue.severity.upper()} {where}: {issue.message}")
-            print(f"  fix: {issue.fix}")
+            print(f"{issue.severity.upper()} {display_text(where)}: {display_text(issue.message)}")
+            print(f"  fix: {display_text(issue.fix)}")
         if truncated:
             print(f"... and {len(ordered) - len(shown)} more")
         print(f"Summary: {len(errors)} errors, {len(warnings)} warnings in {project.files_checked} files checked")

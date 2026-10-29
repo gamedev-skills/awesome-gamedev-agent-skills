@@ -9,15 +9,18 @@ budgets. Targets **Godot 4.7**, **Unity 6.3 LTS**, **Unreal 5.8**.
 ```text
 1. Read total frame time vs your budget (16.67 ms @60).
 2. Compare CPU-frame time and GPU-frame time:
-     GPU >> CPU  → GPU-bound  → draw calls, overdraw, shader cost, resolution, lights/shadows.
-     CPU >> GPU  → CPU-bound  → scripts, physics, pathfinding, allocations/GC, too many nodes.
+     GPU >> CPU  → GPU-bound  → overdraw, shader cost, resolution, lights/shadows.
+     CPU >> GPU  → CPU-bound  → inspect main AND render threads: scripts, physics, pathfinding,
+                                allocations/GC, draw submission and render-state changes.
      Both high / alternating → find the per-frame spike in the timeline (one function/system).
 3. Within the bound side, sort costs descending and attack the top one only.
 4. Re-measure. If it didn't move the frame time, you fixed the wrong thing — revert and re-triage.
 ```
 
-A GPU-bound game won't speed up from faster C#; a CPU-bound game won't speed up from fewer draw
-calls. This split is the single most important decision in performance work.
+Optimize the measured bottleneck. Reducing draw calls or state changes can lower CPU rendering
+cost when submission is limiting the frame, even if the GPU has spare capacity. Batching and
+instancing also have costs, so compare main-thread, render-thread and GPU time before and after
+the change. Faster scripts alone usually won't help a frame limited by GPU work.
 
 ## 2. Per-engine profiler quick start
 

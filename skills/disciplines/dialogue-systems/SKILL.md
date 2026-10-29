@@ -57,6 +57,7 @@ across sessions, use `save-systems`. For data-as-resources in Godot/Unity, see
 ```json
 {
   "start": "guard_intro",
+  "vars": { "gold": 0, "gate_open": false },
   "nodes": {
     "guard_intro": {
       "speaker": "Guard", "line": "DLG_GUARD_001",
@@ -81,7 +82,10 @@ gates a choice; `set` mutates the variable store. The gold cost sits on the
 *choice*, so it is paid once per pick even if the `bribe` node is revisited; the
 idempotent `gate_open` write can live on the node. A string `set` value is an
 expression, so a literal string needs inner quotes: `"mood": "'angry'"`. The full
-interpreter that walks this graph is in `references/runner.md`.
+interpreter that walks this graph is in `references/runner.md`. Its variable store
+starts from `vars`; replace those defaults with the player's saved narrative state
+when starting a real conversation. Declare every referenced variable so unknown
+names still expose authoring mistakes.
 
 ### 2. Runner step (a state machine over the graph)
 

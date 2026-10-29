@@ -91,7 +91,7 @@ public enum Status { Success, Failure, Running }
 public abstract class Node
 {
     public abstract Status Tick(Blackboard bb, float dt);
-    public virtual void Reset() { }   // called when a parent abandons this subtree
+    public virtual void Reset() { }   // idempotent cleanup after completion or abort
 }
 ```
 
@@ -106,6 +106,7 @@ public sealed class Selector : Composite
         {
             var s = Children[Current].Tick(bb, dt);
             if (s == Status.Running) return Status.Running;            // resume here next tick
+            Children[Current].Reset();                                // terminal child can re-enter cleanly
             if (s == Status.Success) { Current = 0; return Status.Success; }
         }
         Current = 0;
@@ -140,8 +141,9 @@ The full curve library (linear, quadratic, exponential, logistic/sigmoid, smooth
 
 ## Pitfalls
 
-- **Re-ticking a `Running` action from the root every frame restarts it.** Return `Running` and
-  resume where you left off; only `Reset()` a subtree when a parent actually abandons it.
+- **Resetting a `Running` subtree every frame restarts it.** Return `Running` and
+  preserve its state until completion or abort. Parents reset terminal children immediately;
+  `BehaviorTree` resets the terminal root. Make cleanup idempotent for ancestor resets.
 - **Deep trees re-evaluated wholesale each tick** waste time and cause thrash. Prefer shallow
   trees and *conditional aborts* (a higher-priority condition can interrupt a lower branch).
 - **A guard condition stops being checked once the action after it is `Running`.** A memory
