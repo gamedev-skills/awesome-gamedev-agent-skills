@@ -34,7 +34,8 @@ the `platformer` genre skill; engine-agnostic feel tuning → `physics-tuning`.
 3. **Do it in `_physics_process(delta)`** — `move_and_slide()` uses the physics step's
    delta internally, so do not multiply `velocity` by `delta` yourself.
 4. **Platformer:** add gravity to `velocity.y` each tick, jump by setting `velocity.y`
-   negative when `is_on_floor()`.
+   negative when `is_on_floor()`; for air jumps, refill a separate counter on landing and
+   spend it only when the ground jump is unavailable (Pattern 5).
 5. **Top-down:** build a direction from input and scale by speed; set
    `motion_mode = MOTION_MODE_FLOATING` so there is no "floor/wall" distinction.
 6. **Read results** with `is_on_floor()`, `is_on_wall()`, `get_wall_normal()`, and
@@ -123,6 +124,69 @@ func _physics_process(delta: float) -> void:
     # ... horizontal input + move_and_slide() ...
 ```
 
+### 5. Double jump (air jumps)
+
+Keep **air jumps** in a separate counter from the ground jump. Refill the counter on the
+floor and spend one only when the player is airborne and coyote time has expired. A separate
+counter means walking off a ledge still leaves exactly the air jumps you configured — the
+ground jump is handled by `is_on_floor()` and coyote time.
+
+```gdscript
+extends CharacterBody2D
+
+@export var speed := 220.0
+@export var jump_velocity := -420.0
+@export var air_jump_velocity := -380.0
+@export var max_air_jumps := 1          # 1 = double jump, 2 = triple jump
+@export var coyote_time := 0.1
+@export var jump_buffer_time := 0.12
+@export var jump_cut := 0.45
+
+var _air_jumps_left := 0
+var _coyote := 0.0
+var _buffer := 0.0
+
+func _physics_process(delta: float) -> void:
+    var on_floor := is_on_floor()
+
+    if on_floor:
+        _air_jumps_left = max_air_jumps
+        _coyote = coyote_time
+    else:
+        _coyote = maxf(_coyote - delta, 0.0)
+
+    if Input.is_action_just_pressed("jump"):
+        _buffer = jump_buffer_time
+    else:
+        _buffer = maxf(_buffer - delta, 0.0)
+
+    if _buffer > 0.0:
+        if on_floor or _coyote > 0.0:
+            _jump(false)                # ground/coyote jump: free
+        elif _air_jumps_left > 0:
+            _air_jumps_left -= 1
+            _jump(true)                 # air jump: spend one
+
+    if Input.is_action_just_released("jump") and velocity.y < 0.0:
+        velocity.y *= jump_cut
+
+    if not on_floor:
+        velocity += get_gravity() * delta
+
+    var dir := Input.get_axis("move_left", "move_right")
+    velocity.x = move_toward(velocity.x, dir * speed, 1500.0 * delta)
+    move_and_slide()
+
+func _jump(is_air_jump: bool) -> void:
+    velocity.y = air_jump_velocity if is_air_jump else jump_velocity
+    _buffer = 0.0                       # consume the press exactly once
+    _coyote = 0.0                       # no second jump from the same coyote window
+```
+
+Emit a signal with the `is_air_jump` flag if the second jump needs a different animation or
+sound. The full runnable version (with feedback and a headless test) is in the starter
+project below.
+
 ## Pitfalls
 
 - **3.x signature is gone.** `move_and_slide(velocity)` (returning the new velocity) was
@@ -139,11 +203,33 @@ func _physics_process(delta: float) -> void:
   `position +=` instead of velocity + `move_and_slide()`.
 - **Slope slipping while idle:** keep `floor_stop_on_slope = true` (default) and raise
   `floor_snap_length` (default 1 px) so the body sticks to downward slopes.
+- **Air jump fires on the ground or twice from one press** → resolve ground/coyote jumps
+  before air jumps, and clear the jump buffer when a jump fires. Otherwise one press can
+  spend both the ground jump and an air jump.
+- **Walking off a ledge gives a free extra jump** → if the ground jump and air jumps share one
+  `_jumps_left` pool and you reset the pool on the floor, falling off leaves the full count.
+  Keep air jumps separate (Pattern 5), or decrement the pool when leaving the floor without
+  jumping.
+- **Coyote time eats the air jump** → check `on_floor or _coyote > 0.0` first and clear the
+  coyote timer inside the jump action. If the air branch runs first, a jump just after leaving
+  a ledge spends the air jump and the player loses the coyote jump.
+- **The second jump feels invisible** → emit a signal with `is_air_jump` and play a distinct
+  SFX/animation. Players cannot tell whether the mid-air press registered otherwise.
+
+## Starter project
+
+A runnable Godot 4.6+ project with the double-jump controller, a small test level, and a
+headless test lives in [`assets/double-jump-demo/`](assets/double-jump-demo/). Open the folder
+in Godot and press F5, or run the test from inside it:
+
+```bash
+godot --headless --path . --script res://tests/test_player.gd
+```
 
 ## References
 
-- For one-way platforms, moving platforms, jump buffering, variable jump height, and
-  `move_and_collide()` (manual collision response), read `references/controller-recipes.md`.
+- For one-way platforms, moving platforms, jump buffering, variable jump height, double
+  jumps, and `move_and_collide()` (manual collision response), read `references/controller-recipes.md`.
 
 ## Related skills
 

@@ -131,7 +131,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`godot-gdscript`](skills/godot/godot-gdscript/SKILL.md) | GDScript language: typing, lifecycle, `@export`, signals, idioms |
 | [`godot-nodes-scenes`](skills/godot/godot-nodes-scenes/SKILL.md) | Scene tree, node composition, instancing, autoloads, `PackedScene` |
 | [`godot-signals-groups`](skills/godot/godot-signals-groups/SKILL.md) | Event-driven design with signals + groups |
-| [`godot-2d-movement`](skills/godot/godot-2d-movement/SKILL.md) | `CharacterBody2D` kinematic movement, `move_and_slide`, slopes |
+| [`godot-2d-movement`](skills/godot/godot-2d-movement/SKILL.md) | `CharacterBody2D` kinematic movement, `move_and_slide`, slopes, air jumps |
 | [`godot-tilemap`](skills/godot/godot-tilemap/SKILL.md) | `TileMapLayer`/`TileSet`: autotiling, terrain, collision/nav layers |
 | [`godot-physics`](skills/godot/godot-physics/SKILL.md) | Rigid/Area/Static bodies (2D+3D), collision layers, raycasts |
 | [`godot-ui-control`](skills/godot/godot-ui-control/SKILL.md) | `Control` nodes: anchors, containers, themes, focus nav |
@@ -231,7 +231,7 @@ primitives.
 
 | Skill | Scope |
 |-------|-------|
-| [`platformer`](skills/genres/platformer/SKILL.md) | 2D platformer: run/jump/coyote-time, tiled levels, hazards, goals |
+| [`platformer`](skills/genres/platformer/SKILL.md) | 2D platformer: run/jump/coyote-time, double jump, tiled levels, hazards, goals |
 | [`roguelike`](skills/genres/roguelike/SKILL.md) | Grid/turn movement, procedural dungeons, permadeath, FOV, loot |
 | [`rpg`](skills/genres/rpg/SKILL.md) | Stats/leveling, inventory, quests, dialogue, save/load, combat |
 | [`fps-shooter`](skills/genres/fps-shooter/SKILL.md) | First-person controller, camera, shooting/hitscan, enemy AI |
@@ -301,19 +301,22 @@ extends CharacterBody2D
 
 @export var speed := 220.0
 @export var jump_velocity := -380.0
-@export var max_jumps := 2
+@export var max_air_jumps := 1
 
-var _jumps_left := max_jumps
+var _air_jumps_left := max_air_jumps
 
 func _physics_process(delta: float) -> void:
-    if not is_on_floor():
-        velocity += get_gravity() * delta   # Godot 4.7 baseline
+    if is_on_floor():
+        _air_jumps_left = max_air_jumps
     else:
-        _jumps_left = max_jumps
+        velocity += get_gravity() * delta   # Godot 4.7 baseline
 
-    if Input.is_action_just_pressed("ui_accept") and _jumps_left > 0:
-        velocity.y = jump_velocity
-        _jumps_left -= 1
+    if Input.is_action_just_pressed("ui_accept"):
+        if is_on_floor():
+            velocity.y = jump_velocity
+        elif _air_jumps_left > 0:
+            velocity.y = jump_velocity
+            _air_jumps_left -= 1
 
     velocity.x = Input.get_axis("ui_left", "ui_right") * speed
     move_and_slide()

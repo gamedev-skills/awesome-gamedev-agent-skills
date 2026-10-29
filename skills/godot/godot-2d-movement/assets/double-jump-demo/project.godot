@@ -1,0 +1,22 @@
+; Engine configuration file.
+; A tiny 2D platformer that demonstrates the double-jump controller.
+
+config_version=5
+
+[application]
+
+config/name="Double Jump Demo"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=540
+window/stretch/mode="canvas_items"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.05, 0.07, 0.12, 1)

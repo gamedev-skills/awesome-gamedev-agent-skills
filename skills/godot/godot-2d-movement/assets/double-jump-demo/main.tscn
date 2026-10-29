@@ -1,0 +1,157 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://player.tscn" id="2_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(960, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform_a"]
+size = Vector2(160, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform_b"]
+size = Vector2(200, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform_c"]
+size = Vector2(200, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(20, 540)
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 960.0
+offset_bottom = 540.0
+color = Color(0.05, 0.07, 0.12, 1)
+
+[node name="MountainFar" type="Polygon2D" parent="."]
+color = Color(0.08, 0.11, 0.18, 1)
+polygon = PackedVector2Array(0, 540, 180, 300, 360, 540)
+
+[node name="MountainMid" type="Polygon2D" parent="."]
+color = Color(0.1, 0.14, 0.22, 1)
+polygon = PackedVector2Array(220, 540, 480, 260, 740, 540)
+
+[node name="MountainNear" type="Polygon2D" parent="."]
+color = Color(0.12, 0.17, 0.26, 1)
+polygon = PackedVector2Array(620, 540, 820, 330, 960, 540)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(480, 520)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Body" type="Polygon2D" parent="Floor"]
+color = Color(0.13, 0.2, 0.28, 1)
+polygon = PackedVector2Array(-480, -20, 480, -20, 480, 20, -480, 20)
+
+[node name="Top" type="Polygon2D" parent="Floor"]
+color = Color(0.28, 0.62, 0.52, 1)
+polygon = PackedVector2Array(-480, -20, 480, -20, 480, -14, -480, -14)
+
+[node name="PlatformA" type="StaticBody2D" parent="."]
+position = Vector2(260, 470)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformA"]
+shape = SubResource("RectangleShape2D_platform_a")
+
+[node name="Body" type="Polygon2D" parent="PlatformA"]
+color = Color(0.16, 0.25, 0.34, 1)
+polygon = PackedVector2Array(-80, -10, 80, -10, 80, 10, -80, 10)
+
+[node name="Top" type="Polygon2D" parent="PlatformA"]
+color = Color(0.35, 0.75, 0.62, 1)
+polygon = PackedVector2Array(-80, -10, 80, -10, 80, -5, -80, -5)
+
+[node name="PlatformB" type="StaticBody2D" parent="."]
+position = Vector2(520, 370)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformB"]
+shape = SubResource("RectangleShape2D_platform_b")
+
+[node name="Body" type="Polygon2D" parent="PlatformB"]
+color = Color(0.16, 0.25, 0.34, 1)
+polygon = PackedVector2Array(-100, -10, 100, -10, 100, 10, -100, 10)
+
+[node name="Top" type="Polygon2D" parent="PlatformB"]
+color = Color(0.35, 0.75, 0.62, 1)
+polygon = PackedVector2Array(-100, -10, 100, -10, 100, -5, -100, -5)
+
+[node name="PlatformC" type="StaticBody2D" parent="."]
+position = Vector2(780, 270)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformC"]
+shape = SubResource("RectangleShape2D_platform_c")
+
+[node name="Body" type="Polygon2D" parent="PlatformC"]
+color = Color(0.16, 0.25, 0.34, 1)
+polygon = PackedVector2Array(-100, -10, 100, -10, 100, 10, -100, 10)
+
+[node name="Top" type="Polygon2D" parent="PlatformC"]
+color = Color(0.35, 0.75, 0.62, 1)
+polygon = PackedVector2Array(-100, -10, 100, -10, 100, -5, -100, -5)
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(-10, 270)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(970, 270)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="FlagPole" type="Polygon2D" parent="."]
+color = Color(0.7, 0.75, 0.8, 1)
+polygon = PackedVector2Array(878, 200, 882, 200, 882, 260, 878, 260)
+
+[node name="Flag" type="Polygon2D" parent="."]
+color = Color(1, 0.8, 0.25, 1)
+polygon = PackedVector2Array(882, 200, 930, 210, 882, 222)
+
+[node name="Goal" type="Label" parent="."]
+offset_left = 730.0
+offset_top = 210.0
+offset_right = 830.0
+offset_bottom = 240.0
+theme_override_colors/font_color = Color(1, 0.84, 0.3, 1)
+theme_override_font_sizes/font_size = 20
+text = "GOAL"
+horizontal_alignment = 1
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(120, 470)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Instructions" type="Label" parent="UI"]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 936.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.82, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "Move: Arrow Keys    Jump: Space (press again in the air)    Reset: R"
+
+[node name="Status" type="Label" parent="UI"]
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 400.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Jump!"
+
+[node name="AirJumps" type="Label" parent="UI"]
+offset_left = 24.0
+offset_top = 84.0
+offset_right = 400.0
+offset_bottom = 112.0
+theme_override_colors/font_color = Color(0.55, 0.75, 0.95, 1)
+theme_override_font_sizes/font_size = 18
+text = "Air jumps left: 1"

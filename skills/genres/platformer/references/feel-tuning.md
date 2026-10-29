@@ -52,7 +52,24 @@ velocity.y += 0.5 * g * dt
 | Max fall speed | terminal velocity | clamp | Prevents tunneling and runaway speed. |
 | Ground accel | time to top speed | 0.03–0.12 s | Instant = arcadey; longer = momentum. |
 | Air control | steering mid-jump | 0.5–1.0× ground | <1 gives committed arcs. |
-| Coyote-after-jump lockout | prevents double jumps | consume timers | Zero both timers on jump. |
+| Air jumps | extra jumps before landing | 0–2 | 1 = double jump; refill on landing. |
+| Air jump height | reach of the second jump | 0.7–1.0× ground | Tune separately from the ground jump. |
+| Coyote-after-jump lockout | one press firing twice | consume timers | Zero both timers on jump. |
+
+## 2b. Double jump / air jumps
+
+- Keep air jumps in a **separate counter** from the ground jump. Reset it on landing; spend
+  one only when the ground/coyote jump is unavailable. This avoids the "walk off a ledge and
+  get two air jumps" bug and the "coyote jump spends the air jump" bug.
+- Resolve jump priority explicitly: **ground/coyote → wall (if any) → air**. Consume the jump
+  buffer once.
+- Tune the second jump by height, not by copying the first jump's velocity. A second jump at
+  0.7–1.0× the ground jump's height is a common range; at 1.0× the total reach is roughly
+  double, which may trivialize gaps.
+- Decide whether wall contact refreshes air jumps. If it does, wall-jump chains become much
+  stronger and levels must be designed around that.
+- Teach the double jump with a ledge that is clearly above the single-jump reach (about
+  1.2–1.5× the single-jump height) and a safe landing. Do not combine it with a new hazard.
 
 ## 3. Apex hang and fast-fall
 

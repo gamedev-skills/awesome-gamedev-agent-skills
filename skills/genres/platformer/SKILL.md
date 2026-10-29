@@ -1,8 +1,9 @@
 ---
 name: platformer
 description: >
-  Build a 2D platformer: run/jump control with coyote time, jump buffering, and variable jump
-  height, plus tiled levels and hazards. Use for a platformer or Mario/Celeste-like, or tuning jump feel.
+  Build a 2D platformer: run/jump control with coyote time, jump buffering, variable jump
+  height, and air jumps (double jump), plus tiled levels and hazards. Use for a platformer or
+  Mario/Celeste-like, or tuning jump feel.
 ---
 
 # Platformer
@@ -31,7 +32,8 @@ jump, repeated thousands of times. Tighten the controller first; everything else
 
 ## Must-have systems
 
-1. **Run/jump controller** — horizontal accel/decel, gravity, jump, with the feel aids below.
+1. **Run/jump controller** — horizontal accel/decel, gravity, jump, with the feel aids below
+   (coyote time, jump buffer, variable height, optional air jumps).
 2. **Solid + one-way collision** — ground, walls, and "jump-through" platforms.
 3. **Level geometry** — a tilemap or hand-placed colliders; the playable space.
 4. **Hazards + death/respawn** — spikes, pits, enemies; reset to the last checkpoint.
@@ -51,6 +53,8 @@ Tune these by **outcome** (height in tiles, time to apex in seconds), not by raw
 | Coyote time | jump just after leaving a ledge | 0.08–0.12 s (~5–7 frames @60) |
 | Jump buffer | press just before landing still jumps | 0.10–0.15 s |
 | Variable jump cut | tap = short hop, hold = full | cut upward velocity ×0.4–0.5 on release |
+| Air jumps | extra jumps before landing | 1 air jump (double jump); refill on landing |
+| Air jump height | reach of the second jump | 0.7–1.0× ground jump height |
 | Apex hang | brief float at the top for air control | reduce gravity ×0.5 near `|vy|`<threshold |
 | Ground accel / friction | responsiveness vs. ice | reach top speed in 0.05–0.1 s |
 | Corner correction | nudge past a ledge clipped by 1–2 px | nudge up to ~4 px sideways |
@@ -88,7 +92,7 @@ buffer_timer -= dt
 if buffer_timer > 0 and coyote_timer > 0:
     velocity.y   = jump_velocity
     buffer_timer = 0
-    coyote_timer = 0                     # consume both so we can't double-jump
+    coyote_timer = 0                     # consume both so one press can't fire twice
 
 # Variable height: releasing jump early while still rising cuts the arc short.
 if jump_released_this_frame and velocity.y < 0:
@@ -98,6 +102,12 @@ if jump_released_this_frame and velocity.y < 0:
 g = fall_gravity if velocity.y > 0 else gravity
 velocity.y = min(velocity.y + g * dt, MAX_FALL_SPEED)
 ```
+
+For a double jump, keep air jumps as a separate counter. Resolve a buffered press in this
+order: **ground/coyote → wall (if any) → air**. Spend an air jump only when the ground jump is
+not available, and refill the counter on landing. This prevents a walk off a ledge from
+granting two air jumps and prevents a coyote-time jump from eating the air jump. See
+`godot-2d-movement` Pattern 5 for the Godot implementation.
 
 ### 3. One-way platforms
 
@@ -122,6 +132,15 @@ Down + Jump (refs §5).
 - **Floaty jumps** → symmetric gravity. Make fall gravity heavier than rise gravity.
 - **"The jump didn't register"** → no input buffering. Buffer presses for ~0.1 s before landing.
 - **"I fell off and couldn't jump"** → no coyote time. Allow a jump for ~0.1 s after leaving ground.
+- **Air jump eats the coyote jump, or one press fires twice** → resolve jump priority
+  explicitly (ground/coyote → wall → air) and consume the jump buffer once. If the air branch
+  runs first, a jump just after a ledge spends the air jump; if the buffer is not cleared, one
+  press can spend two jumps.
+- **Walking off a ledge gives an extra air jump** → if the ground jump and air jumps share one
+  counter, resetting it on the floor leaves the full count after a fall. Keep air jumps
+  separate or decrement the shared pool when leaving the floor without jumping.
+- **The second jump feels invisible** → emit a distinct SFX/animation for the air jump; players
+  need confirmation that the mid-air press registered.
 - **Sticking to walls / catching on tile seams** → use a single capsule/box collider, not
   per-tile colliders, and add corner correction.
 - **Tunneling through floors at high speed** → enable continuous collision / smaller fixed
@@ -142,5 +161,5 @@ Down + Jump (refs §5).
 
 ## References
 
-- For jump math derivation, a full feel-tuning table, corner correction, moving/one-way
-  platforms, and camera follow, read `references/feel-tuning.md`.
+- For jump math derivation, a full feel-tuning table, double-jump tuning, corner correction,
+  moving/one-way platforms, and camera follow, read `references/feel-tuning.md`.

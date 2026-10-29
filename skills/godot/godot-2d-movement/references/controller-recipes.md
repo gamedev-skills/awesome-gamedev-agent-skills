@@ -34,6 +34,36 @@ func _physics_process(delta: float) -> void:
     # ... gravity + horizontal + move_and_slide()
 ```
 
+## Double jump (air jumps)
+
+The runnable controller is Pattern 5 in `SKILL.md`. The decisions that matter:
+
+- **Separate pool.** Count air jumps separately from the ground jump. Reset the air-jump
+  count on the floor; a ground/coyote jump does not spend it. Walking off a ledge therefore
+  leaves exactly `max_air_jumps` air jumps, not `max_air_jumps + 1`.
+- **Priority.** Resolve a buffered press in this order: ground/coyote jump → air jump.
+  Consume the buffer and clear coyote time when either fires. If the air branch runs first, a
+  jump just after leaving a ledge eats the air jump and the player loses the coyote jump.
+- **Reset policy.** Refill on landing (`is_on_floor()`), not on ceiling hits. Optionally refill
+  on wall contact or wall jump — that is a level-design decision, not a controller default.
+- **Air jump height.** Use a separate `air_jump_velocity` (typically 0.7–1.0× the ground jump's
+  height) so the second jump can be tuned independently. At 1.0× the total reach is roughly
+  double the single jump, which can trivialize gaps.
+- **Feedback.** Emit `signal jumped(is_air_jump: bool)` and play a different SFX/animation for
+  `true`. The player needs confirmation that the second press registered.
+- **Test.** Land, jump, wait past coyote time, jump again: the second press should rise and
+  consume the air jump; a third press while airborne should do nothing. Refill on landing.
+
+```gdscript
+signal jumped(is_air_jump: bool)
+
+func _perform_jump(is_air_jump: bool) -> void:
+    velocity.y = air_jump_velocity if is_air_jump else jump_velocity
+    _buffer = 0.0
+    _coyote = 0.0
+    jumped.emit(is_air_jump)
+```
+
 ## One-way platforms
 
 On the platform's `CollisionShape2D` / `CollisionPolygon2D`, enable **one-way collision**

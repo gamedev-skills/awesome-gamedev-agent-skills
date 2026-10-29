@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://player.gd" id="1_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(32, 48)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Body" type="Polygon2D" parent="Visual"]
+color = Color(0.16, 0.78, 0.7, 1)
+polygon = PackedVector2Array(-16, -24, 16, -24, 16, 24, -16, 24)
+
+[node name="Belly" type="Polygon2D" parent="Visual"]
+color = Color(0.08, 0.5, 0.46, 1)
+polygon = PackedVector2Array(-12, 2, 12, 2, 12, 24, -12, 24)
+
+[node name="Visor" type="Polygon2D" parent="Visual"]
+color = Color(0.05, 0.1, 0.14, 1)
+polygon = PackedVector2Array(-11, -16, 11, -16, 11, -6, -11, -6)
+
+[node name="EyeLeft" type="Polygon2D" parent="Visual"]
+color = Color(0.85, 1, 1, 1)
+polygon = PackedVector2Array(-7, -14, -3, -14, -3, -8, -7, -8)
+
+[node name="EyeRight" type="Polygon2D" parent="Visual"]
+color = Color(0.85, 1, 1, 1)
+polygon = PackedVector2Array(3, -14, 7, -14, 7, -8, 3, -8)
