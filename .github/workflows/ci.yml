@@ -54,4 +54,4 @@ jobs:
           python-version: '3.10'
 
       - name: Run check-script tests
-        run: python -m unittest tests.test_check_godot_project tests.test_check_unity_project tests.test_check_steam_build tests.test_check_ebitengine tests.test_check_defold_project -v
+        run: python -m unittest tests.test_check_godot_project tests.test_check_unity_project tests.test_check_steam_build tests.test_check_ebitengine tests.test_check_defold_project tests.test_check_unity_build_size tests.test_build_report -v

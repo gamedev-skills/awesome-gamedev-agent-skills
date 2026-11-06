@@ -40,6 +40,7 @@ a real folder at `skills/<category>/<name>/SKILL.md`. Trigger words (`says:`) an
 | `unity-tilemap-2d` | "Unity tilemap", "tile palette", "rule tile" |
 | `unity-navmesh` | `NavMesh`, `NavMeshAgent`, "pathfinding in Unity" |
 | `unity-build-pipeline` | "build Unity", "player settings", "IL2CPP", "Addressables" |
+| `unity-build-size` | "build too big", "reduce build size", "size limit", huge `sharedassets*.resS`, glTF/GLB textures in a build |
 
 ### Unreal (`skills/unreal/`, target UE 5.8)
 

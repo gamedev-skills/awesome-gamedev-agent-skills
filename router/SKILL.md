@@ -104,7 +104,8 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
   `godot-export`.
 - **Unity** (`skills/unity/`): scripting `unity-csharp-scripting`; input `unity-input-system`;
   physics `unity-physics`; animation `unity-animation`; data `unity-scriptableobjects`; 2D
-  `unity-tilemap-2d`; AI nav `unity-navmesh`; ship `unity-build-pipeline`.
+  `unity-tilemap-2d`; AI nav `unity-navmesh`; ship `unity-build-pipeline`; build too large
+  `unity-build-size`.
 - **Unreal** (`skills/unreal/`): visual scripting `unreal-blueprints`; C++ gameplay
   `unreal-cpp-gameplay`; input `unreal-enhanced-input`; AI `unreal-behavior-trees`; VFX
   `unreal-niagara`; ship `unreal-packaging`.

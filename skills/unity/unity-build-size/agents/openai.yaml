@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unity Build Size"
+  short_description: "Find what bloats a Unity build and shrink it"
+  default_prompt: "Use $unity-build-size to find why my Unity build is so large and bring it under my size limit."
