@@ -91,6 +91,7 @@ Describe the task in plain language. The router figures out the skills:
 | "make a cohesive pixel-art player, enemies, and tiles" | `create-game-assets` + the detected engine importer |
 | "how should I design save slots?" | `save-systems` |
 | "publish my game on itch with butler" | `itch-publish` |
+| [CrakSEO/skills](https://github.com/CrakSEO/skills) | Connect Claude/Cursor/Codex to CrakSEO remote MCP servers for keyword research, SERP, backlinks, rank tracking, site audit, local SEO, AI visibility, Search Console and URL indexing | Claude Code, Cursor, Codex | MIT |
 
 You never type the skill names on the right. That's the router's job.
 
