@@ -1,6 +1,6 @@
 # Feature doc templates
 
-One folder per feature: `docs/features/<slug>/` with `design.md`, `implementation.md`, `testing.md`. Each doc opens with a header line for navigation. The feature's **status lives in `design.md`'s header** (and in the GDD index; `scripts/check_docs.py` checks the two agree). Keep `**Status:** <status>` exactly in this form there. The other two docs carry only the updated date and links.
+One folder per feature: `features/<slug>/` inside the docs folder, with `design.md`, `implementation.md`, `testing.md`. Each doc opens with a header line for navigation. The feature's **status lives in `design.md`'s header** (and in the GDD index; `scripts/check_docs.py` checks the two agree). Keep `**Status:** <status>` exactly in this form there. The other two docs carry only the updated date and links.
 
 Scale to the feature: a small feature's docs can be a few lines per section, and "n/a" is a fine answer. Text in *italics* is guidance; don't copy it.
 
@@ -117,7 +117,7 @@ Scale to the feature: a small feature's docs can be a few lines per section, and
 **Updated:** <YYYY-MM-DD> · [GDD](../../GDD.md) · [Design](design.md) · [Implementation](implementation.md) · Testing
 
 ## Acceptance criteria
-*Group by rule or area. Each one maps to a rule or number in design.md. Tick only what a test's assertions or a dated check prove; split a criterion when the proof covers part of it (see SKILL.md, "Proof annotations" and "Pitfalls").*
+*Group by rule or area. Each one maps to a rule or number in design.md. Tick only what a test's assertions or a dated check prove; split a criterion when the proof covers part of it (see doc-rules.md, "Proof annotations" and "Testing pitfalls").*
 Ticked = proven by the named test or check. Unticked = not proven yet.
 
 - [x] <Checkable statement, worded as narrowly as its proof>. *(`tests/<file>.test.ts` › <suite>)*

@@ -1,13 +1,13 @@
 # GDD template
 
-Copy this structure into `docs/GDD.md`. The GDD is the game **as a whole**: why it exists, what it feels like, the rules every feature follows, and a map of the features. Detailed rules and numbers for one feature belong in that feature's `design.md`. The GDD gives a one-line summary and links there.
+Copy this structure into the project's GDD (`docs/GDD.md` unless the project already uses another folder or file name). Keep the heading text `3. Feature index` and `Change log`, or update the header links to match: they are anchor links. The GDD is the game **as a whole**: why it exists, what it feels like, the rules every feature follows, and a map of the features. Detailed rules and numbers for one feature belong in that feature's `design.md`. The GDD gives a one-line summary and links there.
 
 Drop a section that truly doesn't apply (e.g. Narrative for an abstract puzzle game), but say so in one line instead of silently leaving it out. Text in *italics* is guidance for you; don't copy it into the doc.
 
 ~~~markdown
 # <Title> — Game Design Document
 
-**Version:** 0.1 · **Updated:** <YYYY-MM-DD> · [Architecture](ARCHITECTURE.md) · [Features](#feature-index) · [Change log](#change-log)
+**Version:** 0.1 · **Updated:** <YYYY-MM-DD> · [Architecture](ARCHITECTURE.md) · [Features](#3-feature-index) · [Change log](#change-log)
 
 **Working title:** <title> · **Code name:** <short name>
 

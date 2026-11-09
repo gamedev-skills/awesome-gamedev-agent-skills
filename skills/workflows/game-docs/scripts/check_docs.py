@@ -1,168 +1,163 @@
 #!/usr/bin/env python3
-"""Check a game docs folder (GDD.md + ARCHITECTURE.md + features/<slug>/{design,implementation,testing}.md).
+"""Check a game docs folder: a GDD, ARCHITECTURE.md and features/<slug>/ folders.
 
-Usage:
-    python check_docs.py <docs-dir>
-    python check_docs.py <docs-dir> --old <old-GDD.md> [<old-notes.md> ...]
+Each feature folder holds design.md, implementation.md and testing.md. The
+checker reads every Markdown file under DOCS_DIR and reports what is broken or
+out of step. It never writes anything, never opens the network and never runs
+other programs.
 
-Reports:
-  ERROR  broken relative links, feature folders missing a doc, GDD index rows
-         without folders (and folders without rows), status mismatch between the
-         GDD index and design.md
-  WARN   unknown statuses, broken #anchors, ticked criteria with no proof,
-         missing GDD/ARCHITECTURE
-  INFO   per-feature summary: status, criteria proven, open assumptions
-With --old: lines and numbers from the old docs that don't appear anywhere in
-the new docs (migration safety net; reworded content shows up too, review each).
+Errors (the docs are broken or contradict themselves):
+  broken-link            a relative link points at a file that does not exist
+  feature-doc-missing    a feature folder lacks design.md, implementation.md or testing.md
+  index-folder-missing   a GDD index row links a feature folder that does not exist
+  status-mismatch        the GDD index and design.md give a feature different statuses
+  gdd-no-index           the GDD has no feature index table (Feature and Status columns)
+  design-no-status       design.md has no "**Status:** ..." in its header
 
-Exit code 1 if any ERROR.
+Warnings (worth a look, may be fine):
+  anchor-not-found, absolute-link, unknown-status, folder-not-indexed,
+  row-no-folder, ticked-no-proof, slug-not-kebab, gdd-missing,
+  architecture-missing, not-utf8, unreadable, old-line-missing,
+  old-number-missing
+
+Notes (never change the exit code):
+  feature-summary        status, criteria proven and open assumptions per feature
+  old-all-found          every line of an --old file was found in the new docs
+
+The GDD is GDD.md in DOCS_DIR (any letter case) unless --gdd names another file.
+Anchors follow GitHub's heading slugs: lower case, punctuation dropped except
+'-' and '_', spaces become '-', and repeats get -1, -2 suffixes.
+
+Exit codes: 0 no errors, 1 errors (or warnings with --strict), 2 usage problem:
+DOCS_DIR or an --old/--gdd file is missing, or DOCS_DIR has no GDD and no
+features/ folder.
 """
+
+from __future__ import annotations
+
 import argparse
+import json
 import os
 import re
 import sys
+from dataclasses import dataclass
+from pathlib import Path
+from urllib.parse import unquote
 
-STATUSES = ["idea", "designed", "in progress", "implemented", "changed — code pending", "cut"]
-FEATURE_DOCS = ["design.md", "implementation.md", "testing.md"]
+TOOL = "check_docs"
+SCHEMA = 1
 
-LINK_RE = re.compile(r"(?<!\!)\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+STATUSES = ("idea", "designed", "in progress", "implemented", "changed — code pending", "cut")
+FEATURE_DOCS = ("design.md", "implementation.md", "testing.md")
+
+LINK_RE = re.compile(r"(?<!!)\[(?:[^\]\\]|\\.)*\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)")
+SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 STATUS_RE = re.compile(r"\*\*Status:\*\*\s*([^·|\n]+)")
-CRIT_RE = re.compile(r"^\s*[-*]\s+\[([ xX])\]\s+(.*)$")
-
-errors, warns, infos = [], [], []
-
-
-def read(path):
-    with open(path, encoding="utf-8") as f:
-        return f.read()
-
-
-def rel(path, root):
-    return os.path.relpath(path, root).replace("\\", "/")
+CRIT_RE = re.compile(r"^\s*[-*+]\s+\[([ xX])\]\s+(.*)$")
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+ATX_RE = re.compile(r"^ {0,3}#{1,6}(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$")
+SETEXT_RE = re.compile(r"^ {0,3}(=+|-+)[ \t]*$")
+HTML_ID_RE = re.compile(r"<a\s[^>]*\b(?:id|name)\s*=\s*[\"']([^\"']+)[\"']", re.I)
+SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)?")
 
 
-def norm_status(s):
-    s = s.strip().strip("*_` ").lower()
-    s = s.replace(" - ", " — ").replace(" -- ", " — ").replace(" – ", " — ")
-    return s
+@dataclass
+class Issue:
+    level: str  # ERROR, WARNING or NOTE
+    code: str
+    file: str
+    line: int | None
+    message: str
+    fix: str
+
+    def as_json(self) -> dict[str, object]:
+        return {"code": self.code, "file": self.file, "line": self.line, "message": self.message, "fix": self.fix}
 
 
-def slugify(heading):
-    """GitHub-style anchor."""
-    h = heading.strip().lower()
-    h = re.sub(r"[`*_~]", "", h)
-    h = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", h)
-    h = re.sub(r"[^\w\- ]", "", h, flags=re.UNICODE)
-    return h.replace(" ", "-")
+class UsageProblem(Exception):
+    pass
 
 
-def anchors_of(text):
-    out, seen = set(), {}
-    in_code = False
-    for line in text.splitlines():
-        if line.lstrip().startswith(("```", "~~~")):
-            in_code = not in_code
+# --------------------------------------------------------------------------
+# Markdown helpers
+# --------------------------------------------------------------------------
+
+
+def outside_fences(lines: list[str]) -> list[bool]:
+    """For each line, True when it is ordinary Markdown (not inside or on a code fence)."""
+    flags: list[bool] = []
+    fence: str | None = None
+    for line in lines:
+        m = FENCE_RE.match(line)
+        if fence is None:
+            if m and not (m.group(1)[0] == "`" and "`" in m.group(2)):
+                fence = m.group(1)
+                flags.append(False)
+            else:
+                flags.append(True)
+        else:
+            if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence) and not m.group(2).strip():
+                fence = None
+            flags.append(False)
+    return flags
+
+
+def strip_inline_code(line: str) -> str:
+    return re.sub(r"(`+)(?:(?!\1).)+?\1", "", line)
+
+
+def github_slug(heading: str) -> str:
+    """The anchor GitHub gives a heading."""
+    text = heading.strip()
+    text = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", text)  # images -> alt text
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)  # links -> link text
+    text = re.sub(r"<[^>]+>", "", text)  # inline HTML
+    text = re.sub(r"[`*~]", "", text)
+    # Underscores are emphasis only at word edges; MAX_SPEED keeps its underscore.
+    text = re.sub(r"(?<![^\W_])_+|_+(?![^\W_])", "", text)
+    text = text.lower()
+    text = re.sub(r"[^\w\- ]", "", text)
+    return text.replace(" ", "-")
+
+
+def anchors_of(text: str) -> set[str]:
+    lines = text.split("\n")
+    plain = outside_fences(lines)
+    out: set[str] = set()
+    seen: dict[str, int] = {}
+
+    def add(heading: str) -> None:
+        base = github_slug(heading)
+        n = seen.get(base, 0)
+        seen[base] = n + 1
+        out.add(base if n == 0 else f"{base}-{n}")
+
+    for i, line in enumerate(lines):
+        if not plain[i]:
             continue
-        if in_code:
-            continue
-        m = re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)
+        out.update(a.lower() for a in HTML_ID_RE.findall(line))
+        m = ATX_RE.match(line)
         if m:
-            base = slugify(m.group(1))
-            n = seen.get(base, 0)
-            seen[base] = n + 1
-            out.add(base if n == 0 else "%s-%d" % (base, n))
+            add(m.group(1) or "")
+            continue
+        prev = lines[i - 1] if i > 0 else ""
+        if (SETEXT_RE.match(line) and i > 0 and plain[i - 1] and prev.strip()
+                and not prev.lstrip().startswith(("|", "-", "*", "+", ">", "#"))
+                and not SETEXT_RE.match(prev)):
+            add(prev)
     return out
 
 
-def strip_code(text):
-    """Blank out fenced code blocks and inline code so templates/examples aren't link-checked."""
-    lines, in_code = [], False
-    for line in text.splitlines():
-        if line.lstrip().startswith(("```", "~~~")):
-            in_code = not in_code
-            lines.append("")
-            continue
-        lines.append("" if in_code else re.sub(r"`[^`]*`", "", line))
-    return lines
+def norm_status(text: str) -> str:
+    s = text.strip().strip("*_` ").lower()
+    for dash in (" -- ", " – ", " - "):
+        s = s.replace(dash, " — ")
+    return re.sub(r"\s+", " ", s)
 
 
-def check_links(md_files, root):
-    anchor_cache = {}
-    for path in md_files:
-        for lineno, line in enumerate(strip_code(read(path)), 1):
-            for m in LINK_RE.finditer(line):
-                target = m.group(2)
-                if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):  # http:, mailto:, …
-                    continue
-                file_part, _, anchor = target.partition("#")
-                dest = path if not file_part else os.path.normpath(os.path.join(os.path.dirname(path), file_part))
-                where = "%s:%d" % (rel(path, root), lineno)
-                if not os.path.exists(dest):
-                    errors.append("%s broken link -> %s" % (where, target))
-                    continue
-                if anchor and dest.endswith(".md"):
-                    if dest not in anchor_cache:
-                        anchor_cache[dest] = anchors_of(read(dest))
-                    if anchor.lower() not in anchor_cache[dest]:
-                        warns.append("%s anchor not found -> %s" % (where, target))
-
-
-def parse_index(gdd_text):
-    """Rows of the first table whose header has 'Feature' and 'Status' columns."""
-    lines = gdd_text.splitlines()
-    for i, line in enumerate(lines):
-        if not line.strip().startswith("|"):
-            continue
-        cells = [c.strip().lower() for c in line.strip().strip("|").split("|")]
-        if "feature" in cells and "status" in cells and i + 1 < len(lines) and re.match(r"^\s*\|?\s*:?-", lines[i + 1]):
-            fi, si = cells.index("feature"), cells.index("status")
-            di = cells.index("docs") if "docs" in cells else None  # summaries may link other features
-            rows = []
-            for j in range(i + 2, len(lines)):
-                row = lines[j].strip()
-                if not row.startswith("|"):
-                    break
-                rc = [c.strip() for c in row.strip("|").split("|")]
-                if len(rc) <= max(fi, si):
-                    continue
-                where = rc[di] if di is not None and di < len(rc) else row
-                slugs = set(re.findall(r"features/([^/)\s]+)/", where))
-                rows.append({"line": j + 1, "feature": rc[fi], "status": norm_status(rc[si]), "slugs": slugs})
-            return rows
-    return None
-
-
-def feature_summary(fdir, slug):
-    parts = []
-    design = os.path.join(fdir, "design.md")
-    status = None
-    if os.path.exists(design):
-        m = STATUS_RE.search(read(design))
-        if m:
-            status = norm_status(m.group(1))
-        else:
-            errors.append("features/%s/design.md has no '**Status:** …' in its header" % slug)
-    testing = os.path.join(fdir, "testing.md")
-    if os.path.exists(testing):
-        total = proven = 0
-        for lineno, line in enumerate(read(testing).splitlines(), 1):
-            m = CRIT_RE.match(line)
-            if not m:
-                continue
-            total += 1
-            if m.group(1) in "xX":
-                proven += 1
-                if not re.search(r"\(.+\)\s*\**\s*$", m.group(2)):  # greedy: a proof may contain a link
-                    warns.append("features/%s/testing.md:%d ticked criterion has no proof in (…)" % (slug, lineno))
-        parts.append("%d/%d criteria proven" % (proven, total))
-    assumptions = sum(read(os.path.join(fdir, d)).count("[ASSUMPTION]") for d in FEATURE_DOCS if os.path.exists(os.path.join(fdir, d)))
-    if assumptions:
-        parts.append("%d [ASSUMPTION]" % assumptions)
-    return status, parts
-
-
-def normalize_for_compare(text):
-    # Internal doc links and section refs are expected to change on migration ("§6.10" -> "[combo](...)"),
+def normalize_for_compare(text: str) -> str:
+    # Internal doc links and section refs change on migration ("§6.10" -> "[combo](...)"),
     # so both are dropped; external links keep their text.
     text = re.sub(r"\[[^\]]*\]\((?![a-z][a-z0-9+.-]*:)[^)]*\)", "", text, flags=re.I)
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
@@ -172,104 +167,451 @@ def normalize_for_compare(text):
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
-def check_old(old_paths, md_files):
-    new_blob = " ".join(normalize_for_compare(l) for p in md_files for l in read(p).splitlines())
-    new_numbers = set(re.findall(r"\d+(?:[.,]\d+)?", new_blob))
-    for old in old_paths:
-        missing_lines, missing_nums = [], set()
-        for lineno, line in enumerate(read(old).splitlines(), 1):
-            if re.match(r"^\s*(#|```|~~~|\|?\s*:?-{3})", line):
+def number_key(s: str) -> float:
+    try:
+        return float(s.replace(",", "."))
+    except ValueError:
+        return float("inf")
+
+
+# --------------------------------------------------------------------------
+# Checker
+# --------------------------------------------------------------------------
+
+
+class Checker:
+    def __init__(self, root: Path, gdd_name: str | None, old: list[Path]) -> None:
+        self.root = Path(os.path.normpath(str(root.resolve())))
+        self.gdd_name = gdd_name
+        self.old = [Path(os.path.normpath(str(p.resolve()))) for p in old]
+        self.issues: list[Issue] = []
+        self.files_checked = 0
+        self._text: dict[Path, str | None] = {}
+        self._anchors: dict[Path, set[str] | None] = {}
+
+    # -- reporting -----------------------------------------------------------
+
+    def show(self, path: Path) -> str:
+        try:
+            rel = Path(os.path.relpath(path, self.root))
+        except ValueError:  # another drive on Windows
+            return path.as_posix()
+        if rel.parts[:3] == ("..", "..", ".."):
+            return path.as_posix()
+        return rel.as_posix()
+
+    def add(self, level: str, code: str, path: Path, line: int | None, message: str, fix: str) -> None:
+        self.issues.append(Issue(level, code, self.show(path), line, message, fix))
+
+    def error(self, code: str, path: Path, line: int | None, message: str, fix: str) -> None:
+        self.add("ERROR", code, path, line, message, fix)
+
+    def warn(self, code: str, path: Path, line: int | None, message: str, fix: str) -> None:
+        self.add("WARNING", code, path, line, message, fix)
+
+    def note(self, code: str, path: Path, line: int | None, message: str) -> None:
+        self.add("NOTE", code, path, line, message, "No action needed.")
+
+    # -- reading -------------------------------------------------------------
+
+    def read(self, path: Path, report: bool = True) -> str | None:
+        """Text of a file, or None when it can't be read. Never raises."""
+        if path in self._text:
+            return self._text[path]
+        text: str | None
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            text = None
+            if report:
+                self.warn("unreadable", path, None, f"cannot read file ({exc.strerror or exc})",
+                          "Check that it is a regular file you can read, or move it out of the docs folder.")
+        else:
+            try:
+                text = raw.decode("utf-8-sig")
+            except UnicodeDecodeError as exc:
+                try:
+                    text = raw.decode("cp1252")
+                except UnicodeDecodeError:
+                    text = raw.decode("latin-1")
+                if report:
+                    line = raw[: exc.start].count(b"\n") + 1
+                    self.warn("not-utf8", path, line, "file is not valid UTF-8; read it as Windows-1252 instead",
+                              "Re-save the file as UTF-8 so non-ASCII text shows correctly on GitHub and in editors.")
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
+        self._text[path] = text
+        return text
+
+    def anchors(self, path: Path) -> set[str] | None:
+        if path not in self._anchors:
+            text = self.read(path, report=False) if path.is_file() else None
+            self._anchors[path] = anchors_of(text) if text is not None else None
+        return self._anchors[path]
+
+    # -- discovery -----------------------------------------------------------
+
+    def find_root_file(self, name: str) -> Path | None:
+        try:
+            entries = list(self.root.iterdir())
+        except OSError:
+            return None
+        for entry in entries:
+            if entry.name.lower() == name.lower() and entry.is_file():
+                return entry
+        return None
+
+    def markdown_files(self) -> list[Path]:
+        found: list[Path] = []
+        for dirpath, dirnames, filenames in os.walk(self.root):
+            dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+            for name in sorted(filenames):
+                if name.lower().endswith(".md"):
+                    path = Path(os.path.normpath(os.path.join(dirpath, name)))
+                    if path not in self.old:
+                        found.append(path)
+        return found
+
+    # -- checks --------------------------------------------------------------
+
+    def run(self) -> None:
+        if not self.root.is_dir():
+            raise UsageProblem(f"{self.root}: not a folder")
+        for old in self.old:
+            if not old.is_file():
+                raise UsageProblem(f"--old {old}: file not found")
+
+        if self.gdd_name:
+            gdd: Path | None = Path(os.path.normpath(str(self.root / self.gdd_name)))
+            if not gdd.is_file():
+                raise UsageProblem(f"--gdd {self.gdd_name}: no such file in {self.root}")
+        else:
+            gdd = self.find_root_file("GDD.md")
+        features_dir = self.root / "features"
+        if gdd is None and not features_dir.is_dir():
+            raise UsageProblem(
+                f"{self.root}: no GDD.md and no features/ folder; pass the docs folder, or name the GDD with --gdd")
+
+        md_files = self.markdown_files()
+        for path in md_files:
+            self.read(path)
+        self.files_checked = len(md_files)
+
+        self.check_links(md_files)
+
+        if gdd is None:
+            self.warn("gdd-missing", self.root, None, "no GDD.md in the docs folder",
+                      "Create the GDD from references/gdd-template.md, or pass its file name with --gdd.")
+        if self.find_root_file("ARCHITECTURE.md") is None:
+            self.warn("architecture-missing", self.root, None, "no ARCHITECTURE.md in the docs folder",
+                      "Create it from references/architecture-template.md (it may be short before code exists).")
+
+        folders = self.feature_folders(features_dir)
+        statuses = {slug: self.check_feature(features_dir / slug, slug) for slug in folders}
+
+        if gdd is not None:
+            self.check_index(gdd, folders, statuses)
+
+        if self.old:
+            self.check_old(md_files)
+
+    def check_links(self, md_files: list[Path]) -> None:
+        for path in md_files:
+            text = self._text.get(path)
+            if text is None:
                 continue
-            # table rows are compared cell by cell; prose line by line
-            chunks = line.strip().strip("|").split("|") if line.strip().startswith("|") else [line]
-            for chunk in chunks:
-                n = normalize_for_compare(chunk)
-                if len(n) < 20:
+            lines = text.split("\n")
+            plain = outside_fences(lines)
+            for lineno, line in enumerate(lines, 1):
+                if not plain[lineno - 1]:
                     continue
-                if n not in new_blob:
-                    missing_lines.append((lineno, chunk.strip()[:110]))
-                missing_nums.update(x for x in re.findall(r"\d+(?:[.,]\d+)?", n) if x not in new_numbers)
-        name = os.path.basename(old)
-        if missing_lines:
-            warns.append("--old %s: %d line(s)/cell(s) not found verbatim in new docs:" % (name, len(missing_lines)))
-            warns.extend("    %s:%d  %s" % (name, ln, txt) for ln, txt in missing_lines)
-        if missing_nums:
-            errors.append("--old %s: numbers that appear nowhere in the new docs: %s" % (name, ", ".join(sorted(missing_nums, key=lambda s: float(s.replace(",", "."))))))
-        if not missing_lines and not missing_nums:
-            infos.append("--old %s: all content found in new docs" % name)
+                for m in LINK_RE.finditer(strip_inline_code(line)):
+                    target = m.group(1)
+                    if target.startswith("<"):
+                        target = target[1:-1].strip()
+                    if not target or SCHEME_RE.match(target):  # http:, mailto:, ...
+                        continue
+                    file_part, _, anchor = target.partition("#")
+                    file_part = unquote(file_part.split("?", 1)[0])
+                    anchor = unquote(anchor)
+                    if file_part.startswith("/"):
+                        self.warn("absolute-link", path, lineno, f"absolute link -> {target}",
+                                  "Use a relative link (../GDD.md) so it works on GitHub, in editors and offline.")
+                        continue
+                    dest = path if not file_part else Path(os.path.normpath(str(path.parent / file_part)))
+                    if not dest.exists():
+                        self.error("broken-link", path, lineno, f"broken link -> {target}",
+                                   "Fix the path (relative to this file) or create the missing file.")
+                        continue
+                    if anchor and dest.suffix.lower() == ".md":
+                        found = self.anchors(dest)
+                        if found is not None and anchor.lower() not in found:
+                            self.warn("anchor-not-found", path, lineno, f"anchor not found -> {target}",
+                                      "Match the heading's GitHub anchor: lower case, punctuation dropped,"
+                                      " spaces as '-' (\"## 3. Feature index\" is #3-feature-index).")
 
+    def feature_folders(self, features_dir: Path) -> list[str]:
+        if not features_dir.is_dir():
+            return []
+        try:
+            entries = sorted(features_dir.iterdir())
+        except OSError:
+            return []
+        folders = [e.name for e in entries if e.is_dir() and not e.name.startswith(".")]
+        for slug in folders:
+            if not SLUG_RE.match(slug):
+                self.warn("slug-not-kebab", features_dir / slug, None, f"slug '{slug}' is not lowercase kebab-case",
+                          "Use a short kebab-case noun for new features; don't rename existing ones (links depend on them).")
+        return folders
 
-def main():
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("docs")
-    ap.add_argument("--old", nargs="+", default=[], help="pre-migration docs to compare against (keep them outside docs/)")
-    args = ap.parse_args()
-    root = os.path.abspath(args.docs)
-    if not os.path.isdir(root):
-        sys.exit("not a directory: %s" % root)
-
-    md_files = []
-    for dp, dn, fn in os.walk(root):
-        dn[:] = [d for d in dn if not d.startswith(".")]
-        md_files += [os.path.join(dp, f) for f in fn if f.lower().endswith(".md")]
-    old_abs = {os.path.abspath(p) for p in args.old}
-    md_files = sorted(p for p in md_files if os.path.abspath(p) not in old_abs)
-
-    check_links(md_files, root)
-
-    gdd = os.path.join(root, "GDD.md")
-    if not os.path.exists(os.path.join(root, "ARCHITECTURE.md")):
-        warns.append("no ARCHITECTURE.md")
-    index = None
-    if os.path.exists(gdd):
-        index = parse_index(read(gdd))
-        if index is None:
-            errors.append("GDD.md has no feature index table (a table with 'Feature' and 'Status' columns)")
-    else:
-        warns.append("no GDD.md")
-
-    fdir = os.path.join(root, "features")
-    folders = sorted(d for d in os.listdir(fdir) if os.path.isdir(os.path.join(fdir, d))) if os.path.isdir(fdir) else []
-    for slug in folders:
+    def check_feature(self, fdir: Path, slug: str) -> str | None:
         for doc in FEATURE_DOCS:
-            if not os.path.exists(os.path.join(fdir, slug, doc)):
-                errors.append("features/%s/ is missing %s" % (slug, doc))
-        if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", slug):
-            warns.append("features/%s: slug should be lowercase kebab-case" % slug)
+            if not (fdir / doc).is_file():
+                self.error("feature-doc-missing", fdir, None, f"features/{slug}/ is missing {doc}",
+                           f"Create {doc} from references/feature-templates.md.")
+        parts: list[str] = []
+        status: str | None = None
+        design = fdir / "design.md"
+        design_text = self.read(design) if design.is_file() else None
+        if design_text is not None:
+            m = STATUS_RE.search(design_text)
+            if m:
+                status = norm_status(m.group(1))
+            else:
+                self.error("design-no-status", design, 1, "no '**Status:** ...' in the header",
+                           "Add '**Status:** <status>' to the header line, matching the GDD index.")
+        testing = fdir / "testing.md"
+        testing_text = self.read(testing) if testing.is_file() else None
+        if testing_text is not None:
+            total = proven = 0
+            lines = testing_text.split("\n")
+            plain = outside_fences(lines)
+            for lineno, line in enumerate(lines, 1):
+                m = CRIT_RE.match(line)
+                if not m or not plain[lineno - 1]:
+                    continue
+                total += 1
+                if m.group(1) in "xX":
+                    proven += 1
+                    if not re.search(r"\(.+\)\s*\**\s*$", m.group(2)):
+                        self.warn("ticked-no-proof", testing, lineno, "ticked criterion has no proof in (...)",
+                                  "Name the test or dated check in parentheses at the end, or untick it.")
+            parts.append(f"{proven}/{total} criteria proven")
+        assumptions = 0
+        for doc in FEATURE_DOCS:
+            text = self._text.get(Path(os.path.normpath(str(fdir / doc))))
+            if text:
+                assumptions += text.count("[ASSUMPTION]")
+        if assumptions:
+            parts.append(f"{assumptions} [ASSUMPTION]")
+        summary = " · ".join([status or "no status"] + parts)
+        self.note("feature-summary", fdir, None, f"{slug}: {summary}")
+        return status
 
-    statuses = {}
-    for slug in folders:
-        statuses[slug], parts = feature_summary(os.path.join(fdir, slug), slug)
-        infos.append("%-24s %-24s %s" % (slug, statuses[slug] or "?", " · ".join(parts)))
+    def parse_index(self, text: str) -> list[dict[str, object]] | None:
+        """Rows of the first table whose header has Feature and Status columns."""
+        lines = text.split("\n")
+        plain = outside_fences(lines)
+        for i, line in enumerate(lines):
+            if not plain[i] or not line.strip().startswith("|"):
+                continue
+            cells = [c.strip().lower() for c in line.strip().strip("|").split("|")]
+            if not ("feature" in cells and "status" in cells and i + 1 < len(lines)
+                    and re.match(r"^\s*\|?\s*:?-", lines[i + 1])):
+                continue
+            fi, si = cells.index("feature"), cells.index("status")
+            di = cells.index("docs") if "docs" in cells else None  # summaries may link other features
+            rows: list[dict[str, object]] = []
+            for j in range(i + 2, len(lines)):
+                row = lines[j].strip()
+                if not row.startswith("|"):
+                    break
+                rc = [c.strip() for c in row.strip("|").split("|")]
+                if len(rc) <= max(fi, si):
+                    continue
+                where = rc[di] if di is not None and di < len(rc) else row
+                slugs = set(re.findall(r"features/([^/)\s#]+)/", where))
+                rows.append({"line": j + 1, "feature": rc[fi], "status": norm_status(rc[si]), "slugs": slugs})
+            return rows
+        return None
 
-    if index is not None:
-        indexed = set()
+    def check_index(self, gdd: Path, folders: list[str], statuses: dict[str, str | None]) -> None:
+        text = self.read(gdd)
+        if text is None:
+            return
+        index = self.parse_index(text)
+        if index is None:
+            self.error("gdd-no-index", gdd, None, "no feature index table (a table with 'Feature' and 'Status' columns)",
+                       "Add the Feature index section from references/gdd-template.md.")
+            return
+        indexed: set[str] = set()
         for row in index:
-            if row["status"] not in STATUSES:
-                warns.append("GDD.md:%d '%s' has unknown status '%s' (use: %s)" % (row["line"], row["feature"], row["status"], ", ".join(STATUSES)))
-            if not row["slugs"] and row["status"] not in ("idea", "cut"):
-                warns.append("GDD.md:%d '%s' is '%s' but links no feature folder" % (row["line"], row["feature"], row["status"]))
-            for slug in row["slugs"]:
+            line, feature, status = int(row["line"]), row["feature"], str(row["status"])
+            slugs = sorted(row["slugs"])  # type: ignore[arg-type]
+            if status not in STATUSES:
+                self.warn("unknown-status", gdd, line, f"'{feature}' has unknown status '{status}'",
+                          "Use one of: " + ", ".join(STATUSES) + ".")
+            if not slugs and status not in ("idea", "cut"):
+                self.warn("row-no-folder", gdd, line, f"'{feature}' is '{status}' but links no feature folder",
+                          "Link its features/<slug>/ docs, or set the status to idea if no folder exists yet.")
+            for slug in slugs:
                 indexed.add(slug)
                 if slug not in folders:
-                    errors.append("GDD.md:%d '%s' links features/%s/ which doesn't exist" % (row["line"], row["feature"], slug))
-                elif statuses.get(slug) and statuses[slug] != row["status"]:
-                    errors.append("status mismatch for %s: GDD index says '%s', design.md says '%s'" % (slug, row["status"], statuses[slug]))
+                    self.error("index-folder-missing", gdd, line, f"'{feature}' links features/{slug}/, which doesn't exist",
+                               "Create the feature folder, or fix the slug in the link.")
+                elif statuses.get(slug) and statuses[slug] != status:
+                    self.error("status-mismatch", gdd, line,
+                               f"'{feature}': GDD index says '{status}', features/{slug}/design.md says '{statuses[slug]}'",
+                               "Set the same status in both places.")
         for slug in folders:
             if slug not in indexed:
-                errors.append("features/%s/ is not in the GDD feature index" % slug)
+                self.warn("folder-not-indexed", self.root / "features" / slug, None,
+                          f"features/{slug}/ is not in the GDD feature index",
+                          "Add a row for it to the GDD's feature index, linking its docs.")
 
-    if args.old:
-        check_old(args.old, md_files)
+    def check_old(self, md_files: list[Path]) -> None:
+        new_lines = [normalize_for_compare(line) for p in md_files for line in (self._text.get(p) or "").split("\n")]
+        new_blob = " ".join(new_lines)
+        new_numbers = set(NUMBER_RE.findall(new_blob))
+        for old in self.old:
+            text = self.read(old)
+            if text is None:
+                continue
+            missing_lines = 0
+            missing_nums: set[str] = set()
+            for lineno, line in enumerate(text.split("\n"), 1):
+                if re.match(r"^\s*(#|```|~~~|\|?\s*:?-{3})", line):
+                    continue
+                # table rows are compared cell by cell; prose line by line
+                chunks = line.strip().strip("|").split("|") if line.strip().startswith("|") else [line]
+                for chunk in chunks:
+                    n = normalize_for_compare(chunk)
+                    if len(n) < 20:
+                        continue
+                    if n not in new_blob:
+                        missing_lines += 1
+                        self.warn("old-line-missing", old, lineno, f"not found verbatim in the new docs: {chunk.strip()[:110]}",
+                                  "Check it was moved (reworded is fine) and put it back if it was lost.")
+                    missing_nums.update(x for x in NUMBER_RE.findall(n) if x not in new_numbers)
+            if missing_nums:
+                nums = ", ".join(sorted(missing_nums, key=number_key))
+                self.warn("old-number-missing", old, None, f"numbers that appear nowhere in the new docs: {nums}",
+                          "Find each number's old line; a lost number is usually a lost rule or tuning value.")
+            if not missing_lines and not missing_nums:
+                self.note("old-all-found", old, None, "all content found in the new docs")
 
-    for label, items in (("INFO ", infos), ("WARN ", warns), ("ERROR", errors)):
-        for item in items:
-            print("%s %s" % (label, item))
-    print("\n%d file(s), %d feature(s): %d error(s), %d warning(s)" % (len(md_files), len(folders), len(errors), len([w for w in warns if not w.startswith("    ")])))
-    sys.exit(1 if errors else 0)
+
+# --------------------------------------------------------------------------
+# Output
+# --------------------------------------------------------------------------
+
+
+def split_issues(issues: list[Issue]) -> tuple[list[Issue], list[Issue], list[Issue]]:
+    def key(i: Issue) -> tuple[str, int]:
+        return (i.file, i.line or 0)
+
+    by = {lvl: sorted((i for i in issues if i.level == lvl), key=key) for lvl in ("ERROR", "WARNING", "NOTE")}
+    return by["ERROR"], by["WARNING"], by["NOTE"]
+
+
+def limit(checker: Checker, max_issues: int) -> tuple[list[Issue], list[Issue], list[Issue], int]:
+    errors, warnings, notes = split_issues(checker.issues)
+    if max_issues <= 0:
+        return errors, warnings, notes, 0
+    e = errors[:max_issues]
+    w = warnings[: max(0, max_issues - len(e))]
+    n = notes[: max(0, max_issues - len(e) - len(w))]
+    return e, w, n, len(errors) + len(warnings) + len(notes) - len(e) - len(w) - len(n)
+
+
+def render_text(checker: Checker, max_issues: int) -> str:
+    errors, warnings, notes = split_issues(checker.issues)
+    e, w, n, omitted = limit(checker, max_issues)
+    lines: list[str] = []
+    for issue in e + w + n:
+        where = f"{issue.file}:{issue.line}" if issue.line is not None else issue.file
+        lines.append(f"{issue.level} {where}: {issue.message}")
+        if issue.level != "NOTE":
+            lines.append(f"  fix: {issue.fix}")
+    if omitted:
+        lines.append(f"... and {omitted} more")
+    lines.append(f"Summary: {len(errors)} errors, {len(warnings)} warnings in {checker.files_checked} files checked")
+    if notes:
+        lines.append(f"Notes: {len(notes)} informational findings (do not affect --strict)")
+    return "\n".join(lines)
+
+
+def render_json(checker: Checker, max_issues: int) -> str:
+    errors, warnings, notes = split_issues(checker.issues)
+    e, w, n, omitted = limit(checker, max_issues)
+    payload = {
+        "tool": TOOL,
+        "schema": SCHEMA,
+        "root": checker.root.as_posix(),
+        "files_checked": checker.files_checked,
+        "error_count": len(errors),
+        "warning_count": len(warnings),
+        "note_count": len(notes),
+        "errors": [i.as_json() for i in e],
+        "warnings": [i.as_json() for i in w],
+        "notes": [i.as_json() for i in n],
+        "truncated": omitted > 0,
+    }
+    return json.dumps(payload, indent=2, ensure_ascii=False)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="check_docs.py",
+        description=(
+            "Check a game docs folder (a GDD, ARCHITECTURE.md and features/<slug>/ with design.md,"
+            " implementation.md and testing.md) for broken links, missing docs and status mismatches."
+            " Read-only."
+        ),
+        epilog=(
+            "examples:\n"
+            "  python scripts/check_docs.py docs\n"
+            "  python scripts/check_docs.py design --gdd game-design.md\n"
+            "  python scripts/check_docs.py docs --old ../scratch/old-GDD.md\n"
+            "  python scripts/check_docs.py docs --json --strict\n\n"
+            "exit codes: 0 no errors, 1 errors (or warnings with --strict),\n"
+            "            2 usage problem, a missing folder or file, or no GDD and no features/"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("docs_dir", metavar="DOCS_DIR", help="the docs folder that holds the GDD and features/")
+    parser.add_argument("--gdd", metavar="FILE", help="GDD file name inside DOCS_DIR (default: GDD.md, any case)")
+    parser.add_argument("--old", nargs="+", default=[], metavar="FILE",
+                        help="pre-migration docs to compare against (keep them outside DOCS_DIR)")
+    parser.add_argument("--json", action="store_true", help="print one JSON object instead of text")
+    parser.add_argument("--strict", action="store_true", help="exit 1 on warnings too")
+    parser.add_argument("--max-issues", type=int, default=50, metavar="N",
+                        help="print at most N issues (default 50, 0 = no limit); totals are unchanged")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.max_issues < 0:
+        parser.error("--max-issues must be 0 or more")
+    target = Path(args.docs_dir)
+    if not target.is_dir():
+        print(f"{TOOL}: {target}: folder not found", file=sys.stderr)
+        return 2
+    checker = Checker(target, args.gdd, [Path(p) for p in args.old])
+    try:
+        checker.run()
+    except UsageProblem as exc:
+        print(f"{TOOL}: {exc}", file=sys.stderr)
+        return 2
+    print(render_json(checker, args.max_issues) if args.json else render_text(checker, args.max_issues))
+    errors, warnings, _ = split_issues(checker.issues)
+    if errors or (args.strict and warnings):
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

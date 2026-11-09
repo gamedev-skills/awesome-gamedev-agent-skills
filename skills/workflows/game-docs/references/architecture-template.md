@@ -1,6 +1,6 @@
 # ARCHITECTURE template
 
-Copy into `docs/ARCHITECTURE.md`. This is the game-wide technical picture: things more than one feature depends on. A feature's own modules, data and events go in its `implementation.md`, which links back here for the shared parts.
+Copy into `ARCHITECTURE.md` next to the GDD (by default `docs/ARCHITECTURE.md`). If the GDD has another file name, change the `[GDD](GDD.md)` link to match. This is the game-wide technical picture: things more than one feature depends on. A feature's own modules, data and events go in its `implementation.md`, which links back here for the shared parts.
 
 Before code exists, write the intended architecture and mark it `planned`. Once code exists, **describe the code as it is**. Read the repo, and use real paths and names. Text in *italics* is guidance; don't copy it.
 

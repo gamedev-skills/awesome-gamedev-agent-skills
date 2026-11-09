@@ -88,7 +88,8 @@ After the engine, read the request for task signals (three **additive** categori
   words ("make a roguelike", "deckbuilder").
 - **workflows** (process/shipping): `game-jam`, `prototype-fast`, `steam-publish`,
   `itch-publish`, `game-docs`. Triggered by process words ("publish on Steam", "vertical slice",
-  "draft a GDD").
+  "draft a GDD"). Add `game-docs` only when the user asks for docs or the project already has a
+  GDD; a plain "make a game" or "add a feature" does not pull it in.
 
 File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel`; `steam_appid.txt`
 → `steam-publish`; `*.inputactions` → `unity-input-system`.
@@ -180,7 +181,7 @@ pointers, and state the gap.
 
 `game-jam` (jam, 48-hour, Ludum Dare/GMTK) · `prototype-fast` (vertical slice, MVP, greybox) ·
 `steam-publish` (Steam, Steamworks, depot; `steam_appid.txt`) · `itch-publish` (itch.io, butler;
-`.itch.toml`) · `game-docs` (GDD, feature design doc, sync docs; `docs/GDD.md`).
+`.itch.toml`) · `game-docs` (GDD, feature design doc, sync docs; only when asked or an existing GDD).
 
 For the exhaustive per-skill trigger list and every engine binding, read
 `references/routing-table.md`.
