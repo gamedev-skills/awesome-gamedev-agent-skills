@@ -93,8 +93,9 @@ def build_parser() -> argparse.ArgumentParser:
             "example:\n"
             "  python scripts/build_report.py ~/Library/Logs/Unity/Editor.log\n"
             "  python scripts/build_report.py build.log --top 30 --budget-mb 200 --json\n\n"
-            "exit codes: 0 report found (and within --budget-mb), 1 no report in the log or\n"
-            "            over budget, 2 usage problem or unreadable log"
+            "exit codes: 0 report found (and within --budget-mb), 1 no report in the log,\n"
+            "            over budget, or --budget-mb set but the report has no complete build size,\n"
+            "            2 usage problem or unreadable log"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -107,7 +108,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--budget-mb",
         type=float,
         metavar="MB",
-        help="exit 1 when the complete build size (uncompressed) is above this many MB",
+        help="exit 1 when the complete build size (uncompressed) is above this many MB, "
+        "or when the report has no complete build size to compare",
     )
     return parser
 
@@ -141,7 +143,8 @@ def main(argv: list[str] | None = None) -> int:
 
     top = report.assets if args.top == 0 else report.assets[: args.top]
     budget = None if args.budget_mb is None else round(args.budget_mb * 1024**2)
-    over = budget is not None and report.complete_bytes is not None and report.complete_bytes > budget
+    unchecked = budget is not None and report.complete_bytes is None
+    over = budget is not None and not unchecked and report.complete_bytes > budget
 
     if args.json:
         print(
@@ -154,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
                     "complete_bytes": report.complete_bytes,
                     "budget_bytes": budget,
                     "over_budget": over,
+                    "budget_checked": budget is not None and not unchecked,
                     "categories": report.categories,
                     "asset_count": len(report.assets),
                     "assets": top,
@@ -173,7 +177,13 @@ def main(argv: list[str] | None = None) -> int:
         if over:
             print(f"OVER BUDGET: {human(report.complete_bytes)} > {human(budget)}")
 
-    return 1 if over else 0
+    if unchecked:
+        print(
+            "error: --budget-mb is set but the Build Report has no 'Complete build size' line "
+            "(cut-off log or a different layout), so the budget was not checked",
+            file=sys.stderr,
+        )
+    return 1 if over or unchecked else 0
 
 
 if __name__ == "__main__":

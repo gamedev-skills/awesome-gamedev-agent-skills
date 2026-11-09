@@ -10,14 +10,16 @@ WARNINGS (probably wasting space; each one might still be intentional)
                          images with Texture2D.LoadImage, so they ship as
                          uncompressed RGBA32/RGB24 with a full mip chain.
   uncompressed-texture   A texture whose effective platform setting has
-                         Compression = None and whose source is at least 1024 px.
+                         Compression = None (or an explicit uncompressed Format)
+                         and whose source is at least 1024 px.
   texture-max-size       A texture whose effective Max Size is above
                          --max-texture-size and whose source is that large too.
   pcm-audio              An AudioClip of 1 MB or more whose default settings use
                          PCM (no compression).
   large-resources-asset  A file of 8 MB or more inside a Resources folder. Every
                          asset in a Resources folder ships, used or not.
-  gltf-unreadable        A .glb/.gltf that could not be parsed.
+  gltf-unreadable        A .glb/.gltf that could not be parsed or has an
+                         unexpected structure.
 
 NOTES (informational, never affect the exit status)
   gltf-embedded-images   A glTFast model whose embedded images are all within the
@@ -46,6 +48,7 @@ import base64
 import json
 import os
 import re
+import shlex
 import struct
 import sys
 from dataclasses import dataclass, field
@@ -63,6 +66,37 @@ AUDIO_EXTENSIONS = frozenset({".wav", ".aif", ".aiff", ".mp3", ".ogg", ".flac", 
 # TextureImporterCompression.Uncompressed and AudioCompressionFormat.PCM as stored in .meta files.
 UNCOMPRESSED = 0
 PCM = 0
+
+# TextureImporterFormat.Automatic. Any other value is an explicit format, and Unity then ignores
+# textureCompression for that platform.
+AUTOMATIC_FORMAT = -1
+
+# Explicit TextureImporterFormat values that store pixels uncompressed: value -> (name, bytes per pixel).
+# Every other explicit format is block-compressed (DXT, BC, ETC, EAC, ASTC, PVRTC, crunched).
+UNCOMPRESSED_FORMATS = {
+    1: ("Alpha8", 1),
+    2: ("ARGB16", 2),
+    3: ("RGB24", 3),
+    4: ("RGBA32", 4),
+    5: ("ARGB32", 4),
+    7: ("RGB16", 2),
+    9: ("R16", 2),
+    13: ("RGBA16", 2),
+    15: ("RHalf", 2),
+    16: ("RGHalf", 4),
+    17: ("RGBAHalf", 8),
+    18: ("RFloat", 4),
+    19: ("RGFloat", 8),
+    20: ("RGBAFloat", 16),
+    21: ("YUY2", 2),
+    22: ("RGB9E5", 4),
+    62: ("RG16", 2),
+    63: ("R8", 1),
+    72: ("RG32", 4),
+    73: ("RGB48", 6),
+    74: ("RGBA64", 8),
+}
+UNCOMPRESSED_AUTOMATIC_BPP = 4
 
 UNCOMPRESSED_MIN_PX = 1024
 PCM_MIN_BYTES = 1024 * 1024
@@ -90,7 +124,9 @@ JPEG_SOF = frozenset({0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB
 JPEG_NO_LENGTH = frozenset({0x01, *range(0xD0, 0xDA)})
 
 PLATFORM_ENTRY_RE = re.compile(r"^  - serializedVersion:")
-PLATFORM_KEY_RE = re.compile(r"^    (buildTarget|maxTextureSize|textureCompression|overridden):\s*(\S+)\s*$")
+PLATFORM_KEY_RE = re.compile(
+    r"^    (buildTarget|maxTextureSize|textureFormat|textureCompression|overridden):\s*(\S+)\s*$"
+)
 IMPORTER_RE = re.compile(r"^[A-Za-z]+Importer:$")
 AUDIO_FORMAT_RE =re.compile(r"^    compressionFormat:\s*(-?\d+)\s*$")
 AUDIO_OVERRIDES_RE = re.compile(r"^  platformSettingOverrides:\s*(\{\})?\s*$")
@@ -125,7 +161,8 @@ class Scan:
 
 
 def quoted(path: str) -> str:
-    return f'"{path}"'
+    """Quote a path for a POSIX shell, so names with $(...) or backticks paste safely."""
+    return shlex.quote(path)
 
 
 def mb(size: int) -> str:
@@ -227,6 +264,7 @@ def decode_data_uri(uri: str) -> bytes | None:
 def read_glb_chunks(path: Path) -> tuple[dict, int | None, int]:
     """Return (glTF JSON, offset of the BIN chunk data or None, BIN length)."""
     with path.open("rb") as handle:
+        file_size = os.fstat(handle.fileno()).st_size
         header = handle.read(12)
         if len(header) < 12:
             raise ValueError("file is shorter than a GLB header")
@@ -243,6 +281,8 @@ def read_glb_chunks(path: Path) -> tuple[dict, int | None, int]:
             if len(chunk_header) < 8:
                 break
             length, kind = struct.unpack("<II", chunk_header)
+            if length > file_size - handle.tell():
+                raise ValueError("a chunk length runs past the end of the file")
             if kind == GLB_JSON and gltf is None:
                 gltf = json.loads(handle.read(length).decode("utf-8"))
                 continue
@@ -295,6 +335,8 @@ def read_model(path: Path) -> Model:
         gltf, bin_offset, _ = read_glb_chunks(path)
     else:
         gltf, bin_offset = json.loads(path.read_text(encoding="utf-8")), None
+    if not isinstance(gltf, dict):
+        raise ValueError("the glTF JSON root is not an object")
     views = gltf.get("bufferViews") or []
     buffer_bytes = sum(buffer.get("byteLength", 0) for buffer in gltf.get("buffers") or [])
     image_bytes = 0
@@ -316,6 +358,35 @@ def read_model(path: Path) -> Model:
     return Model(found, max(0, buffer_bytes - image_bytes))
 
 
+def unreadable(scan: Scan, path: Path, message: str) -> None:
+    scan.add(
+        "warning",
+        "gltf-unreadable",
+        path,
+        None,
+        message,
+        "open it in a glTF viewer or re-export it; glTFast will fail to import it too",
+    )
+
+
+def resize_fix(scan: Scan, path: Path) -> str:
+    command = (
+        f"from the project folder run {GLTF_TRANSFORM} resize {quoted(scan.rel(path))} "
+        f"{quoted(scan.rel(path))} --width {scan.max_texture_size} --height {scan.max_texture_size}"
+    )
+    if path.suffix.lower() == ".gltf":
+        # gltf-transform writes a .gltf's images as separate files, so this is really Fix B.
+        return (
+            f"{command}; for a .gltf this writes the images out as separate files that the Texture "
+            "Importer compresses, so turn sRGB (Color Texture) off on every data map such as normal, "
+            "metallic-roughness and occlusion (references/gltf-textures.md, Fix B)"
+        )
+    return (
+        f"{command}, or move the images out of the model so the Texture Importer compresses them "
+        "(references/gltf-textures.md)"
+    )
+
+
 def check_gltf(scan: Scan, path: Path) -> None:
     scan.files_checked += 1
     try:
@@ -331,14 +402,10 @@ def check_gltf(scan: Scan, path: Path) -> None:
             return
         model = read_model(path)
     except (OSError, ValueError, UnicodeDecodeError, struct.error) as exc:
-        scan.add(
-            "warning",
-            "gltf-unreadable",
-            path,
-            None,
-            f"could not read the model: {exc}",
-            "open it in a glTF viewer or re-export it; glTFast will fail to import it too",
-        )
+        unreadable(scan, path, f"could not read the model: {exc}")
+        return
+    except (TypeError, AttributeError, KeyError, IndexError, RecursionError, MemoryError, OverflowError):
+        unreadable(scan, path, "the glTF JSON does not have the structure the glTF 2.0 spec requires")
         return
     if model.geometry_bytes >= GEOMETRY_NOTE_BYTES:
         scan.add(
@@ -365,10 +432,7 @@ def check_gltf(scan: Scan, path: Path) -> None:
             f"{len(too_big)} of {len(images)} embedded images exceed {scan.max_texture_size} px "
             f"(largest image {largest.index}: {largest.width}x{largest.height} {largest.kind}); "
             f"glTFast ships them uncompressed, about {mb(total)} in the build",
-            f"from the project folder run {GLTF_TRANSFORM} resize {quoted(scan.rel(path))} "
-            f"{quoted(scan.rel(path))} --width {scan.max_texture_size} --height {scan.max_texture_size}, "
-            "or move the images out of the model so the Texture Importer compresses them "
-            "(references/gltf-textures.md)",
+            resize_fix(scan, path),
         )
     elif total >= NOTE_MIN_BYTES:
         scan.add(
@@ -391,6 +455,8 @@ class PlatformSetting:
     max_size: int | None = None
     compression: int | None = None
     compression_line: int | None = None
+    format: int = AUTOMATIC_FORMAT
+    format_line: int | None = None
     max_size_line: int | None = None
     overridden: bool = False
 
@@ -418,6 +484,8 @@ def texture_platforms(lines: list[str]) -> list[PlatformSetting]:
             current.build_target = value
         elif key == "maxTextureSize" and value.lstrip("-").isdigit():
             current.max_size, current.max_size_line = int(value), number
+        elif key == "textureFormat" and value.lstrip("-").isdigit():
+            current.format, current.format_line = int(value), number
         elif key == "textureCompression" and value.lstrip("-").isdigit():
             current.compression, current.compression_line = int(value), number
         elif key == "overridden":
@@ -435,6 +503,18 @@ def effective_platform(platforms: list[PlatformSetting], platform: str) -> Platf
     return None
 
 
+def uncompressed_storage(setting: PlatformSetting) -> tuple[str, int, int | None] | None:
+    """(what the setting says, bytes per pixel, .meta line) when the texture ships uncompressed."""
+    if setting.format != AUTOMATIC_FORMAT:
+        if setting.format not in UNCOMPRESSED_FORMATS:
+            return None
+        name, bpp = UNCOMPRESSED_FORMATS[setting.format]
+        return f"Format is {name}", bpp, setting.format_line
+    if setting.compression == UNCOMPRESSED:
+        return "Compression is None", UNCOMPRESSED_AUTOMATIC_BPP, setting.compression_line
+    return None
+
+
 def check_texture(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None:
     setting = effective_platform(texture_platforms(lines), scan.platform)
     if setting is None:
@@ -449,17 +529,24 @@ def check_texture(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None
     max_size = setting.max_size or longest
     shipped = min(longest, max_size)
     where = f"{setting.build_target} override" if setting.overridden else "default platform setting"
-    if setting.compression == UNCOMPRESSED and shipped >= UNCOMPRESSED_MIN_PX:
+    storage = uncompressed_storage(setting)
+    if storage and shipped >= UNCOMPRESSED_MIN_PX:
+        said, bpp, line = storage
         scale = shipped / longest
         width, height = max(1, round(size[0] * scale)), max(1, round(size[1] * scale))
+        fix = (
+            "set Format to Automatic (or a compressed format) unless this texture must stay lossless"
+            if setting.format != AUTOMATIC_FORMAT
+            else "set Compression to Normal Quality (or High Quality) unless this texture must stay lossless"
+        )
         scan.add(
             "warning",
             "uncompressed-texture",
             meta,
-            setting.compression_line,
-            f"Compression is None in the {where} for a {size[0]}x{size[1]} source; "
-            f"about {mb(mip_chain_bytes(width, height, 4))} in the build",
-            "set Compression to Normal Quality (or High Quality) unless this texture must stay lossless",
+            line,
+            f"{said} in the {where} for a {size[0]}x{size[1]} source; "
+            f"about {mb(mip_chain_bytes(width, height, bpp))} in the build",
+            fix,
         )
     if max_size > scan.max_texture_size and longest > scan.max_texture_size:
         scan.add(

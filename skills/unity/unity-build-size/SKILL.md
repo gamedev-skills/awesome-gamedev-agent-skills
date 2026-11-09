@@ -55,9 +55,11 @@ to `performance-optimization`. Store upload steps belong to `steam-publish` / `i
 4. **Fix the biggest category first**, smallest change first:
    - **glTF/GLB with embedded images** (`gltf-embedded-texture`): glTFast ships them
      uncompressed. Shrink them or move them out; read `references/gltf-textures.md`. The
-     `fix:` line holds a `gltf-transform` command to run from the project folder.
+     `fix:` line holds a `gltf-transform` command to run from the project folder. On a `.gltf`
+     that command writes the images out as separate files, so fix their sRGB setting too.
    - **Textures** (`uncompressed-texture`, `texture-max-size`): set Compression to Normal
-     Quality and lower Max Size, per platform if needed (Pattern 1).
+     Quality and lower Max Size, per platform if needed (Pattern 1). A platform override with
+     an explicit Format ignores Compression; set that Format to Automatic or a compressed one.
    - **Audio** (`pcm-audio`): Vorbis for music and ambience, ADPCM for short effects, Force To
      Mono where stereo adds nothing.
    - **Meshes**: for FBX/OBJ use the Model Importer's Mesh Compression; for glTF reduce the source
@@ -65,10 +67,16 @@ to `performance-optimization`. Store upload steps belong to `steam-publish` / `i
    - **Resources / StreamingAssets**: everything in a `Resources` folder ships; StreamingAssets is
      copied byte for byte. Move out what nothing loads.
    - **Scenes**: remove test scenes from the Scene List of the profile you build.
+   - **Player compression**: in the Build Profile's platform settings, set Compression Method to
+     LZ4HC for release builds (LZ4 builds faster while iterating). It compresses the player data
+     files on disk, so measure the build folder; the Build Report still shows uncompressed
+     sizes. Scripted builds pass `BuildOptions.CompressWithLz4HC`. Web builds use Player
+     Settings > Publishing Settings > Compression Format (Brotli) instead.
 5. **Rebuild and compare.** Rerun `build_report.py` and check that the categories you touched
    dropped. Use `--budget-mb` to fail a CI job over the limit.
-6. **Package only what runs** (Pattern 2): leave out `*_BurstDebugInformation_DoNotShip`, then
-   archive and measure the archive.
+6. **Package only what runs** (Pattern 2): leave `*_BurstDebugInformation_DoNotShip` and
+   IL2CPP's `*_BackUpThisFolder_ButDontShipItWithYourGame` out of the archive, then measure the
+   archive.
 7. **Prove it runs.** Launch the packaged player, reach gameplay, and look at the assets you
    shrank. When you cannot run the target platform, build the same project for your own platform
    and launch that instead, and say which one you tested.
@@ -121,14 +129,17 @@ and `textureCompression`, then `importer.SetPlatformTextureSettings(settings)`.
 
 ```bash
 # From the folder that holds the build folder (Windows example names)
-rm -rf "MyGame/MyGame_BurstDebugInformation_DoNotShip"
-zip -qr -9 MyGame.zip MyGame
+zip -qr -9 MyGame.zip MyGame \
+  -x '*_BurstDebugInformation_DoNotShip/*' '*_BackUpThisFolder_ButDontShipItWithYourGame/*'
+unzip -l MyGame.zip | grep -E 'DoNotShip|DontShip' || echo "debug folders excluded"
 ls -l MyGame.zip
 ```
 
-Burst writes its debug information (`lib_burst_generated.txt`, PDBs, dSYMs) into that folder
-"to ensure it is easy to remove the files that you should not ship" (Burst changelog). Keep a
-copy if you need to symbolicate crash reports.
+Burst writes its debug information (`lib_burst_generated.txt`, PDBs, dSYMs) into
+`*_BurstDebugInformation_DoNotShip` "to ensure it is easy to remove the files that you should
+not ship" (Burst changelog). IL2CPP builds also write `*_BackUpThisFolder_ButDontShipItWithYourGame`
+with the generated C++ and symbols. Both stay in the build folder; keep them (or archive them
+separately) so you can symbolicate crash reports from this build.
 
 ### 3. Fail CI over a budget
 
@@ -150,11 +161,11 @@ size separately when the limit is on the archive.
   sRGB on. Turn sRGB (Color Texture) off for every map except base color, emissive and the
   specular-glossiness pair.
 - **A compressed archive is still over the limit** → archivers usually gain little on data Unity
-  has already block-compressed; reduce resolution or remove assets before trying stronger
-  archive settings.
+  has already block-compressed or LZ4-compressed; reduce resolution or remove assets before
+  trying stronger archive settings.
 - **Size dropped in the Editor log but not on disk** → you measured an old build folder, or a
-  stale `*_BurstDebugInformation_DoNotShip` folder sits beside the data folder. Delete the output
-  folder and build clean.
+  stale `*_BurstDebugInformation_DoNotShip` or `*_BackUpThisFolder_ButDontShipItWithYourGame`
+  folder sits beside the data folder. Build into an empty output folder.
 - **An asset you never use still ships** → it sits in a `Resources` folder, or a scene in the
   build list references it. The Build Report lists every used asset; search the scenes for it.
 - **Textures look soft after lowering Max Size** → that texture fills more screen pixels than the

@@ -64,6 +64,11 @@ done
 The textures still ship uncompressed, so pick the edge from the table above. Unity reimports the
 models the next time the Editor gets focus, or at the start of a batch-mode run.
 
+**A `.gltf` input is different.** When `resize` writes a `.gltf`, it writes every image, including
+`data:` URIs, as a separate file next to it. The images then import through the Texture Importer,
+which is Fix B below: they get compressed, but also arrive with sRGB on. Follow the sRGB step in
+Fix B for those files. Only a `.glb` keeps its images embedded after Fix A.
+
 ## Fix B — move the images out so the Texture Importer compresses them
 
 `gltf-transform copy` writes a `.gltf` with its buffer and images as separate files:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import shlex
 import struct
 import subprocess
 import sys
@@ -57,13 +58,13 @@ def glb(images: list[bytes], geometry_bytes: int = 0) -> bytes:
 
 
 def texture_meta(default_compression: int = 1, default_max: int = 2048, override: dict | None = None) -> str:
-    def entry(target: str, max_size: int, compression: int, overridden: int) -> str:
+    def entry(target: str, max_size: int, compression: int, overridden: int, texture_format: int = -1) -> str:
         return (
             "  - serializedVersion: 4\n"
             f"    buildTarget: {target}\n"
             f"    maxTextureSize: {max_size}\n"
             "    resizeAlgorithm: 0\n"
-            "    textureFormat: -1\n"
+            f"    textureFormat: {texture_format}\n"
             f"    textureCompression: {compression}\n"
             "    compressionQuality: 50\n"
             f"    overridden: {overridden}\n"
@@ -76,7 +77,13 @@ def texture_meta(default_compression: int = 1, default_max: int = 2048, override
         f"  maxTextureSize: {default_max}\n"
         "  platformSettings:\n"
         + entry("DefaultTexturePlatform", default_max, default_compression, 0)
-        + entry("Standalone", standalone["max"], standalone["compression"], standalone["overridden"])
+        + entry(
+            "Standalone",
+            standalone["max"],
+            standalone["compression"],
+            standalone["overridden"],
+            standalone.get("format", -1),
+        )
         + "  spriteSheet:\n    serializedVersion: 2\n"
     )
 
@@ -153,7 +160,7 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         # 8192² RGBA32 with mips (341.3 MiB) plus 512² RGBA32 with mips (1.3 MiB)
         self.assertIn("about 342.7 MB", message)
         self.assertIn(
-            'npx @gltf-transform/cli@4 resize "Assets/Models/room.glb" "Assets/Models/room.glb" --width 2048',
+            "npx @gltf-transform/cli@4 resize Assets/Models/room.glb Assets/Models/room.glb --width 2048",
             data["warnings"][0]["fix"],
         )
 
@@ -179,7 +186,7 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         self.write("Assets/Models/plant.glb", glb([], geometry_bytes=40 * MIB))
         data = self.report()
         self.assertEqual(self.codes(data, "notes"), [("gltf-heavy-geometry", "Assets/Models/plant.glb")])
-        self.assertIn('simplify "Assets/Models/plant.glb" "Assets/Models/plant.glb"', data["notes"][0]["fix"])
+        self.assertIn("simplify Assets/Models/plant.glb Assets/Models/plant.glb", data["notes"][0]["fix"])
 
     def test_gltf_external_images_are_left_to_the_texture_importer(self) -> None:
         gltf = {
@@ -194,6 +201,43 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         data = self.report()
         self.assertEqual(self.codes(data, "warnings"), [("gltf-embedded-texture", "Assets/Models/table.gltf")])
         self.assertIn("1 of 1 embedded images", data["warnings"][0]["message"])
+
+    def test_fix_commands_quote_shell_metacharacters(self) -> None:
+        rel = "Assets/Models/$(touch pwned) `id`.glb"
+        self.write(rel, glb([png(4096, 4096)]))
+        fix = self.report()["warnings"][0]["fix"]
+        command = fix.split("run ", 1)[1].split(",", 1)[0]
+        self.assertEqual(shlex.split(command)[3:5], [rel, rel])
+        self.assertIn(shlex.quote(rel), fix)
+
+    def test_gltf_data_uri_fix_warns_about_srgb(self) -> None:
+        image = {"uri": "data:image/png;base64," + base64.b64encode(png(4096, 4096)).decode()}
+        self.write("Assets/Models/table.gltf", json.dumps({"asset": {"version": "2.0"}, "images": [image]}))
+        self.write("Assets/Models/room.glb", glb([png(4096, 4096)]))
+        fixes = {item["file"]: item["fix"] for item in self.report()["warnings"]}
+        self.assertIn("separate files", fixes["Assets/Models/table.gltf"])
+        self.assertIn("sRGB (Color Texture) off", fixes["Assets/Models/table.gltf"])
+        self.assertIn("Fix B", fixes["Assets/Models/table.gltf"])
+        self.assertNotIn("sRGB", fixes["Assets/Models/room.glb"])
+
+    def test_malformed_gltf_warns_without_a_traceback(self) -> None:
+        nested = "[" * 100_000 + "]" * 100_000
+        cases = {
+            "list_root.gltf": "[1, 2]",
+            "wrong_types.gltf": json.dumps({"buffers": [{"byteLength": "big"}], "images": [1]}),
+            "image_list.gltf": json.dumps({"images": [["bufferView"]], "bufferViews": {}}),
+            "nested.gltf": '{"images": ' + nested + "}",
+        }
+        for name, text in cases.items():
+            self.write(f"Assets/Models/{name}", text)
+        huge_chunk = struct.pack("<III", 0x46546C67, 2, 28) + struct.pack("<II", 0xFFFFFFF0, 0x4E4F534A) + b"{}  "
+        self.write("Assets/Models/huge_chunk.glb", huge_chunk)
+        result = self.run_checker("--json", "--max-issues", "0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        data = json.loads(result.stdout)
+        expected = sorted(("gltf-unreadable", f"Assets/Models/{name}") for name in [*cases, "huge_chunk.glb"])
+        self.assertEqual(self.codes(data, "warnings"), expected)
 
     def test_unreadable_glb_warns(self) -> None:
         self.write("Assets/Models/broken.glb", b"not a glb at all")
@@ -233,6 +277,22 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         self.assertEqual(self.report()["warning_count"], 0)
         android = self.report("--platform", "Android")
         self.assertEqual(self.codes(android, "warnings"), [("uncompressed-texture", "Assets/Textures/wall.png.meta")])
+
+    def test_explicit_format_decides_over_compression(self) -> None:
+        self.write("Assets/Textures/wall.png", png(2048, 2048))
+        etc2 = {"max": 2048, "compression": 0, "overridden": 1, "format": 47}  # ETC2_RGBA8
+        self.write("Assets/Textures/wall.png.meta", texture_meta(override=etc2))
+        self.assertEqual(self.report()["warning_count"], 0)
+
+        rgba32 = {"max": 2048, "compression": 1, "overridden": 1, "format": 4}
+        meta = self.write("Assets/Textures/wall.png.meta", texture_meta(override=rgba32))
+        data = self.report()
+        self.assertEqual(self.codes(data, "warnings"), [("uncompressed-texture", "Assets/Textures/wall.png.meta")])
+        warning = data["warnings"][0]
+        self.assertEqual(meta.read_text().splitlines()[warning["line"] - 1].strip(), "textureFormat: 4")
+        self.assertIn("Format is RGBA32 in the Standalone override", warning["message"])
+        self.assertIn("about 21.3 MB", warning["message"])
+        self.assertIn("Format to Automatic", warning["fix"])
 
     def test_small_uncompressed_texture_is_ignored(self) -> None:
         self.write("Assets/UI/icon.png", png(512, 512))

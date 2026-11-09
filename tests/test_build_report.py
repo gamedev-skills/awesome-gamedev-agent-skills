@@ -65,6 +65,7 @@ class BuildReportTests(unittest.TestCase):
         names = [category["name"] for category in data["categories"]]
         self.assertEqual(names, ["Textures", "Meshes", "Sounds", "Total User Assets"])
         self.assertFalse(data["over_budget"])
+        self.assertFalse(data["budget_checked"])
 
     def test_text_output_and_top(self) -> None:
         result = self.run_script(str(self.log), "--top", "1")
@@ -79,6 +80,17 @@ class BuildReportTests(unittest.TestCase):
         self.assertEqual(over.returncode, 1)
         self.assertIn("OVER BUDGET", over.stdout)
         self.assertEqual(self.run_script(str(self.log), "--budget-mb", "400").returncode, 0)
+
+    def test_budget_fails_when_complete_size_is_missing(self) -> None:
+        text = self.log.read_text(encoding="utf-8").splitlines(keepends=True)
+        self.log.write_text("".join(line for line in text if not line.startswith("Complete build size")), "utf-8")
+        result = self.run_script(str(self.log), "--budget-mb", "400", "--json")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("budget was not checked", result.stderr)
+        data = json.loads(result.stdout)
+        self.assertFalse(data["budget_checked"])
+        self.assertIsNone(data["complete_bytes"])
+        self.assertEqual(self.run_script(str(self.log)).returncode, 0)
 
     def test_log_without_report(self) -> None:
         empty = Path(self.temp_dir.name) / "empty.log"
