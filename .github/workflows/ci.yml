@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Execute the published engine-neutral C# AI examples as well as the Python tests.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
       # Only the bundled create-game-assets helpers need a third-party package;
       # installing it here lets their tests run instead of being skipped.
       - name: Install asset-helper test dependency
@@ -28,7 +33,7 @@ jobs:
       - name: Validate SKILL.md frontmatter and links
         run: python scripts/validate-skills.py
 
-      - name: Run validator regression tests
+      - name: Run regression tests
         run: python -m unittest discover -s tests -v
 
       - name: Build the documentation site

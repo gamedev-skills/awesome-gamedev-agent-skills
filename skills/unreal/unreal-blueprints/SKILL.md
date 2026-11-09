@@ -31,8 +31,10 @@ mapping → `unreal-enhanced-input`. AI logic → `unreal-behavior-trees`.
 1. **Choose the Blueprint type.** A **Blueprint Class** (derived from Actor/Pawn/Character/
    ActorComponent) defines a reusable object. The **Level Blueprint** is a per-level graph for
    level-specific scripting only — don't put reusable logic there.
-2. **Use the Construction Script for editor-time setup** (procedural placement, configuring
-   components from variables) — it runs when the actor is placed or edited, *not* during play.
+2. **Use the Construction Script for instance setup** (procedural placement, configuring
+   components from variables). It can rerun when actors are placed/edited and also runs for
+   dynamically spawned Blueprint instances during play. Placed actors can use their cooked
+   construction results on load. Keep construction repeatable; use `BeginPlay` for gameplay init.
 3. **Use the Event Graph for runtime logic.** `Event BeginPlay` for init, input/overlap events
    for reactions. Avoid `Event Tick` unless you truly need per-frame work.
 4. **Expose data with variables**; click the eye icon to make a variable Instance Editable, and

@@ -33,7 +33,8 @@ plumbing*, not those subsystems.
    load), `OnEnable` (subscribe to events), `Start` (init that depends on other objects'
    `Awake`), `Update` (per-frame logic/input polling), `FixedUpdate` (physics), `LateUpdate`
    (camera follow after movement), `OnDisable`/`OnDestroy` (unsubscribe/cleanup).
-2. **Cache component lookups in `Awake`** — never call `GetComponent` every frame.
+2. **Cache stable component references in `Awake`** when they are reused frequently.
+   Judge lookup cost by call frequency, object count and profiler evidence.
 3. **Expose tunables with `[SerializeField] private`**, not public fields, so other code
    can't mutate them but designers can edit them in the Inspector.
 4. **Scale per-frame values by `Time.deltaTime`** in `Update` (and `Time.fixedDeltaTime`
@@ -117,8 +118,9 @@ private System.Collections.IEnumerator FlashThenHide()
 
 ## Pitfalls
 
-- **`GetComponent` in `Update`** — it searches every frame and tanks performance. Cache the
-  reference in `Awake`/`Start`.
+- **Repeated component lookups in hot paths** — many `GetComponent` calls across many objects
+  can add CPU cost. Cache stable references in `Awake`/`Start`; profile before treating an
+  occasional lookup as a bottleneck, and refresh the cache if components change at runtime.
 - **Physics in `Update`** — moving a `Rigidbody` with forces or `MovePosition` outside
   `FixedUpdate` causes jitter and timestep-dependent behaviour. Read input in `Update`,
   apply physics in `FixedUpdate`.

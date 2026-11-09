@@ -73,10 +73,11 @@ func _physics_process(_d: float) -> void:
 ### 3. Blend space: blend run direction by a 2D parameter
 
 ```gdscript
-# Root is an AnimationNodeBlendSpace2D named "Move" with idle/run points placed in it.
+# tree.tree_root is an AnimationNodeBlendSpace2D with idle/run points placed in it.
 func update_locomotion(input_dir: Vector2) -> void:
-    # Parameter path = "parameters/<node name>/blend_position".
-    tree.set("parameters/Move/blend_position", input_dir)
+    tree.set("parameters/blend_position", input_dir)
+# If the blend space is instead a child named "Move" in a blend tree/state machine,
+# its parameter is "parameters/Move/blend_position".
 ```
 
 ### 4. Tween: fade and scale a UI element (code-driven)
@@ -96,9 +97,9 @@ func pop_in(node: Control) -> void:
 
 - **`AnimationTree.active` left false** → nothing animates and `travel()` appears to do
   nothing. Set `active = true` and assign the `anim_player` path.
-- **Wrong parameter path.** Blend/condition paths are `"parameters/<NodeName>/..."` and
-  must match the node names in the tree exactly (e.g. `"parameters/playback"`,
-  `"parameters/Move/blend_position"`). A typo silently no-ops.
+- **Wrong parameter path.** Root parameters start at `"parameters/"` (e.g.
+  `"parameters/blend_position"` or `"parameters/playback"`). Nested nodes add their names,
+  e.g. `"parameters/Move/blend_position"`; match the actual tree hierarchy.
 - **AnimationPlayer and AnimationTree fighting.** When an `AnimationTree` is active, don't
   also call `AnimationPlayer.play()` for the same tracks — let the tree own playback.
 - **3.x Tween node is gone.** There is no `Tween` node to add in 4.x; create tweens in

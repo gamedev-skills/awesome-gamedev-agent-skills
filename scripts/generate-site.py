@@ -9,7 +9,9 @@ Output is written to ``_site/`` (git-ignored) and is deployed by
 ``.github/workflows/pages.yml``. Nothing here mutates the skills.
 
 Usage:
-    python scripts/generate-site.py [--out _site] [--base-url URL]
+    python scripts/generate-site.py [--out _site] [--base-url URL] [--clean]
+
+Existing non-empty output needs --clean and this generator's ownership marker.
 
 No third-party dependencies.
 """
@@ -20,6 +22,7 @@ import argparse
 import html
 import re
 import shutil
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -31,6 +34,8 @@ GITHUB_BLOB = f"https://github.com/{REPO_SLUG}/blob/main"
 INSTALL_CMD = f"npx skills add {REPO_SLUG}"
 
 MAX_META_DESCRIPTION = 155
+OUTPUT_MARKER = ".gamedev-skills-site"
+OUTPUT_MARKER_CONTENT = "awesome-gamedev-agent-skills documentation output v1\n"
 
 # Category slug -> (page heading, lead paragraph). Engine groups first.
 CATEGORIES: dict[str, tuple[str, str]] = {
@@ -522,18 +527,41 @@ def build_sitemap(out: Path, urls: list[str], base_url: str) -> None:
 
 # --------------------------------------------------------------------------- #
 
+def prepare_output(out: Path, *, clean: bool) -> Path:
+    """Create output, clearing only explicitly selected, generator-owned directories."""
+    out = out.expanduser().absolute()
+    if out.is_symlink():
+        raise ValueError("output must not be a symlink")
+    out = out.resolve()
+    repo = REPO_ROOT.resolve()
+    if out == Path(out.anchor) or out == repo or out in repo.parents:
+        raise ValueError("output must not be a filesystem root, the repository, or its ancestor")
+    if out.exists():
+        if not out.is_dir():
+            raise ValueError("output exists and is not a directory")
+        if any(out.iterdir()):
+            if not clean:
+                raise ValueError("output is not empty; use --clean only for this generator's output")
+            marker = out / OUTPUT_MARKER
+            if (marker.is_symlink() or not marker.is_file()
+                    or marker.read_text(encoding="utf-8") != OUTPUT_MARKER_CONTENT):
+                raise ValueError("refusing to clean output without the correct generator marker")
+            shutil.rmtree(out)
+    out.mkdir(parents=True, exist_ok=True)
+    # Mark before rendering so an interrupted generation can be retried with --clean.
+    (out / OUTPUT_MARKER).write_text(OUTPUT_MARKER_CONTENT, encoding="utf-8")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=str(DEFAULT_OUT), help="output directory")
     ap.add_argument("--base-url", default=DEFAULT_BASE_URL, help="canonical base URL")
+    ap.add_argument("--clean", action="store_true",
+                    help="replace non-empty output only when it has this generator's marker")
     args = ap.parse_args()
 
     base_url = args.base_url.rstrip("/")
-    out = Path(args.out)
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
-
     skills = collect_skills()
     if not skills:
         print("No SKILL.md files found under skills/.")
@@ -546,6 +574,13 @@ def main() -> int:
     unknown = sorted(set(by_cat) - set(CATEGORIES))
     if unknown:
         print(f"FAILED — skills use unknown category values: {', '.join(unknown)}")
+        return 1
+
+    # Invalid source input must leave even previously generated output untouched.
+    try:
+        out = prepare_output(Path(args.out), clean=args.clean)
+    except (OSError, ValueError) as exc:
+        print(f"FAILED — {exc}", file=sys.stderr)
         return 1
 
     urls = [f"{base_url}/", f"{base_url}/install/"]
