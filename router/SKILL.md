@@ -192,6 +192,27 @@ pointers, and state the gap.
 For the exhaustive per-skill trigger list and every engine binding, read
 `references/routing-table.md`.
 
+<!-- unified-studio-extension:start -->
+### 3e. Studio/design & production extensions (select only when relevant)
+
+Studio skills extend the existing engine, discipline, genre and workflow catalog. They own **durable decisions, specifications and verification evidence**, not engine APIs or low-level asset generation. Never preload all ten.
+
+| Intent | Studio skill | Composition |
+|--------|--------------|-------------|
+| art bible, visual pillars, shared palette, camera or sprite rules | `studio-art-bible` | `create-game-assets` only when producing art |
+| equipment specification, animation states, modular gear contract | `studio-asset-spec` | `create-game-assets` to create/validate assets |
+| sprite library, license, missing asset or import audit | `studio-asset-audit` | `create-game-assets` for approved repairs |
+| brainstorm core fantasy, mechanics or scope | `studio-brainstorm` | genre skill if needed |
+| GDD, gameplay system rules, combat/loot/economy edge cases | `studio-system-design` | genre + engine skill for implementation |
+| system architecture, data ownership, module boundaries | `studio-architecture` | engine skills; ADR for major decisions |
+| architecture decision, tradeoffs, migration/rollback | `studio-architecture-decision` | engine skills if code follows |
+| polished playable vertical slice and feasibility verdict | `studio-vertical-slice` | `prototype-fast` only for early greybox |
+| conflicts between design, art, and implementation | `studio-consistency-check` | inspect canonical project sources |
+| QA plan, regression matrix and acceptance evidence | `studio-qa-plan` | engine test skill to run checks |
+
+**Minimal context:** Route at most 1–2 applicable studio skills; don't invoke planning for routine code edits. Preserve the existing engine even for MonoGame or other custom engines: the router's custom-engine fallback remains authoritative. Composition order: engine fundamentals → discipline → genre → optional studio decision or validation contract. For generated art, `create-game-assets` still owns normalization and import.
+<!-- unified-studio-extension:end -->
+
 ## 4. Read protocol (progressive disclosure)
 
 1. **Preloaded:** only each skill's `name` + `description` are in context. Decide from those plus

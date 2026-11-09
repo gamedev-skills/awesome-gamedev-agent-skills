@@ -163,3 +163,23 @@ the detected engine lacks, load the closest skill(s) and **state the gap** plain
   to `defold-core`. There is no Defold GUI, sprite/tilemap or collision skill yet: use
   `defold-core` (its build reference links the official manuals for those subsystems) plus
   `game-ui-ux` / `level-design` / `physics-tuning`, and state the gap.
+
+<!-- unified-studio-extension:start -->
+## Studio/design and production extensions (`skills/studio/`)
+
+Optional, additive, engine-neutral skills that supplement the base catalog.
+
+| Skill | Trigger words / composition |
+|-------|------------------------------|
+| `studio-art-bible` | art bible, visual identity, palette, camera and sprite standard; plus `create-game-assets` for art production |
+| `studio-asset-spec` | asset brief, modular armor or weapon contract, directional animation states |
+| `studio-asset-audit` | asset inventory and provenance audit, import readiness |
+| `studio-brainstorm` | brainstorm concept, player fantasy, gameplay options and scope |
+| `studio-system-design` | system GDD, combat and loot rules, balance, edge cases |
+| `studio-architecture` | system boundaries, engine integration and data ownership |
+| `studio-architecture-decision` | technical ADR, architecture decision, migration and rollback |
+| `studio-vertical-slice` | representative polished playable slice, feasibility test |
+| `studio-consistency-check` | contradictions across approved documents, assets and code |
+| `studio-qa-plan` | risk-based QA matrix, regression, release acceptance evidence |
+<!-- unified-studio-extension:end -->
+

@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 77 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 87 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
@@ -88,7 +88,17 @@
         "./skills/workflows/game-jam",
         "./skills/workflows/prototype-fast",
         "./skills/workflows/steam-publish",
-        "./skills/workflows/itch-publish"
+        "./skills/workflows/itch-publish",
+        "./skills/studio/studio-art-bible",
+        "./skills/studio/studio-asset-spec",
+        "./skills/studio/studio-asset-audit",
+        "./skills/studio/studio-brainstorm",
+        "./skills/studio/studio-system-design",
+        "./skills/studio/studio-architecture",
+        "./skills/studio/studio-architecture-decision",
+        "./skills/studio/studio-vertical-slice",
+        "./skills/studio/studio-consistency-check",
+        "./skills/studio/studio-qa-plan"
       ]
     },
     {

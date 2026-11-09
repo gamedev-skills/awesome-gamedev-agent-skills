@@ -3,7 +3,7 @@ Copyright 2026 Abhishek Barali and the awesome-gamedev-agent-skills contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-All skills in this repository are original works. They were authored from primary
+The upstream skills in this repository are original works. They were authored from primary
 documentation (engine and framework docs, language references, and platform
 specifications). Third-party sources and other skill collections were studied for
 general patterns only; no text or code was copied from them.
@@ -13,3 +13,10 @@ Game engine, framework, and platform names referenced in this repository
 three.js, Babylon.js, Bevy, GameMaker, LÖVE, and MonoGame) are trademarks of
 their respective owners and are used for identification and descriptive purposes
 only. Their use does not imply any affiliation with or endorsement by those owners.
+
+Studio extension note (2026):
+  This fork includes ten portable studio-* skills adapted from the ideas and
+  workflows in Codex Game Studio, copyright (c) 2026 MerlinH, MIT license.
+  See docs/third-party/codex-game-studio-LICENSE for the MIT notice.
+  The README, router, routing table and marketplace catalog were modified.
+  The original Apache-2.0 license and attribution notices are preserved.
