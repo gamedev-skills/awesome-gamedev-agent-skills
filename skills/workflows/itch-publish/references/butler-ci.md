@@ -33,7 +33,7 @@ BUTLER_VERSION=15.32.0
 BUTLER_SHA256=5db7b053fc9b578b86ffaf3520a12b952eb95c9225171cc5720dfbc9fe4574b3
 curl -fL -o butler.zip "https://github.com/itchio/butler/releases/download/v${BUTLER_VERSION}/butler-linux-amd64.zip"
 printf '%s  %s\n' "$BUTLER_SHA256" butler.zip | sha256sum -c -
-unzip -q butler.zip
+unzip -jq butler.zip   # -j: the release zip keeps its files in a linux-amd64/ folder
 chmod +x butler
 ./butler -V        # prints version; confirms it runs
 ```
@@ -63,7 +63,7 @@ jobs:
           BUTLER_SHA256=5db7b053fc9b578b86ffaf3520a12b952eb95c9225171cc5720dfbc9fe4574b3
           curl -fL -o butler.zip "https://github.com/itchio/butler/releases/download/v${BUTLER_VERSION}/butler-linux-amd64.zip"
           printf '%s  %s\n' "$BUTLER_SHA256" butler.zip | sha256sum -c -
-          unzip -q butler.zip
+          unzip -jq butler.zip   # flatten the zip's linux-amd64/ folder
           chmod +x butler
       - name: Push builds
         env:

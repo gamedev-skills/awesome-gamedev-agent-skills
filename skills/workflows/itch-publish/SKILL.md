@@ -149,8 +149,8 @@ butler push ./build leafy/my-game:windows --dry-run
 
 ## References
 
-- For CI/CD (GitHub Actions/GitLab) with `BUTLER_API_KEY`, automated install via `broth`, the
-  full flag list, and the update-check API, read `references/butler-ci.md`.
+- For CI/CD (GitHub Actions/GitLab) with `BUTLER_API_KEY`, a pinned and checksum-verified
+  install, the full flag list, and the update-check API, read `references/butler-ci.md`.
 - Primary docs: the butler manual — `itch.io/docs/butler` (installing, login, pushing);
   itch.io creator docs — `itch.io/docs/creators/html5` (web build limits) and
   `itch.io/docs/creators/quality-guidelines` (tagging, AI disclosure, delisting rules).

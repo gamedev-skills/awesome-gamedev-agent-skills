@@ -113,9 +113,10 @@ const ROOMS := {
 # Search (room, held keys) states: keys from mutually exclusive one-way branches
 # must not be combined. Keys are never consumed and doors never re-lock; model
 # consumable keys as counts and persistent door changes as additional state.
+# States grow exponentially with distinct keys; fine for hand-built room graphs.
 func goal_reachable(rooms: Dictionary, start: String, goal: String) -> bool:
     var pending: Array[Dictionary] = [{"room": start, "keys": {}}]
-    var visited := {}                             # room -> distinct keysets already explored
+    var visited := {}                             # "room|sorted keys" -> true
     while not pending.is_empty():
         var state: Dictionary = pending.pop_back()
         var room: String = state["room"]
@@ -124,11 +125,12 @@ func goal_reachable(rooms: Dictionary, start: String, goal: String) -> bool:
         var grant = info.get("grants")
         if grant != null:
             have[grant] = true
-        var keysets: Array = visited.get(room, [])
-        if keysets.has(have):
+        var names := PackedStringArray(have.keys())
+        names.sort()
+        var id := room + "|" + ",".join(names)
+        if visited.has(id):
             continue                              # cycles stop only at an equivalent state
-        keysets.append(have)
-        visited[room] = keysets
+        visited[id] = true
         if room == goal:
             return true
         for exit in info.get("exits", []):
