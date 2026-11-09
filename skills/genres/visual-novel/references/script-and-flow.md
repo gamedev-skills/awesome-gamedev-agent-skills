@@ -67,7 +67,8 @@ What the runtime can restore decides how precise "save anywhere" can be:
 - **Ink:** `story.state.ToJson()` / `story.state.LoadJson(json)` captures the exact position
   and all variables, so a load resumes the same line.
 - **Yarn Spinner:** you can save the variables and the current node name
-  (`DialogueRunner.CurrentNodeName` in Unity) and restart that node, but its FAQ states that the
+  (`DialogueRunner.Dialogue.CurrentNode` in Yarn Spinner for Unity 3.x; 2.x had
+  `DialogueRunner.CurrentNodeName`) and restart that node, but its FAQ states that the
   specific line inside a node cannot be saved or restored. Keep nodes short, put a node boundary
   wherever a save may happen, or record the last line ID and fast-forward to it on load.
 - **Ren'Py:** saving and loading at any line is built in (a save records the start of the

@@ -55,10 +55,10 @@ the change. Faster scripts alone usually won't help a frame limited by GPU work.
 - **Unreal Insights** for full timeline traces; `ProfileGPU` (Ctrl+Shift+,) for a GPU breakdown.
 
 **External tools (engine-agnostic)**
-- **RenderDoc** (1.46 at last check): GPU frame capture for Vulkan, D3D11/12 and OpenGL/ES on
+- **RenderDoc** (1.47 at last check): GPU frame capture for Vulkan, D3D11/12 and OpenGL/ES on
   Windows, Linux and Android; no Metal. On Apple platforms use the Xcode Metal debugger and
   Instruments; on Windows D3D12, PIX.
-- **Tracy** (0.14.1 at last check): instrumented CPU/GPU timeline for native code; keep the
+- **Tracy** (0.15.0 at last check): instrumented CPU/GPU timeline for native code; keep the
   client library and the viewer on the same release, because the network protocol can change.
 
 ## 3. Pooling manager (generic)

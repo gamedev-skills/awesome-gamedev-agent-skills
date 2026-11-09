@@ -135,7 +135,9 @@ private System.Collections.IEnumerator FlashThenHide()
   script's `enabled = false` does *not* stop them.
 - **Obsolete warnings on `FindObjectOfType` / `FindObjectsOfType`** — Unity 6 replaced them.
   Use `FindFirstObjectByType` (old behaviour), `FindAnyObjectByType` (faster, any match) or
-  `FindObjectsByType(FindObjectsSortMode.None)`; all are slow, so cache the result.
+  `FindObjectsByType(FindObjectsSortMode.None)`; all are slow, so cache the result. From
+  Unity 6.4, `FindFirstObjectByType` and the `FindObjectsSortMode` overloads are obsolete too:
+  use `FindAnyObjectByType` and `FindObjectsByType<T>()` there.
 - **An `async` method keeps running after its object is destroyed** — `await` is not tied to
   the GameObject the way a coroutine is. Pass `destroyCancellationToken` to the
   `Awaitable` waits (they then throw `OperationCanceledException`), and never await the same
@@ -151,7 +153,7 @@ private System.Collections.IEnumerator FlashThenHide()
 - `scripts/check_unity_project.py` — read-only `.meta`/GUID and missing-script checker;
   `--help` lists every check and the exit codes.
 - Primary docs: Unity Manual "Event function execution order"
-  (`https://docs.unity3d.com/Manual/execution-order.html`), `ScriptReference/MonoBehaviour`,
+  (`https://docs.unity.com/en-us/engine/6000.3/manual/scripting/managing-update-order/execution-order`), `ScriptReference/MonoBehaviour`,
   and the Manual page "Asynchronous programming with the Awaitable class".
 
 ## Related skills

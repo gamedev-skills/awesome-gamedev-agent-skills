@@ -57,8 +57,8 @@ edge/held cleanly so the controller can apply them.
   + `GetInputTypeForHandle`; Godot exposes the index as `steam_input_index` in
   `get_joy_info()`), or fetch Steam's own art (`GetGlyphPNGForActionOrigin` /
   `GetGlyphSVGForActionOrigin`).
-- Godot 4.7's SDL3 joypad driver covers Windows, Linux and macOS; on Android and
-  Web `get_joy_info()` is empty, so fall back to `get_joy_name()` there.
+- Godot 4.7's SDL3 joypad driver covers Windows, Linux, macOS and (new in 4.7) iOS;
+  on Android and Web `get_joy_info()` is empty, so fall back to `get_joy_name()` there.
 - Support **hot-swapping**: a player may start on keyboard and pick up a
   controller mid-session. Re-resolve prompts on device change without a restart.
 

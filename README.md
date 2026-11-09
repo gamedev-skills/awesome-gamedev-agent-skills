@@ -175,7 +175,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 |-------|-------|
 | [`ebitengine-game`](skills/ebitengine/ebitengine-game/SKILL.md) | Playable Go 2D games: update/draw contracts, input, rendering, text, audio, gameplay tests, optional starter and platform builds |
 
-#### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r186
+#### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r187
 
 | Skill | Scope |
 |-------|-------|

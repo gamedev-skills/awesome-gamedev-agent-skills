@@ -123,7 +123,7 @@ lookup texture indexed by the pixel's RGB instead.
 - **Unreal 5.8 — Material Editor (node graph) + HLSL.** Most authoring is visual
   nodes; Custom nodes embed HLSL. Concepts (UVs, fresnel via a Fresnel node,
   panner for UV scroll) map directly to the patterns here.
-- **three.js r186.** `WebGLRenderer` runs GLSL through `ShaderMaterial`
+- **three.js r187.** `WebGLRenderer` runs GLSL through `ShaderMaterial`
   (three.js prepends its uniforms and attributes such as `projectionMatrix`,
   `position`, `uv`; compiled as GLSL ES 3.00 on WebGL 2) or `RawShaderMaterial`
   (you declare everything). `WebGPURenderer` (`three/webgpu`) only runs node

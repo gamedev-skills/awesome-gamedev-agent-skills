@@ -119,8 +119,8 @@ $Sprite2D.material.set_shader_parameter("amount", 0.7)
   `hint_color`/`hint_albedo`→`source_color`; `hint_white`/`hint_black`→
   `hint_default_white`/`hint_default_black`; `hint_range` stays. Depth/normal use `hint_depth_texture` / `hint_normal_roughness_texture`.
 - **Wrong output variable.** In `canvas_item` write `COLOR`; in `spatial` write `ALBEDO`
-  (and `EMISSION`, `ALPHA`, `ROUGHNESS`, `METALLIC`). Writing `COLOR` in a spatial shader
-  does nothing.
+  (and `EMISSION`, `ALPHA`, `ROUGHNESS`, `METALLIC`). In a spatial `fragment()`, `COLOR` is
+  the read-only vertex color, so assigning to it fails to compile.
 - **Color uniforms without `source_color`** are treated as raw linear values and look
   wrong (washed/dark) because Godot won't sRGB-convert them.
 - **Object drawn in the wrong order, casts no shadow, or skips SSAO (3D)** → the spatial

@@ -54,7 +54,7 @@ jobs:
   butler:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # ... your build steps produce ./build/windows, ./build/linux, etc. ...
       - name: Install butler
         run: |

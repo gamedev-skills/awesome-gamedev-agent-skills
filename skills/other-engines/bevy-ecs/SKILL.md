@@ -105,7 +105,7 @@ fn setup(mut commands: Commands) {
 // Iterate every entity that has BOTH Velocity and Transform; mutate Transform.
 fn move_players(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform)>) {
     for (velocity, mut transform) in &mut query {
-        // delta_secs() is f32 seconds (renamed from delta_seconds() in 0.16).
+        // delta_secs() is f32 seconds (renamed from delta_seconds() in 0.15).
         transform.translation += velocity.0.extend(0.0) * time.delta_secs();
     }
 }
@@ -167,7 +167,7 @@ impl Plugin for GameplayPlugin {
 ## Pitfalls
 
 - **`delta_seconds()` not found** → it was renamed to `time.delta_secs()` (and
-  `elapsed_secs()`) in 0.16. Using the old name fails to compile.
+  `elapsed_secs()`) in 0.15. Using the old name fails to compile.
 - **Movement speed scales with frame rate** → multiply per-frame changes by
   `time.delta_secs()`. Never assume a fixed frame time.
 - **Panic `error[B0001]`: "... accesses component(s) Transform in a way that conflicts

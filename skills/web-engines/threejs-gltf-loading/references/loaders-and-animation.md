@@ -1,4 +1,4 @@
-# three.js glTF: loaders, compression & animation detail (r186)
+# three.js glTF: loaders, compression & animation detail (r187)
 
 Depth behind the glTF skill: combining decoders, async loading with progress,
 cloning skinned meshes, and exporter hygiene. Notes call out where older releases
@@ -34,7 +34,7 @@ Notes:
   `examples/jsm/libs/draco/` and `examples/jsm/libs/basis/` from the installed
   `three` into your static assets and call `draco.setDecoderPath('/decoders/draco/')`
   and `ktx2.setTranscoderPath('/decoders/basis/')`. A pinned CDN folder such as
-  `https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/libs/basis/` also works;
+  `https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/` also works;
   on releases before r185 one of these paths is required.
 - The decoder/transcoder files must match your three.js version; a mismatch throws
   at load time.

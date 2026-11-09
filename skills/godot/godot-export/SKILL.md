@@ -47,6 +47,8 @@ networking code of a server → `godot-multiplayer` (this skill covers building 
 ```bash
 # Preset name must match exactly what's in Project > Export (quote it).
 # Run from the project directory (where project.godot lives).
+# The output folder must already exist; Godot does not create it.
+mkdir -p build/windows build/linux build/web
 godot --headless --export-release "Windows Desktop" build/windows/game.exe
 godot --headless --export-release "Linux"           build/linux/game.x86_64
 godot --headless --export-release "Web"             build/web/index.html
