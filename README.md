@@ -29,6 +29,24 @@ task skills before it writes code.
   engine release, and checked by a [validator](scripts/validate-skills.py). Current baselines and
   upgrade policy live in [version support](docs/VERSION-SUPPORT.md).
 
+## Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="280">
+      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
+        <b>Your product here</b>
+      </a>
+      <br>
+      <sub>Monthly sponsor slot</sub>
+    </td>
+  </tr>
+</table>
+
+Want to reach game developers who build with AI coding agents? Email
+[abhishekbarali6969@gmail.com](mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills).
+Sponsored entries are labelled as sponsored and have no effect on which skills the router picks.
+
 ## Contents
 
 - [Quick start](#quick-start)
@@ -36,7 +54,6 @@ task skills before it writes code.
 - [How the router picks skills](#how-the-router-picks-skills)
 - [Catalog](#catalog)
 - [Agent compatibility](#agent-compatibility)
-- [Sponsors](#sponsors)
 - [Contributing](#contributing)
 
 ## Quick start
@@ -332,27 +349,6 @@ templates/     SKILL.md template
 scripts/       validate-skills.py, generate-site.py and tooling
 tests/         regression tests for the validator
 ```
-
-## Sponsors
-
-This project is free and open source. Sponsors help keep every skill current with each new
-engine release.
-
-<table>
-  <tr>
-    <td align="center" width="280">
-      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
-        <b>Your product here</b>
-      </a>
-      <br>
-      <sub>Monthly sponsor slot</sub>
-    </td>
-  </tr>
-</table>
-
-Want to reach game developers who build with AI coding agents? Email
-[abhishekbarali6969@gmail.com](mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills).
-Sponsored entries are labelled as sponsored and have no effect on which skills the router picks.
 
 ## Contributing
 
