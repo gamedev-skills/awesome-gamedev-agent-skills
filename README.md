@@ -14,6 +14,7 @@ right skill for whatever you're building.**
 [![Skills](https://img.shields.io/badge/skills-77%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
+[![Sponsor](https://img.shields.io/badge/sponsor-this%20project-ea4aaa)](#sponsors)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
 needs them. This repo gives your agent **77 game-dev skills** and a **router** that picks the
@@ -35,6 +36,7 @@ task skills before it writes code.
 - [How the router picks skills](#how-the-router-picks-skills)
 - [Catalog](#catalog)
 - [Agent compatibility](#agent-compatibility)
+- [Sponsors](#sponsors)
 - [Contributing](#contributing)
 
 ## Quick start
@@ -330,6 +332,27 @@ templates/     SKILL.md template
 scripts/       validate-skills.py, generate-site.py and tooling
 tests/         regression tests for the validator
 ```
+
+## Sponsors
+
+This project is free and open source. Sponsors help keep every skill current with each new
+engine release.
+
+<table>
+  <tr>
+    <td align="center" width="280">
+      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
+        <b>Your product here</b>
+      </a>
+      <br>
+      <sub>Monthly sponsor slot</sub>
+    </td>
+  </tr>
+</table>
+
+Want to reach game developers who build with AI coding agents? Email
+[abhishekbarali6969@gmail.com](mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills).
+Sponsored entries are labelled as sponsored and have no effect on which skills the router picks.
 
 ## Contributing
 
