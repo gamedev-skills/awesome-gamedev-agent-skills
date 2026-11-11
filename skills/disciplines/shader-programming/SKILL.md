@@ -1,10 +1,11 @@
 ---
 name: shader-programming
 description: >
-  Cross-engine shader technique in GLSL with HLSL equivalents: vertex and fragment stages, and how
-  dissolve, outline, fresnel rim and post effects work. Use for a dissolve, outline or rim effect,
-  porting GLSL to HLSL, or specks or mobile shimmer. Not for engine syntax (`godot-shaders`,
-  `threejs-materials-lighting`, `pixijs-rendering`) or particles (`unreal-niagara`).
+  Engine-neutral shader technique in GLSL with HLSL equivalents: how dissolve, outline, fresnel
+  rim and post effects work, and porting GLSL to HLSL. Use when the math of an effect is the
+  question, or for specks or mobile shimmer. To write a shader in one engine, its skill alone is
+  enough (`godot-shaders`, `threejs-materials-lighting`, `pixijs-rendering`). Not for particles
+  (`unreal-niagara`).
 ---
 
 # Shader programming (cross-engine)

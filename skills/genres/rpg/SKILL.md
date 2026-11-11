@@ -3,8 +3,9 @@ name: rpg
 description: >
   Designs RPG progression and combat numbers in any engine: stats with a modifier stack, XP
   curves, damage formulas, items and equipment (slots, rarity, affixes) and quests. Use for a JRPG
-  or Diablo-style looter, or stats wrong after unequipping. Not for crafting and carry weight
-  (`survival-crafting`), dialogue (`dialogue-systems`) or permadeath runs (`roguelike`).
+  or Diablo-style looter, or stats wrong after unequipping. Pair with `save-systems` to save
+  characters and inventory. Not for crafting and carry weight (`survival-crafting`) or dialogue
+  (`dialogue-systems`).
 ---
 
 # RPG

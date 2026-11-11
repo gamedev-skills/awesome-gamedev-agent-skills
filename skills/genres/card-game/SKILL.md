@@ -3,9 +3,9 @@ name: card-game
 description: >
   Designs card games and deckbuilders in any engine: cards as data with one effect interpreter,
   deck zones, a trigger stack and seeded shuffles. Use for a Slay the Spire- or Balatro-like or a
-  TCG, or cards that duplicate or streaky shuffles. Not for grid crawlers (`roguelike`), card data
-  assets (`godot-resources`, `unity-scriptableobjects`) or hand drag-and-drop
-  (`godot-ui-control`).
+  TCG, or cards that duplicate or streaky shuffles. Pair with the engine skill for card data and
+  hand UI (`godot-resources`, `godot-ui-control`, `unity-scriptableobjects`). Not for grid
+  crawlers (`roguelike`).
 ---
 
 # Card game
