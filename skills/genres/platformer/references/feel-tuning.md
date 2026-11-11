@@ -1,8 +1,19 @@
 # Platformer feel tuning (depth)
 
-Deeper detail behind the controller in `SKILL.md`. All snippets are engine-neutral
-pseudocode; the math is standard kinematics and ports to any engine. Tune by *outcome*
-(tiles of height, seconds to apex), then read off the physics values.
+Depth behind `SKILL.md`. Engine-neutral pseudocode; the math is standard kinematics. Tune by
+outcome (tiles of height, seconds to apex), then read off the physics values with
+`scripts/jump_tuner.py`.
+
+Contents:
+1. Deriving jump physics and the half-step integrator
+2. Variable jump height: the hold (sustain) model
+3. Apex hang and fast-fall
+4. Corner correction
+5. One-way platforms and drop-through
+6. Moving platforms per engine
+7. Camera follow (pointer)
+8. Teaching and pacing
+9. Wall slide and wall jump
 
 ## 1. Deriving jump physics
 
@@ -38,21 +49,31 @@ position.y += velocity.y * dt       # or move_and_slide() / CharacterController.
 velocity.y += 0.5 * g * dt
 ```
 
-## 2. Full feel knob reference
+## 2. Variable jump height: the hold (sustain) model
 
-| Knob | What it changes | Typical range | Notes |
-|------|-----------------|---------------|-------|
-| Jump height | vertical reach | 2–5 tiles | Keep below the player's *commit* comfort. |
-| Time to apex | weight/snappiness | 0.25–0.45 s | Lower = snappier, "tighter". |
-| Fall multiplier | floatiness on descent | 1.3–2.2× | The single biggest "feel" lever. |
-| Coyote time | post-ledge grace | 0.05–0.15 s | ~3–9 frames at 60 Hz. |
-| Jump buffer | pre-land grace | 0.08–0.18 s | Forgive early presses. |
-| Variable-jump cut | tap vs hold height | ×0.3–0.6 of vy | Cut only while rising. |
-| Apex hang | air control at top | ×0.4–0.6 g near apex | Define apex as `|vy| < hang_threshold`. |
-| Max fall speed | terminal velocity | clamp | Prevents tunneling and runaway speed. |
-| Ground accel | time to top speed | 0.03–0.12 s | Instant = arcadey; longer = momentum. |
-| Air control | steering mid-jump | 0.5–1.0× ground | <1 gives committed arcs. |
-| Coyote-after-jump lockout | prevents double jumps | consume timers | Zero both timers on jump. |
+The release cut in `SKILL.md` is the default. Precision platformers (Celeste is the usual
+reference) instead hold the launch speed while the button is held, for a capped time, and end
+the hold on release or on a ceiling hit. Tap height then comes from gravity alone, so it stays
+small (about 20% of a full jump with Celeste's numbers) and the full height depends on the hold
+time as much as on gravity.
+
+```python
+# On jump: start the hold.
+velocity.y = -LAUNCH_SPEED
+hold_ticks = round(HOLD_TIME * TICK_RATE)        # Celeste: 0.2 s
+
+# Every tick, after applying gravity:
+if hold_ticks > 0:
+    if jump_held and not hit_ceiling:
+        velocity.y = min(velocity.y, -LAUNCH_SPEED)  # keep rising at launch speed
+        hold_ticks -= 1
+    else:
+        hold_ticks = 0                           # release or bonk ends the hold for good
+```
+
+With this model, full height = `LAUNCH_SPEED * HOLD_TIME` plus the free rise
+`LAUNCH_SPEED^2 / (2g)` (less with apex hang), so `jump_tuner.py`'s height-and-time solution
+does not apply directly. Tune hold time for full height and gravity for tap height.
 
 ## 3. Apex hang and fast-fall
 
@@ -118,16 +139,12 @@ The same idea on landing edges (a few px of "ledge grab"/snap) makes platforms f
   moving (`body.friction`, default `(1, 0)`); a static body does not. Unity's
   `CharacterController` does not carry riders; add the delta yourself.
 
-## 7. Camera follow
+## 7. Camera follow (pointer)
 
-- **Deadzone:** a rectangle the player can move within before the camera reacts; stops jitter.
-- **Look-ahead:** offset the camera target in the direction of motion / facing so the player
-  sees what's coming. Lerp the offset; don't snap it.
-- **Smoothing:** move the camera toward its target with an exponential `lerp(cam, target,
-  1 - exp(-k*dt))` rather than a fixed fraction, so it is frame-rate independent.
-- **Clamp:** keep the camera rect inside the level bounds so you never show out-of-level space.
-- **Vertical care:** lock or slow vertical follow during normal jumps; only follow Y on large
-  height changes (falling into a pit, climbing) to avoid bobbing on every hop.
+Platformer cameras need a deadzone, look-ahead in the facing direction, frame-rate
+independent smoothing and level-bounds clamping, with vertical follow locked or slowed during
+ordinary hops. The `camera-systems` skill owns that code; load it rather than rebuilding it
+here.
 
 ## 8. Teaching and pacing (hand-off to `level-design`)
 
