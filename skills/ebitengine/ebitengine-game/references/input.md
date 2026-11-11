@@ -1,7 +1,19 @@
 # Input
 
-API baseline: Ebitengine v2.10.5. Snippets are patterns to adapt, with the
+API baseline: Ebitengine v2.10.6. Snippets are patterns to adapt, with the
 project's imports, initialization and validation.
+
+## Contents
+
+- [Rules](#rules)
+- [Actions instead of keys](#actions-instead-of-keys)
+- [Menus: key repeat](#menus-key-repeat)
+- [Gamepads](#gamepads)
+- [Mouse and simple buttons](#mouse-and-simple-buttons)
+- [Touch](#touch)
+- [Text entry](#text-entry)
+- [Device prompts and cancellation](#device-prompts-and-cancellation)
+- [Browsers](#browsers)
 
 ## Rules
 
@@ -19,7 +31,7 @@ project's imports, initialization and validation.
 - Positions from `ebiten.CursorPosition`, `CursorPositionF` and `TouchPosition`
   use the engine's default mapping to `Layout` coordinates. A custom
   `DrawFinalScreen` transform also needs matching input conversion
-  (`rendering.md`).
+  (rendering reference).
 
 ## Actions instead of keys
 
@@ -106,7 +118,7 @@ jump key while the first is held does not retrigger jump. If a game wants each
 physical press to trigger, aggregate binding edges instead and document that
 choice. Axis bindings need a dead zone and, for digital actions, a threshold.
 
-Persist bindings with the save data (see `architecture-and-testing.md`). Ignore
+Persist bindings with the save data (see the architecture-and-testing reference). Ignore
 the input that opened the rebind prompt, provide cancel/reset and conflict
 handling, and re-sample held state when a binding changes. Show key names with
 `ebiten.KeyName(key)`; it reflects the layout for named printable keys but may
@@ -189,7 +201,7 @@ input owner; touch needs the same press-origin rule tied to a specific TouchID.
 Keyboard/gamepad confirmation should activate the focused widget.
 
 With a camera, convert the cursor with the inverse camera transform
-(`rendering.md`). `ebiten.Wheel()` returns scroll offsets for this tick.
+(rendering reference). `ebiten.Wheel()` returns scroll offsets for this tick.
 `ebiten.SetCursorMode(ebiten.CursorModeCaptured)` locks the cursor for mouse-look.
 
 ## Touch
@@ -232,5 +244,5 @@ Keyboard events reach the game only while its canvas or iframe has focus. Ask th
 player to click or tap the game first (a title screen does this naturally), and
 avoid browser shortcuts (Ctrl+W, F5) as game controls.
 
-Source contracts: [input APIs](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/input.go)
-and [tick-based edge helpers](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/inpututil/inpututil.go).
+Source contracts: [input APIs](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/input.go)
+and [tick-based edge helpers](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/inpututil/inpututil.go).

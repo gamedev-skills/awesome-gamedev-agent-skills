@@ -38,7 +38,7 @@ def main():
     ap.add_argument("--out", required=True, help="new project directory (must not exist or be empty)")
     ap.add_argument("--module", required=True, help="Go module path, e.g. example.com/mygame or github.com/you/game")
     ap.add_argument("--title", default="My Game", help="window and title-screen text")
-    ap.add_argument("--ebiten", default="v2.10.5", help="Ebitengine version for go.mod (default v2.10.5)")
+    ap.add_argument("--ebiten", default="v2.10.6", help="Ebitengine version for go.mod (default v2.10.6)")
     ap.add_argument("--go", default="1.25.0", help="go directive (Ebitengine v2.10 needs 1.25 or later)")
     ap.add_argument("--ci", action="store_true", help="add a GitHub Actions workflow and the tools/ scripts it uses")
     ap.add_argument("--bundle-id", help="macOS bundle ID for --ci release builds (default com.example.<name>)")
@@ -51,7 +51,7 @@ def main():
         print(f"error: invalid module path {args.module!r}", file=sys.stderr)
         return 2
     if not VERSION_RE.fullmatch(args.ebiten):
-        print(f"error: --ebiten must look like v2.10.5, got {args.ebiten!r}", file=sys.stderr)
+        print(f"error: --ebiten must look like v2.10.6, got {args.ebiten!r}", file=sys.stderr)
         return 2
     if int(args.ebiten.split(".")[1]) < 10:
         print("error: this starter uses Ebitengine v2.10+ APIs", file=sys.stderr)

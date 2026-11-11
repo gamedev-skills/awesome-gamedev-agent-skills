@@ -1,7 +1,18 @@
 # Architecture and testing
 
-API baseline: Ebitengine v2.10.5. Snippets illustrate patterns to adapt; a
+API baseline: Ebitengine v2.10.6. Snippets illustrate patterns to adapt; a
 production project must supply imports, initialization and validation.
+
+## Contents
+
+- [Package layout](#package-layout)
+- [Scenes](#scenes)
+- [Resource and callback lifetime](#resource-and-callback-lifetime)
+- [Entities](#entities)
+- [Randomness](#randomness)
+- [Saving](#saving)
+- [Testing](#testing)
+- [Debugging](#debugging)
 
 ## Package layout
 
@@ -245,7 +256,7 @@ func Load(game string) (SaveData, error) {
 ## Testing
 
 For controlled action sequences and matching state/image diagnostics, read
-[Playtest diagnostics](playtest-diagnostics.md). The capture helper below only
+the playtest-diagnostics reference. The capture helper below only
 writes pixels; it does not establish that a complete interaction succeeded.
 
 1. **Rules:** `go test ./world/...` with table tests and fixed seeds. Step the
@@ -256,7 +267,7 @@ writes pixels; it does not establish that a complete interaction succeeded.
    correct code or API support.
 3. **Rendering smoke test:** run the game with scripted input and capture a frame
    (the starter's `-demo -shot FILE -shot-tick N`), on Linux under `xvfb-run -a`
-   with a null audio device if there is no sound card (see `audio.md`). Look at
+   with a null audio device if there is no sound card (see the audio reference). Look at
    the PNG; for regression checks compare against a stored image with a small
    per-channel tolerance, since GPU drivers differ slightly.
 4. **Opt-in VM testing:** Ebitengine's
@@ -267,7 +278,7 @@ writes pixels; it does not establish that a complete interaction succeeded.
    `ebitenginevmguest` and configure `EBITENGINE_VM_ENDPOINT`, or use
    `RunGameOptions.VMGuestEndpoint`. It requires matching engine versions and
    a graphics environment for the host; it is not a software renderer.
-5. **Builds:** compile the advertised targets (see `project-and-builds.md`), then
+5. **Builds:** compile the advertised targets (see the project-and-builds reference), then
    run the resulting artifacts in their target environments. Compilation alone
    does not validate packaging, SDKs, input, storage or audio.
 6. **People:** feel, difficulty and audio quality still need someone playing.
@@ -306,5 +317,5 @@ func savePNG(screen *ebiten.Image, path string) error {
 - Errors returned from `Update` stop the game and come back from `RunGame`; return
   wrapped errors instead of `log.Fatal` deep inside scenes.
 
-Source contracts: [game loop and focus policy](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/run.go)
+Source contracts: [game loop and focus policy](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/run.go)
 and [Go file replacement guarantees](https://pkg.go.dev/os#Rename).

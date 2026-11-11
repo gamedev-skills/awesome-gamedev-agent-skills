@@ -1,8 +1,19 @@
 # Project setup and builds
 
-The bundled starter pins Ebitengine v2.10.5 / Go 1.25+. Keep an existing
+The bundled starter pins Ebitengine v2.10.6 / Go 1.25+. Keep an existing
 project's pinned versions. Commands are POSIX-shell examples; adapt to the
 selected targets and record actual build/runtime verification separately.
+
+## Contents
+
+- [Requirements](#requirements)
+- [New project](#new-project)
+- [Assets](#assets)
+- [Window and screen](#window-and-screen)
+- [Desktop builds](#desktop-builds)
+- [Browser (WebAssembly)](#browser-webassembly)
+- [Mobile](#mobile)
+- [Release checklist](#release-checklist)
 
 ## Requirements
 
@@ -20,14 +31,14 @@ selected targets and record actual build/runtime verification separately.
   Fedora: `sudo dnf install libX11 libglvnd-glx mesa-libGL mesa-dri-drivers`.
 - **WSL**: run the Windows build, `GOOS=windows go run .`.
 - **Mobile** builds still use cgo and the platform SDKs (below).
-- Smoke test of a machine: `go run github.com/hajimehoshi/ebiten/v2/examples/rotate@v2.10.5`.
+- Smoke test of a machine: `go run github.com/hajimehoshi/ebiten/v2/examples/rotate@v2.10.6`.
 
 ## New project
 
 ```sh
 mkdir mygame && cd mygame
 go mod init example.com/mygame
-go get github.com/hajimehoshi/ebiten/v2@v2.10.5
+go get github.com/hajimehoshi/ebiten/v2@v2.10.6
 ```
 
 or `python3 "$skill_dir/scripts/new_game.py" --out mygame --module example.com/mygame`, then
@@ -65,7 +76,7 @@ Call before `RunGame` (most are also safe at run time):
 
 On Windows, Ebitengine hides the console window of a game started from Explorer
 once it is running. Release builds still add `-H=windowsgui` so no console
-appears at all (see the Windows section of `publishing-and-platforms.md`).
+appears at all (see the Windows section of the publishing-and-platforms reference).
 
 ## Desktop builds
 
@@ -78,12 +89,12 @@ GOOS=linux   GOARCH=amd64 go build -buildvcs=false -trimpath -ldflags="-s -w" -o
 ```
 
 Steam builds for Windows add `-X=runtime.godebugDefault=asyncpreemptoff=1` to
-`-ldflags` (`publishing-and-platforms.md`).
+`-ldflags` (publishing-and-platforms reference).
 
 For universal macOS distribution, an `.app` bundle is useful: `scripts/package_macos_app.py`
 assembles one from the amd64 and arm64 binaries. Unsigned apps need the user to
 allow them in System Settings; signing and notarisation need Apple tooling on a
-Mac (`publishing-and-platforms.md`).
+Mac (publishing-and-platforms reference).
 
 ## Browser (WebAssembly)
 
@@ -130,7 +141,7 @@ Install the binder and create a mobile package that registers the game with
 `mobile.SetGame` (not `RunGame`) and exports at least one function:
 
 ```sh
-go install github.com/hajimehoshi/ebiten/v2/cmd/ebitenmobile@v2.10.5
+go install github.com/hajimehoshi/ebiten/v2/cmd/ebitenmobile@v2.10.6
 ```
 
 ```go
@@ -171,8 +182,8 @@ package (here `game`) that both `main` and the mobile package import.
 - [ ] Licence files for fonts, music and art ship with the build.
 - [ ] Version stamped (`-ldflags "-X main.version=…"`, shown on the title or
       options screen) so bug reports name a build.
-- [ ] Distribution: [platforms](publishing-and-platforms.md). Automated builds:
-      [CI](ci-and-release.md). Test the final archive after extraction.
+- [ ] Distribution: the publishing-and-platforms reference. Automated builds:
+      the ci-and-release reference. Test the final archive after extraction.
 
 Sources: [v2.10 installation/runtime requirements](https://ebitengine.org/en/documents/install.html),
 [WebAssembly](https://ebitengine.org/en/documents/webassembly.html),

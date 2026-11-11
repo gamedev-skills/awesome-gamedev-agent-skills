@@ -1,10 +1,19 @@
-# Defold file formats (1.14.0)
+# Defold file formats (1.14.1)
 
-Every file below comes from one small project that Bob 1.14.0 built (`--variant headless`) and
-the 1.14.0 headless engine ran: a player that moves and fires bullets from a factory, a loader
+Every file below comes from one small project that Bob 1.14.1 built (`--variant headless`) and
+the 1.14.1 headless engine ran: a player that moves and fires bullets from a factory, a loader
 that spawns a wave with a collection factory and loads a level through a collection proxy.
 Copy these shapes when you must write editor files by hand; when the editor is available,
 let it write them.
+
+## Contents
+
+- [game.project](#gameproject) and [.input_binding](#input_binding)
+- [.collection](#collection): instances, embedded instances, nested collections, children,
+  proxy-loaded collections
+- [.go](#go): file and embedded components, factories, proxies
+- [.atlas](#atlas) and [Scripts](#scripts)
+- [Where build errors point](#where-build-errors-point): tracing generated-file errors
 
 The editor files are protobuf text format. Fields not shown keep their defaults, `#` starts a
 comment, and the field order the editor writes does not matter to Bob. The schemas are the
