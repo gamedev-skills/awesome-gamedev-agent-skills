@@ -44,6 +44,8 @@ Export a typed array of resources (great for data-driven design):
   that calls a `Callable` (4.4+; the script must also be `@tool`).
 - `@export_storage var cache: Array` — saved with the scene/resource but hidden from the
   Inspector.
+- `@abstract` (4.5+) — on a class (before `class_name`) it cannot be instantiated; on a
+  bodiless method, every concrete subclass must implement it.
 
 ## Static typing details
 

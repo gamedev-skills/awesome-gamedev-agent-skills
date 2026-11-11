@@ -2,6 +2,9 @@
 
 Depth companion to `godot-export`.
 
+Contents: export_presets.cfg; Useful command-line flags; Custom feature tags; Web (HTML5)
+specifics; Android; macOS / iOS; PCK patching & DLC; Encryption.
+
 ## export_presets.cfg
 
 Generated/edited by *Project > Export*; commit it so CI and teammates share presets. It is
