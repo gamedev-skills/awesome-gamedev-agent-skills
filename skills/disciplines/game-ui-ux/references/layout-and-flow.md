@@ -1,8 +1,15 @@
-# Layout, scaling & flow — depth for `game-ui-ux`
+# Layout, scaling and flow
 
-Detail the `game-ui-ux` body defers here: per-engine scaling modes, safe-area math, a complete
-focus + screen-stack pattern, diegetic UI, accessibility, and localization-ready layout. Snippets
-target **Godot 4.7** and **Unity 6.3 LTS**.
+Contents:
+1. Scaling modes per engine
+2. Safe-area maths
+3. Focus navigation (full pattern, modal focus trap)
+4. Screen/menu stack
+5. Diegetic vs non-diegetic UI
+6. Accessibility
+7. Localization-ready layout
+
+Snippets target Godot 4.7 and Unity 6.3 LTS.
 
 ## 1. Scaling modes per engine
 
@@ -111,8 +118,6 @@ func _set_interactive(screen: Control, on: bool) -> void:
 # Pause overlay: get_tree().paused = true and set the overlay's process_mode = PROCESS_MODE_ALWAYS.
 ```
 
-This mirrors the state-stack idea in `love2d-core`'s `references/state-stack.md`, applied to UI.
-
 ## 5. Diegetic vs non-diegetic UI
 
 - **Non-diegetic:** drawn on the screen plane, outside the fiction (most HUDs). Cheapest, clearest.
@@ -146,7 +151,7 @@ This mirrors the state-stack idea in `love2d-core`'s `references/state-stack.md`
 ## Primary sources
 
 - [Godot 4.7: Multiple resolutions](https://docs.godotengine.org/en/4.7/tutorials/rendering/multiple_resolutions.html)
-- [Unity Input System 1.14: UI support](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.14/manual/UISupport.html)
+- [Unity Input System: UI support](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/UISupport.html)
 - [Xbox Accessibility Guideline 101: Text display](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/101)
 - [Xbox Accessibility Guideline 102: Contrast](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/102)
 - [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com/)

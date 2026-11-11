@@ -1,10 +1,15 @@
-# Utility AI system — curves, considerations, evaluator
+# Utility AI system: curves, considerations, evaluator
 
-Depth for `ai-behavior-trees-utility-ai`. Utility AI turns *"which action do I want most right
+Contents:
+1. Response-curve library (`Curves`, including `Compensate`)
+2. Considerations
+3. Scored actions and the compensation factor
+4. The evaluator: argmax with hysteresis, softmax
+
+Utility AI turns *"which action do I want most right
 now?"* into arithmetic: describe each candidate action with a few **considerations**, map each raw
 fact through a **normalized response curve** to 0..1, combine them into a score, and select. Same
-C#-only style as the BT core, so it composes with it (see the hybrid section in
-`references/practical-examples.md`).
+C#-only style as the BT core; `UtilityAction.Behavior` holds an optional BT subtree for hybrids.
 
 Golden rule: **every consideration outputs 0..1.** Mixing ranges (one 0..1, one 0..100) lets the
 big one dominate and makes weights meaningless.
@@ -201,6 +206,4 @@ public sealed class UtilityEvaluator
 
 Usage: score every decision step, then run the winner's `Behavior` (hybrid) or call its handler
 directly. Verify by drawing each action's live score as a debug bar while tuning — utility bugs are
-almost always a mis-shaped curve or an un-normalized fact, and both are obvious on screen. The
-worked villager-needs evaluator and the BT+Utility hybrid are in
-`references/practical-examples.md`.
+almost always a mis-shaped curve or an un-normalized fact, and both are obvious on screen.
