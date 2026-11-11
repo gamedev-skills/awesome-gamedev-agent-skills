@@ -4,6 +4,14 @@ Depth for the `unity-csharp-scripting` skill: the full execution order and the c
 patterns that don't fit in the main playbook. Verified against the Unity Manual
 "Event function execution order" page and `ScriptReference/MonoBehaviour`.
 
+## Contents
+
+- Execution order
+- Coroutine yield instructions
+- `Awaitable` (async/await) instead of a coroutine
+- Custom yield instruction
+- Gotchas
+
 ## Execution order (the parts that matter for gameplay)
 
 Per object, the engine calls these in this order:
@@ -40,30 +48,6 @@ yield return new WaitUntil(() => isReady);  // resume once the predicate is true
 yield return new WaitWhile(() => isLoading);// resume once the predicate is false
 yield return StartCoroutine(OtherRoutine());// run a nested coroutine to completion first
 ```
-
-## Stopping coroutines deterministically
-
-Keep the handle so you can stop exactly the right routine:
-
-```csharp
-private Coroutine _spawnLoop;
-
-private void OnEnable()  => _spawnLoop = StartCoroutine(SpawnLoop());
-private void OnDisable() { if (_spawnLoop != null) StopCoroutine(_spawnLoop); }
-
-private System.Collections.IEnumerator SpawnLoop()
-{
-    var wait = new WaitForSeconds(1f);      // allocate once, reuse — avoids per-iteration GC
-    while (true)
-    {
-        Spawn();
-        yield return wait;
-    }
-}
-```
-
-`StopAllCoroutines()` stops every coroutine on the MonoBehaviour — convenient but blunt;
-prefer stopping by handle when multiple routines run on one object.
 
 ## `Awaitable` (async/await) instead of a coroutine
 
