@@ -1,13 +1,10 @@
 ---
 name: threejs-scene-setup
 description: >
-  Sets up and debugs the foundation of a plain three.js game or 3D scene: import maps and
-  three/addons paths, Scene + PerspectiveCamera + WebGLRenderer, the setAnimationLoop loop
-  with Timer, resize and pixel-ratio budget, OrbitControls, WebGL context loss, and opting
-  into WebGPURenderer. Use when starting a three.js project or when the user reports "Failed
-  to resolve module specifier three", a black canvas, a stretched view after resize, nothing
-  animating, slow HiDPI rendering, the Clock deprecation warning, or WebGPURenderer errors. Not for loading GLB models (use `threejs-gltf-loading`),
-  materials, lights or shadows (use `threejs-materials-lighting`), or React Three Fiber.
+  Sets up and debugs a plain three.js r187 game or 3D scene: import maps, Scene, PerspectiveCamera
+  and WebGLRenderer, setAnimationLoop with Timer, resize, OrbitControls and WebGPURenderer. Use on
+  "Failed to resolve module specifier three", a black canvas or nothing animating. Not for GLB
+  loading (`threejs-gltf-loading`), materials (`threejs-materials-lighting`) or React Three Fiber.
 ---
 
 # three.js scene setup

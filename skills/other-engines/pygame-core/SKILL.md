@@ -1,15 +1,11 @@
 ---
 name: pygame-core
 description: >
-  Builds and debugs 2D games in Python with pygame-ce (imported as pygame): the event,
-  update and draw loop, delta-time movement, Surface and Rect/FRect drawing, keyboard and
-  mouse input, Sprite and Group management, collision, sound and text, plus headless
-  test and screenshot runs. Use whenever code does import pygame or the user mentions
-  pygame, pygame-ce, blit, clock.tick, sprite groups, a window that freezes or says not
-  responding, a game that runs faster on another PC, jittery sub-pixel movement, mixer not
-  initialized, or a pygame/pygame-ce install conflict. Not for 3D, for engine-neutral input
-  or save architecture (use `input-systems`, `save-systems`) or for genre rules such as jump
-  feel (use `platformer`).
+  Builds and debugs 2D games in Python with pygame-ce (imported as pygame): the event-update-draw
+  loop, delta time, Surfaces and Rects, Sprite groups and headless tests. Use when code imports
+  pygame, or a window says not responding, speed differs per PC or pygame and pygame-ce conflict.
+  Not for engine-neutral input or saves (`input-systems`, `save-systems`) or jump feel
+  (`platformer`).
 ---
 
 # pygame Core

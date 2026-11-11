@@ -1,15 +1,10 @@
 ---
 name: survival-crafting
 description: >
-  Design survival-crafting loops in any engine: gathering with tool tiers and node respawn,
-  crafting recipes, stations and tech trees, recipe discovery, carry weight and stack limits,
-  food spoilage, hunger, thirst, temperature and stamina needs, base building with snapping and
-  stability, day-night cycles and raid escalation, and saving a changed world. Use for a
-  Minecraft-, Valheim-, Don't Starve-, Rust-, Subnautica- or Terraria-like, or when crafting
-  eats materials, needs feel like chores or kill too fast, players strip the map, inventory is
-  always full, or the mid-game stalls. Not for RPG equipment stats, rarity and affixes (use
-  `rpg`), terrain and biome generation (use `procedural-gen`) or save-file mechanics (use
-  `save-systems`).
+  Designs survival-crafting loops in any engine: gathering, recipes and tech trees, carry weight,
+  spoilage, hunger and temperature, and base building. Use for a Minecraft-, Valheim- or Don't
+  Starve-like, or crafting that eats materials or needs that feel like chores. Not for RPG
+  equipment stats (`rpg`), terrain generation (`procedural-gen`) or save files (`save-systems`).
 ---
 
 # Survival crafting

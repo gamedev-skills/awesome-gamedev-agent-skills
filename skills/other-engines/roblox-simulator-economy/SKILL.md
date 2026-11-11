@@ -1,14 +1,11 @@
 ---
 name: roblox-simulator-economy
 description: >
-  Roblox simulator, tycoon, clicker and idle-game economy in Luau: upgrade cost curves, buy
-  max, income per second, rebirth pacing, offline earnings, big-number formatting (1.5K, 2.0Qa),
-  server-owned purchases, repairing tampered save values, and odds disclosure for paid eggs,
-  crates and spins, with a Lune pacing calculator. Use when picking or checking baseCost,
-  costGrowth or rebirth numbers, a rebirth takes far longer than the last, numbers show as
-  1000.0K, offline pays too much, or players gain currency they did not earn. Not for DataStore
-  saving and session locking (use `roblox-datastores`), remote rate limits (`roblox-networking`),
-  shop layout (`roblox-ui`), or wave-defense economies (`tower-defense`).
+  Roblox simulator, tycoon and idle-game economies in Luau: upgrade cost curves, income per
+  second, rebirth pacing, big-number formatting and paid-egg odds, with a Lune calculator. Use for
+  baseCost or rebirth numbers or unearned currency. Not for DataStores (`roblox-datastores`),
+  remote limits (`roblox-networking`), shop layout (`roblox-ui`) or wave economies
+  (`tower-defense`).
 ---
 
 # Roblox simulator economy

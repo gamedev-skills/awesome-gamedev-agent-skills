@@ -1,15 +1,10 @@
 ---
 name: ebitengine-game
 description: >
-  Creates, improves, debugs and packages playable 2D games in Go with Ebitengine
-  (github.com/hajimehoshi/ebiten/v2): a complete start-play-outcome-retry loop, action
-  input, rendering and pixel-art scaling, text/v2, audio, scenes, gameplay tests, scripted
-  screenshots, and desktop, browser (WASM) or mobile builds. Use whenever go.mod requires
-  ebiten/v2 or the user asks for a game in Go or mentions Ebitengine, ebiten.Game,
-  Update/Draw/Layout, inpututil, a sound that plays too fast or as noise, blurry pixel art,
-  a stale HUD, a missed key press, stutter, or a game.wasm build, including focused fixes.
-  Not for Go software that merely depends on Ebitengine, engine patches, or engine-neutral
-  design alone (pair with `game-ui-ux`, `game-feel`, `audio-design` or a genre skill).
+  Creates, debugs and packages 2D games in Go with Ebitengine v2: a play-and-retry loop, input,
+  pixel-art scaling, text, audio and desktop, WASM or mobile builds. Use when go.mod requires
+  ebiten/v2 or the user wants a game in Go, or on blurry pixel art, missed key presses or stutter.
+  Not for engine patches; pair with `game-feel`, `game-ui-ux` or a genre skill for design.
 ---
 
 # Ebitengine game

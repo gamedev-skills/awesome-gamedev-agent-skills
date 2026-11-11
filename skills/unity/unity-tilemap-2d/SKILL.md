@@ -1,14 +1,11 @@
 ---
 name: unity-tilemap-2d
 description: >
-  Builds and scripts 2D tilemaps in Unity 6.3 LTS: Grid and Tilemap, Tile assets and the
-  Tile Palette, Tilemap Collider 2D with a Composite Collider 2D, Rule Tiles from 2D Tilemap
-  Extras, and runtime SetTile/GetTile/SetTilesBlock. Use when painting or generating a tile
-  level, adding tilemap collision, seams appear between tile colliders, RuleTile is not
-  found, usedByComposite is obsolete, tiles sort wrongly, or the user mentions Unity
-  tilemap, tile palette, rule tile, hex or isometric grids. Not for level design practice
-  (use `level-design`), generation algorithms (use `procedural-gen`), character movement
-  (use `unity-physics`) or Godot TileMapLayer (use `godot-tilemap`).
+  Unity 6.3 LTS 2D tilemaps: the Tile Palette, Tilemap Collider 2D with a Composite Collider, Rule
+  Tiles and runtime SetTile. Use for painting or generating a tile level, seams between tile
+  colliders, RuleTile not found, or hex and isometric grids. Not for level design
+  (`level-design`), generation (`procedural-gen`), movement (`unity-physics`) or Godot
+  (`godot-tilemap`).
 ---
 
 # Unity 2D Tilemap

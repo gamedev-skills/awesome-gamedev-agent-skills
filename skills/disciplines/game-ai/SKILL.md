@@ -1,15 +1,11 @@
 ---
 name: game-ai
 description: >
-  Design engine-neutral enemy and NPC AI architecture: choose the decision model (FSM,
-  hierarchical FSM, behavior tree, utility, GOAP), and build finite state machines, perception
-  (sight cones, line of sight, hearing, last-known position), steering (seek, arrive,
-  separation, flocking) and grid or graph pathfinding (A*, heuristics, flow fields, Godot
-  AStarGrid2D). Use for enemy AI, patrol/chase/flee, guard states, "find a path to the player",
-  agents stuck on corners, jittery state switching, or an AI that sees through walls. Not for
-  behavior-tree or utility AI code (use `ai-behavior-trees-utility-ai`), Unreal BT, EQS or
-  StateTree (use `unreal-behavior-trees`), or Unity NavMesh baking and agents (use
-  `unity-navmesh`).
+  Designs engine-neutral enemy and NPC AI: picks FSM, behavior tree, utility or GOAP, and builds
+  perception, steering and A* pathfinding. Use for patrol and chase, "find a path to the player",
+  agents stuck on corners or AI that sees through walls. Not for BT or utility code
+  (`ai-behavior-trees-utility-ai`), Unreal AI (`unreal-behavior-trees`) or Unity NavMesh
+  (`unity-navmesh`).
 ---
 
 # Game AI architecture

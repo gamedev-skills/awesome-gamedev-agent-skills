@@ -1,15 +1,10 @@
 ---
 name: rpg
 description: >
-  Design RPG progression and combat numbers in any engine: base and derived stats with a
-  modifier stack, XP curves sized in minutes per level, damage and defense formulas
-  (subtractive or ratio), crits and elemental multipliers, items and equipment (slots, rarity
-  tiers, affixes, item level), quest state machines and JRPG or ATB turn order. Use for a
-  JRPG, CRPG, action RPG, Diablo-style looter or Pokemon-like, or when stats stay wrong after
-  unequipping, late-game numbers explode, defense makes enemies immune, levels come too fast or
-  too slow, or loot feels flat. Not for gathering, crafting recipes, carry weight or spoilage
-  (use `survival-crafting`), dialogue trees (use `dialogue-systems`), save files (use
-  `save-systems`) or permadeath runs (use `roguelike`).
+  Designs RPG progression and combat numbers in any engine: stats with a modifier stack, XP
+  curves, damage formulas, items and equipment (slots, rarity, affixes) and quests. Use for a JRPG
+  or Diablo-style looter, or stats wrong after unequipping. Not for crafting and carry weight
+  (`survival-crafting`), dialogue (`dialogue-systems`) or permadeath runs (`roguelike`).
 ---
 
 # RPG

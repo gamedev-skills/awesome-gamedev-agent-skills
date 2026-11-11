@@ -1,14 +1,10 @@
 ---
 name: roblox-studio-workflow
 description: >
-  Safe editing of an existing Roblox place or Rojo project: find the source of truth (Studio,
-  Rojo, Script Sync, packages), inventory Explorer, reuse existing remotes and modules, pick
-  execution locations, clean up experiments, and prove changes with the right test mode (Server
-  and Clients, Device Simulator, StudioTestService) or the Studio MCP server (execute_luau,
-  get_console_output). Use when an agent edits a .rbxl, .rbxlx or Rojo project, works through
-  Studio MCP tools, or must report what was actually tested. Not for installing or connecting
-  Studio MCP (Roblox's official `roblox-get-started` skill), or the feature code itself
-  (`roblox-luau`, `roblox-ui`, `roblox-networking` and the other Roblox skills).
+  Safely edits an existing Roblox place or Rojo project: finds the source of truth and proves
+  changes with the right test mode or Studio MCP (execute_luau). Use when an agent edits a .rbxl
+  or Rojo project, works through Studio MCP tools, or must report what was tested. Not for
+  installing Studio MCP (`roblox-get-started`) or the feature code (`roblox-luau`, `roblox-ui`).
 ---
 
 # Roblox Studio workflow

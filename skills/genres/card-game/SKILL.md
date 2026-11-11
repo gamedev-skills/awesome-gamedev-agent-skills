@@ -1,15 +1,11 @@
 ---
 name: card-game
 description: >
-  Build card games and deckbuilders in any engine: cards as data run by one effect
-  interpreter, draw, hand, discard and exhaust zones with reshuffle, energy or mana costs and a
-  power budget, a trigger stack, enemy intents, card rewards and deck thinning, scoring
-  pipelines and fair seeded shuffles. Use for a Slay the Spire-, Balatro-, Monster Train- or
-  Inscryption-like roguelike deckbuilder, a Hearthstone- or Magic-style TCG/CCG or a card
-  battler, or when cards duplicate or vanish, triggers fire in the wrong order or loop
-  forever, shuffles feel streaky, or the starter deck is too weak. Not for grid dungeon
-  crawlers (use `roguelike`), card assets as Godot or Unity data files (use `godot-resources`
-  or `unity-scriptableobjects`) or hand drag-and-drop widgets (use `godot-ui-control`).
+  Designs card games and deckbuilders in any engine: cards as data with one effect interpreter,
+  deck zones, a trigger stack and seeded shuffles. Use for a Slay the Spire- or Balatro-like or a
+  TCG, or cards that duplicate or streaky shuffles. Not for grid crawlers (`roguelike`), card data
+  assets (`godot-resources`, `unity-scriptableobjects`) or hand drag-and-drop
+  (`godot-ui-control`).
 ---
 
 # Card game

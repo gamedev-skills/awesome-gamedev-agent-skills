@@ -1,14 +1,11 @@
 ---
 name: physics-tuning
 description: >
-  Engine-neutral physics tuning with Godot checks: fixed timestep and render interpolation,
-  CCD and speed caps against tunnelling, mass, damping, gravity scale and materials, solver
-  iterations, sleeping, and a collision layer matrix. Use when bodies jitter, fast objects
-  pass through walls, stacks explode, speed changes with frame rate, physics feels floaty or
-  heavy, or a collision matrix needs planning, even if the user only says the physics feels
-  wrong. Not for engine physics API (use `godot-physics`, `unity-physics` incl. 2D,
-  `roblox-physics`, `phaser-arcade-physics`), camera jitter (use `camera-systems`), or jump
-  feel and coyote time (use `platformer`).
+  Engine-neutral physics tuning with Godot checks: fixed timestep and interpolation, CCD against
+  tunnelling, damping, solver iterations and collision layer matrices. Use when bodies jitter,
+  fast objects pass through walls or physics feels floaty or wrong. Not for engine physics APIs
+  (`godot-physics`, `unity-physics`, `roblox-physics`, `phaser-arcade-physics`) or jump feel
+  (`platformer`).
 ---
 
 # Physics tuning

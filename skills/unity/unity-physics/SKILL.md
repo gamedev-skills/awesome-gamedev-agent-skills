@@ -1,14 +1,10 @@
 ---
 name: unity-physics
 description: >
-  Writes and debugs Unity 6.3 LTS physics for 3D (Rigidbody, Collider) and 2D (Rigidbody2D,
-  Collider2D, Physics2D): forces and linearVelocity, kinematic bodies, triggers vs
-  collisions, the layer collision matrix, raycasts and joints. Use whenever a Unity object
-  falls through the floor, OnCollisionEnter or OnTriggerEnter2D never fires, a ground-check
-  ray always hits the player, a body jitters or passes through walls, or the user mentions
-  AddForce, isKinematic, bodyType, Physics2D.Raycast or obsolete velocity warnings. Not for
-  engine-neutral timestep, jitter or tunnelling tuning (use `physics-tuning`), tilemap
-  colliders (use `unity-tilemap-2d`) or NavMesh agents (use `unity-navmesh`).
+  Unity 6.3 LTS physics in 3D and 2D: Rigidbody and Rigidbody2D, forces and linearVelocity, the
+  layer collision matrix and raycasts. Use when an object falls through the floor, OnTriggerEnter
+  never fires, or a ground ray hits the player. Not for engine-neutral tunnelling tuning
+  (`physics-tuning`), tilemap colliders (`unity-tilemap-2d`) or NavMesh (`unity-navmesh`).
 ---
 
 # Unity Physics (3D PhysX and 2D)

@@ -1,16 +1,11 @@
 ---
 name: godot-gdscript
 description: >
-  GDScript 2.0 for Godot 4: static typing and type inference, the node lifecycle
-  (_ready/_process/_physics_process), @export/@onready/@tool, await and coroutines, typed
-  collections, and porting 3.x scripts to 4.x syntax. Use when
-  writing, fixing or reviewing .gd files, or when a script will not parse ("Cannot infer the
-  type", "Identifier not declared", "Not all code paths return a value"), a coroutine never
-  resumes, an @onready variable is null, or code broke after upgrading to Godot 4.7. Ships a
-  headless compile check for every script. Not for signal wiring and
-  groups (use `godot-signals-groups`), scene structure and node paths (use
-  `godot-nodes-scenes`), C# (use `godot-csharp`), or test suites in CI (use
-  `godot-gdscript-headless-testing`).
+  GDScript 2.0 for Godot 4.7: static typing, @export and @onready, await and coroutines, and
+  porting 3.x code. Use for .gd parse errors ("Cannot infer the type"), a coroutine that never
+  resumes, a null @onready variable or upgrade breakage. Not for signals (`godot-signals-groups`),
+  scenes (`godot-nodes-scenes`), C# (`godot-csharp`) or CI tests
+  (`godot-gdscript-headless-testing`).
 ---
 
 # Godot GDScript (4.x)

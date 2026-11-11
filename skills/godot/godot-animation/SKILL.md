@@ -1,14 +1,10 @@
 ---
 name: godot-animation
 description: >
-  Godot 4 animation APIs: AnimationPlayer clips and Call Method tracks, AnimationTree state
-  machines, blend spaces and one-shots, AnimatedSprite2D sprite sheets, and code-driven
-  Tweens with create_tween(). Use when playing or blending character animations, wiring
-  travel() and parameters/ paths, awaiting animation_finished, or tweening UI and objects in
-  a Godot project, and when an animation will not play, a state never changes, a tween does
-  nothing or snaps back, or the log says "Animation not found". Ships a headless state test. Not for juice and easing choices (use `game-feel`), making sprite art
-  (use `create-game-assets`), shader effects (use `godot-shaders`), or Unity or three.js
-  animation (use `unity-animation` or `threejs-gltf-loading`).
+  Godot 4.7 animation APIs: AnimationPlayer, AnimationTree state machines, AnimatedSprite2D and
+  create_tween() Tweens, with a headless state test. Use when travel() does nothing, an animation
+  will not play, a tween snaps back or the log says "Animation not found". Not for easing choices
+  (`game-feel`), sprite art (`create-game-assets`) or Unity (`unity-animation`).
 ---
 
 # Godot Animation (4.x)

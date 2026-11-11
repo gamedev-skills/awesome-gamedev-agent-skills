@@ -1,14 +1,11 @@
 ---
 name: roblox-luau
 description: >
-  Roblox Luau scripting and code structure: services, creating and parenting Instances, events
-  and connection cleanup, Script vs LocalScript vs ModuleScript and RunContext, where each
-  container runs, the task library, deferred events, typed Luau and the new type solver, and
-  selene and luau-lsp checks. Use when writing or debugging Roblox Studio scripts, a LocalScript
-  does not run, a client gets nil right after joining, wait() needs replacing, ModuleScripts need
-  organizing, or type warnings appear. Not for remote design, exploit hardening, replication or
-  server authority (use `roblox-networking`), saving data (`roblox-datastores`), or editing a live
-  place safely (`roblox-studio-workflow`).
+  Roblox Luau scripting and code structure: services, Instances, Script vs LocalScript vs
+  ModuleScript, the task library and typed Luau, with selene and luau-lsp checks. Use when a
+  LocalScript does not run, a client gets nil after joining or wait() needs replacing. Not for
+  remotes (`roblox-networking`), saving (`roblox-datastores`) or live-place edits
+  (`roblox-studio-workflow`).
 ---
 
 # Roblox Luau scripting

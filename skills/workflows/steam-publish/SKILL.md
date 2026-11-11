@@ -1,14 +1,10 @@
 ---
 name: steam-publish
 description: >
-  Publishes or updates a game on Steam with Steamworks and SteamPipe: depots and packages,
-  app_build and depot_build .vdf scripts, steamcmd +run_app_build uploads, beta branches,
-  setting a build live, store and build review, Coming Soon and release. Use when the user
-  mentions Steam, Steamworks, steamcmd, ContentBuilder, a depot, SetLive, "Failed to get
-  application info", status 6, Mac or Linux installing no files, Steam Deck Verified, or how
-  long Steam review or Coming Soon takes, even if they only say "ship it on Steam". Not for
-  itch.io (use `itch-publish`) or Steamworks API calls in game code such as achievements,
-  overlay, cloud saves or lobbies (use the engine's Steam binding).
+  Publishes or updates a game on Steam with Steamworks and SteamPipe: depots, app_build .vdf
+  scripts, steamcmd uploads, beta branches, SetLive, store review and Coming Soon. Use for
+  steamcmd, ContentBuilder, "Failed to get application info", Steam Deck Verified or "ship it on
+  Steam". Not for itch.io (`itch-publish`) or Steamworks SDK calls in game code.
 ---
 
 # Steam Publish (Steamworks + SteamPipe)

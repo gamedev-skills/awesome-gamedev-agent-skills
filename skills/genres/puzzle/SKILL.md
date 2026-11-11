@@ -1,15 +1,10 @@
 ---
 name: puzzle
 description: >
-  Design grid and logic puzzle games in any engine: board state kept apart from visuals,
-  match-3 detection, cascades, special pieces and deadlock reshuffles, Sokoban-style pushing
-  with dead-square detection, sliding-tile parity, unique-solution logic grids (nonogram,
-  Sudoku, no-guess Minesweeper), exact undo and restart, solver-checked level generation and
-  difficulty measured by solver effort. Use for a Candy Crush- or Bejeweled-like, Sokoban, a
-  Baba Is You- or Stephen's Sausage Roll-style puzzler, Picross, 2048 or a daily puzzle, or when
-  cascades miss matches, undo drifts, boards soft-lock, or generated levels are unsolvable or
-  have two answers. Not for physics puzzle platformers (use `platformer` with
-  `physics-tuning`) or card games (use `card-game`).
+  Designs grid and logic puzzle games in any engine: match-3 cascades, Sokoban pushing,
+  unique-solution grids (nonogram, Sudoku), exact undo and solver-checked levels. Use for a Candy
+  Crush-like, Sokoban or Picross, or broken cascades, drifting undo or unsolvable levels. Not for
+  physics puzzlers (`platformer`, `physics-tuning`) or card games (`card-game`).
 ---
 
 # Puzzle

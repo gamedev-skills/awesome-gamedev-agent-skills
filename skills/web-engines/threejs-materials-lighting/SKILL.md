@@ -1,14 +1,11 @@
 ---
 name: threejs-materials-lighting
 description: >
-  Lights and shades three.js scenes: choosing MeshStandardMaterial, MeshPhysicalMaterial or
-  unlit MeshBasicMaterial, ambient, hemisphere, directional, point and spot lights, shadow
-  maps and shadow-camera fitting, HDR or RoomEnvironment image-based lighting, texture color
-  space, and tone mapping. Use when a three.js mesh or loaded model renders black, too dark,
-  washed out or flat, shadows are missing, cut off, blocky or covered in acne, reflections look
-  wrong, or the image goes dark after adding EffectComposer. Not for renderer and loop setup
-  (use `threejs-scene-setup`), loading models (use `threejs-gltf-loading`), or writing custom
-  shader effects (use `shader-programming`).
+  Lights and shades three.js r187 scenes: standard, physical and unlit materials, lights, shadows,
+  HDR environment lighting and tone mapping. Use when a mesh renders black or washed out, shadows
+  are missing or full of acne, or EffectComposer darkens the image. Not for renderer setup
+  (`threejs-scene-setup`), model loading (`threejs-gltf-loading`) or custom shaders
+  (`shader-programming`).
 ---
 
 # three.js materials and lighting

@@ -1,14 +1,10 @@
 ---
 name: prototype-fast
 description: >
-  Builds a throwaway playable prototype in about an hour to answer one question, usually "is
-  this mechanic fun?": a one-question brief with keep and kill criteria, a greybox of the
-  mechanic in a separate prototypes folder, a debug HUD for the judged numbers, a user
-  playtest, and a recorded keep, kill or retune call. Use when the user says prototype this,
-  rough it in, just get something playable, a quick vertical slice or MVP of one mechanic,
-  test whether an idea is fun, or asks whether to keep or rewrite prototype code. Not for a timed jam with a submission (use `game-jam`), blocking out a
-  level layout (use `level-design`), or the production version of a proven feature (use the
-  engine or genre skill).
+  Builds a throwaway playable prototype in about an hour to answer one question, usually "is this
+  mechanic fun?": a one-question brief, a greybox, a debug HUD, a playtest and a keep, kill or
+  retune call. Use for "prototype this", "just get something playable" or whether to keep
+  prototype code. Not for a timed jam (`game-jam`) or level blockouts (`level-design`).
 ---
 
 # Prototype Fast

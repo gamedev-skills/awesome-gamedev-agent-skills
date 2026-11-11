@@ -1,15 +1,11 @@
 ---
 name: godot-export
 description: >
-  Export a Godot 4 project for distribution: export templates, export_presets.cfg presets
-  for Windows, macOS, Linux, Web and Android, command-line exports with --export-release,
-  --export-pack and --export-patch, export builds in CI, web COOP/COEP headers,
-  dedicated-server builds, and feature tags. Use when exporting or packaging a Godot
-  game, automating builds, or when an export fails with "No export template found", a
-  preset is not found, the web build shows a blank page or SharedArrayBuffer error, or the
-  exported game is missing files or cannot save. Not for running tests in CI (use
-  `godot-gdscript-headless-testing`), uploading to stores (use `steam-publish` or
-  `itch-publish`), or server networking code (use `godot-multiplayer`).
+  Exports Godot 4.7 projects: templates, export_presets.cfg for desktop, Web and Android,
+  command-line exports and web COOP/COEP headers. Use on "No export template found", a blank web
+  build, a SharedArrayBuffer error or files missing after export. Not for tests in CI
+  (`godot-gdscript-headless-testing`), store uploads (`steam-publish`, `itch-publish`) or netcode
+  (`godot-multiplayer`).
 ---
 
 # Godot Export & Builds (4.x)

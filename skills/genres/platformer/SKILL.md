@@ -1,15 +1,11 @@
 ---
 name: platformer
 description: >
-  Design and tune 2D platformer jumping in any engine: coyote time, jump buffering, variable
-  jump height, apex hang, fall gravity and terminal speed, ceiling corner correction, wall
-  slide and wall jump, one-way and moving platforms, checkpoints and level reach. Ships a
-  calculator that turns jump height and time-to-apex into gravity and checks a logged jump.
-  Use for a Mario-, Celeste-, Hollow Knight- or Super Meat Boy-like, or when the jump feels
-  floaty, heavy or laggy, presses get eaten at ledges, or the player snags on corners. Not for
-  the Godot CharacterBody2D API (load `godot-2d-movement` with this), rebinding or generic input
-  buffering (use `input-systems`), shake and squash juice (use `game-feel`) or camera follow
-  (use `camera-systems`).
+  Designs and tunes 2D platformer jumping in any engine: coyote time, jump buffering, variable
+  jump height, fall gravity, corner correction and wall jumps. Use for a Mario- or Celeste-like,
+  or a jump that feels floaty or laggy or presses eaten at ledges. Not for the Godot
+  CharacterBody2D API (load `godot-2d-movement` too), generic input buffering (`input-systems`) or
+  juice (`game-feel`).
 ---
 
 # Platformer

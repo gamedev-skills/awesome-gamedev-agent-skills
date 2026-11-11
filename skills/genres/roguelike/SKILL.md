@@ -1,15 +1,11 @@
 ---
 name: roguelike
 description: >
-  Design run-based roguelikes and roguelites in any engine: run structure and length,
-  permadeath with separate run and profile saves, meta-progression and post-win difficulty
-  ladders, seeded and daily runs that replay exactly, energy-based turn order and speed,
-  symmetric field of view and fog of war, depth-scaled spawn budgets and per-run item
-  identification. Use for NetHack-, Brogue- or DCSS-style dungeon crawlers and Hades-, Dead
-  Cells- or Isaac-style roguelites, or when a seed gives different floors, one monster never
-  acts, vision is one-sided, or deaths feel cheap or runs grindy. Not for dungeon generation
-  algorithms such as BSP, cellular caves or WFC, or loot-table mechanics (use
-  `procedural-gen`), or roguelike deckbuilders (use `card-game`).
+  Designs run-based roguelikes and roguelites in any engine: run structure, permadeath,
+  meta-progression, seeded and daily runs, turn order and symmetric field of view. Use for
+  NetHack- or Hades-style games, or seeds that give different floors or runs that feel cheap. Not
+  for dungeon generation or loot tables (`procedural-gen`) or roguelike deckbuilders
+  (`card-game`).
 ---
 
 # Roguelike

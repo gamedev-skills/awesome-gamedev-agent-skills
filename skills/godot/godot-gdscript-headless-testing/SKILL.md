@@ -1,14 +1,11 @@
 ---
 name: godot-gdscript-headless-testing
 description: >
-  Run GDScript tests from the command line with godot --headless and a SceneTree runner
-  script that exits non-zero on failure, so CI can gate merges without opening the editor.
-  Use when a Godot project needs unit or smoke tests without an addon, when wiring GitHub
-  Actions or another CI job to run Godot tests, or when a headless run hangs, opens a window,
-  exits 0 despite failed checks or SCRIPT ERROR lines, or fails only on a fresh checkout
-  with "Identifier not declared". Owns Godot tests in CI. Not for export presets or building
-  release binaries in CI (use `godot-export`), GDScript language questions (use
-  `godot-gdscript`), or Unity test runs (use `unity-build-pipeline`).
+  Runs Godot 4.7 GDScript tests with godot --headless and a SceneTree runner that exits non-zero
+  on failure, so CI can gate merges. Owns Godot tests in CI. Use for GitHub Actions jobs or a
+  headless run that hangs or exits 0 despite SCRIPT ERROR lines. Not for export in CI
+  (`godot-export`), GDScript language (`godot-gdscript`) or Unity tests
+  (`unity-csharp-scripting`).
 ---
 
 # Godot GDScript headless testing (4.x)

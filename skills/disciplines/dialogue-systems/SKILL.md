@@ -1,14 +1,10 @@
 ---
 name: dialogue-systems
 description: >
-  Build branching dialogue and narrative state, engine-neutral: choose Ink, Yarn Spinner or a
-  small custom JSON graph runner, wire lines, choices, conditions, variables, commands and
-  localization line IDs into the game loop, and validate every branch. Use for NPC
-  conversations, dialogue trees, choice menus, barks, .ink or .yarn files, inklecate or ysc,
-  dialogue that dead-ends or charges a cost twice, or flags that later dialogue reads. Not
-  for visual-novel structure such as backlog, skip/auto and save slots (use `visual-novel`),
-  quests and stats (use `rpg`), or text box and choice-button widgets (use
-  `godot-ui-control` with `game-ui-ux`).
+  Builds engine-neutral branching dialogue with Ink, Yarn Spinner or a small JSON graph runner:
+  lines, choices, conditions, variables and localization IDs. Use for NPC conversations, dialogue
+  trees, barks, .ink or .yarn files, or dialogue that dead-ends. Not for visual-novel backlog and
+  skip (`visual-novel`), quests (`rpg`) or text box widgets (`godot-ui-control`, `game-ui-ux`).
 ---
 
 # Dialogue systems

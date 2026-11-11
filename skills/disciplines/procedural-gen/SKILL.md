@@ -1,14 +1,11 @@
 ---
 name: procedural-gen
 description: >
-  Engine-neutral procedural generation algorithms in Python with Godot and Unity mappings:
-  seeded RNG, dungeon layout (rooms and corridors, BSP, drunkard's walk, cellular automata,
-  wave function collapse), connectivity checks, noise terrain and biomes, weighted drop
-  tables, and a seed sweep. Use when writing a map or dungeon generator, WFC, Perlin or
-  simplex terrain, or loot odds, or when a seed gives different maps, rooms are unreachable,
-  noise looks flat, or shared seeds break after an update. Not for roguelike run structure,
-  permadeath or meta-progression (use `roguelike`), deckbuilders (use `card-game`), or
-  painting tiles (use `godot-tilemap`, `unity-tilemap-2d`).
+  Engine-neutral procedural generation in Python with Godot and Unity mappings: seeded RNG,
+  dungeon layouts, wave function collapse, noise terrain and loot tables. Use for a dungeon
+  generator, WFC or Perlin terrain, or seeds that give different maps. Not for roguelike run
+  structure (`roguelike`), deckbuilders (`card-game`) or painting tiles (`godot-tilemap`,
+  `unity-tilemap-2d`).
 ---
 
 # Procedural generation

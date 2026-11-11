@@ -1,14 +1,10 @@
 ---
 name: godot-signals-groups
 description: >
-  Godot 4 signals and node groups: declaring typed signals, emit(), connect() with
-  Callables, bind/unbind, CONNECT_ONE_SHOT and CONNECT_DEFERRED, awaiting signals,
-  autoload event buses, add_to_group/call_group broadcasts, and the [connection] and
-  groups= entries in .tscn files. Use when Godot nodes need to talk without hard
-  references, a handler fires twice or never, the log shows "already connected",
-  "Method expected N argument(s)" or a freed lambda capture, or 3.x
-  connect("signal", self, "method") code needs porting. Not for general GDScript syntax
-  (use `godot-gdscript`) or scene and autoload setup (use `godot-nodes-scenes`).
+  Godot 4.7 signals and node groups: typed signals, connect() with Callables, one-shot and
+  deferred connections, event-bus autoloads and call_group broadcasts. Use when nodes must talk
+  without hard references, a handler fires twice or never, or the log says "already connected".
+  Not for GDScript syntax (`godot-gdscript`) or autoload setup (`godot-nodes-scenes`).
 ---
 
 # Godot Signals & Groups (4.x)

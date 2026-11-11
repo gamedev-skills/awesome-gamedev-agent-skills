@@ -1,16 +1,10 @@
 ---
 name: visual-novel
 description: >
-  Build visual novels and choice-driven story games in Ren'Py or any engine: route structure
-  (common route, branch-and-merge, character routes, true ending), affection and flag
-  tracking, save-anywhere that resumes the exact line, rollback, backlog, skip-read-only,
-  auto-forward and text speed, typewriter reveal, sprite and background staging, CG and ending
-  galleries, and checks that every ending is reachable. Use for a VN, dating sim, otome,
-  kinetic novel or mystery VN (Doki Doki- or Steins;Gate-like), or when a load resumes at
-  the wrong line, skip runs through unread text,
-  choices feel meaningless, an ending cannot be reached, or text jumps while typing. Not for
-  dialogue inside a larger game or Ink and Yarn runtime wiring (use `dialogue-systems`) or text
-  box widget code (use `godot-ui-control` with `game-ui-ux`).
+  Builds visual novels and choice-driven stories in Ren'Py or any engine: routes and endings,
+  save-anywhere, backlog, skip-read-only and typewriter text. Use for a VN or dating sim, or loads
+  at the wrong line, skip running through unread text or an unreachable ending. Not for dialogue
+  in a larger game or Ink and Yarn (`dialogue-systems`) or text box widgets (`godot-ui-control`).
 ---
 
 # Visual novel

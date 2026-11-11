@@ -1,14 +1,11 @@
 ---
 name: unity-csharp-scripting
 description: >
-  Writes and fixes Unity 6.3 LTS C# gameplay scripts: MonoBehaviour lifecycle order,
-  component access, Inspector serialization, coroutines and Awaitable, and .meta/GUID
-  discipline for files changed outside the Editor. Use when creating, moving or renaming .cs
-  files in a Unity project, a component shows "Missing script", a field is missing from the
-  Inspector, a coroutine stops early, FindObjectOfType is obsolete, or the user wants a
-  Unity project compiled, tested or checked from the command line. Not for Rigidbody and
-  collisions (use `unity-physics`), input (use `unity-input-system`), data assets (use
-  `unity-scriptableobjects`) or player builds (use `unity-build-pipeline`).
+  Writes and fixes Unity 6.3 LTS C# gameplay scripts: MonoBehaviour lifecycle, serialization,
+  .meta/GUID discipline and command-line tests. Use for new or renamed .cs files, "Missing script"
+  or a field missing from the Inspector. Not for physics (`unity-physics`), input
+  (`unity-input-system`), data assets (`unity-scriptableobjects`) or builds
+  (`unity-build-pipeline`).
 ---
 
 # Unity C# Scripting (MonoBehaviour)

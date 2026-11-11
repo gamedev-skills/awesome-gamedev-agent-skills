@@ -1,13 +1,11 @@
 ---
 name: level-design
 description: >
-  Engine-neutral level design with Godot checks: player metrics measured from the real
-  controller, blockout before art, critical and golden paths, key and ability gating with a
-  soft-lock reachability check, pacing as data, encounters, and guiding players with light and
-  landmarks. Use when laying out or reviewing a level or metroidvania gate order, or when
-  players get lost, a jump is impossible, the level feels flat or exhausting, or a key sits
-  behind its own door. Not for generating levels (use `procedural-gen`), painting tiles (use
-  `godot-tilemap`, `unity-tilemap-2d`) or tuning the jump (use `platformer`).
+  Engine-neutral level design with Godot checks: player metrics from the real controller, key and
+  ability gating with a soft-lock check, and pacing. Use when laying out a level or metroidvania
+  gates, or players get lost or a key sits behind its own door. Not for generation
+  (`procedural-gen`), painting tiles (`godot-tilemap`, `unity-tilemap-2d`) or jump tuning
+  (`platformer`).
 ---
 
 # Level design

@@ -1,15 +1,11 @@
 ---
 name: godot-physics
 description: >
-  Godot 4 physics API in 2D and 3D: choosing StaticBody, RigidBody, AnimatableBody,
-  CharacterBody or Area; collision_layer and collision_mask bits and layer names;
-  Area overlap signals for triggers and hurtboxes; forces and impulses; RayCast nodes
-  and direct_space_state queries; and Jolt Physics, the default 3D engine for projects
-  created in 4.6+. Use when Godot objects pass through each other, an Area2D or Area3D
-  never fires body_entered, a raycast hits nothing or hits itself, or 3D joints, floors
-  or contacts change after moving to Jolt or 4.7. Not for engine-neutral jitter,
-  tunnelling, timestep or layer-matrix planning (use `physics-tuning`) or CharacterBody
-  movement code (use `godot-2d-movement`).
+  Godot 4.7 physics API in 2D and 3D: body and Area types, collision_layer and mask bits, Area
+  signals for hurtboxes, RayCast and space queries, and Jolt (3D default since 4.6). Use when
+  objects pass through each other, body_entered never fires or a raycast hits itself. Not for
+  engine-neutral jitter and tunnelling (`physics-tuning`) or CharacterBody movement
+  (`godot-2d-movement`).
 ---
 
 # Godot Physics (4.x, 2D + 3D)

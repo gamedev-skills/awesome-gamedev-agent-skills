@@ -1,14 +1,10 @@
 ---
 name: godot-ui-control
 description: >
-  Godot 4 Control-node API for menus and HUDs: anchors and offsets, Container layout and
-  size flags, Theme and StyleBox resources, focus_mode and focus neighbours for keyboard
-  and gamepad, mouse_filter, CanvasLayer HUDs, window stretch settings, and a headless
-  layout check at several screen sizes. Use when building or fixing a Godot main menu,
-  HUD, inventory screen or settings page, when UI overlaps or drifts off-screen on
-  resize or ultrawide, buttons ignore the gamepad, or an invisible panel swallows
-  clicks. Not for engine-neutral layout, scaling, safe-area and menu-flow rules (use
-  `game-ui-ux`, and load both for Godot UI work) or input rebinding (use `input-systems`).
+  Godot 4.7 Control-node API for menus and HUDs: anchors, Containers, Theme and StyleBox, focus
+  neighbours and stretch settings, with a headless layout check. Use when Godot UI overlaps or
+  drifts on resize, buttons ignore the gamepad, or an invisible panel swallows clicks. Not for
+  engine-neutral UI rules (`game-ui-ux`; load both) or rebinding (`input-systems`).
 ---
 
 # Godot UI / Control nodes (4.x)

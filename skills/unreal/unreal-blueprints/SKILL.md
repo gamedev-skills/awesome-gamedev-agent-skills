@@ -1,14 +1,11 @@
 ---
 name: unreal-blueprints
 description: >
-  Builds and fixes Unreal Engine 5 Blueprint visual scripting: Blueprint Classes vs the Level
-  Blueprint, the Event Graph and Construction Script, variables, functions and macros, and how
-  Blueprints talk to each other (Cast, Blueprint Interfaces, Event Dispatchers). Use whenever
-  the user works in Blueprints or BP graphs, asks how one Blueprint should call another, or
-  reports "cast failed", "my variable doesn't show on the instance", "Event Tick is slow", "this
-  Blueprint takes forever to load" or a Blueprint compile error. Not for C++ gameplay classes
-  (use `unreal-cpp-gameplay`), input mapping assets (use `unreal-enhanced-input`) or AI trees
-  (use `unreal-behavior-trees`).
+  Unreal Engine 5 (UE 5.8) Blueprint visual scripting: Blueprint Classes vs the Level Blueprint,
+  Event Graph, and Cast, Interfaces and Event Dispatchers. Use for BP graphs, how one Blueprint
+  calls another, "cast failed", slow Event Tick or Blueprint compile errors. Not for C++
+  (`unreal-cpp-gameplay`), input assets (`unreal-enhanced-input`) or AI trees
+  (`unreal-behavior-trees`).
 ---
 
 # Unreal Blueprints

@@ -1,13 +1,10 @@
 ---
 name: itch-publish
 description: >
-  Publishes and updates a game on itch.io with the butler CLI: the project page, butler login
-  or BUTLER_API_KEY, butler push to user/game:channel, channel names that set the Windows,
-  macOS, Linux and Android tags, HTML5 browser builds, --userversion, dry runs and
-  push-preview, and CI uploads. Use when the user says upload or publish to itch, butler push,
-  itch channel, an HTML5 game that downloads instead of playing, a blank or 403 web build on
-  itch, "invalid target (bad game)", or shipping a jam, demo or release build to itch.io. Not
-  for Steam (use `steam-publish`) or jam scope and schedule (use `game-jam`).
+  Publishes and updates games on itch.io with the butler CLI: butler push to user/game:channel,
+  channel platform tags, HTML5 builds, --userversion and CI uploads. Use for "upload to itch", an
+  HTML5 game that downloads instead of playing, a blank or 403 web build, or "invalid target". Not
+  for Steam (`steam-publish`) or jam scope (`game-jam`).
 ---
 
 # itch.io Publish (butler)

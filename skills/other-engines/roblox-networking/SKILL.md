@@ -1,14 +1,10 @@
 ---
 name: roblox-networking
 description: >
-  Roblox client/server networking and anti-exploit work: RemoteEvent, UnreliableRemoteEvent
-  and RemoteFunction contracts, server authority, argument and Instance validation, rate limits,
-  hit and damage validation, targeted replication, streaming, prediction, and Server Authority
-  mode (AuthorityMode, BindToSimulation). Use when a remote trusts the client, exploiters fire or
-  spam remotes, players get damage, currency or items they should not, hits register wrongly,
-  clients desync, or multiplayer code needs hardening and Server and Clients tests. Not for Luau
-  basics or module layout (use `roblox-luau`), saving data (`roblox-datastores`), or constraint,
-  force and raycast APIs (`roblox-physics`).
+  Roblox client-server networking and anti-exploit: RemoteEvent and RemoteFunction contracts,
+  server authority, rate limits, hit validation and replication. Use when a remote trusts the
+  client, exploiters spam remotes or gain items, or hits register wrongly. Not for Luau basics
+  (`roblox-luau`), saving (`roblox-datastores`) or force and raycast APIs (`roblox-physics`).
 ---
 
 # Roblox networking

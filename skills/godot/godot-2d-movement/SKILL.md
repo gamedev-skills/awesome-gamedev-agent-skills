@@ -1,14 +1,11 @@
 ---
 name: godot-2d-movement
 description: >
-  Godot 4 CharacterBody2D movement code: platformer run and jump with gravity, top-down
-  8-direction motion, slopes, moving and one-way platforms, and reading slide collisions after
-  move_and_slide(). Use when writing or fixing a 2D player or enemy controller in GDScript, or
-  when a character will not move, crawls, falls through the floor, slides down slopes, sticks
-  to walls, or is_on_floor() is always false. Ships a headless test that drops the character
-  on a floor and checks landing, jumping and running. Not for coyote time, jump buffering or
-  jump-feel tuning (use `platformer`), collision layers, RigidBody2D, raycasts or 3D
-  characters (use `godot-physics`), or tile levels (use `godot-tilemap`).
+  Godot 4.7 CharacterBody2D movement in GDScript: platformer run and jump, top-down 8-direction
+  motion, slopes and one-way platforms, with a headless landing test. Use when a 2D controller
+  will not move, falls through the floor or is_on_floor() is always false. Not for coyote time and
+  jump feel (`platformer`), RigidBody2D, raycasts or 3D (`godot-physics`) or tile levels
+  (`godot-tilemap`).
 ---
 
 # Godot 2D Movement (4.x)

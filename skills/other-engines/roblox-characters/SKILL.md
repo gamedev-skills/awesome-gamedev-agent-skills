@@ -1,14 +1,10 @@
 ---
 name: roblox-characters
 description: >
-  Roblox player character systems: CharacterAdded and CharacterRemoving lifecycle, Humanoid
-  and HumanoidRootPart references, Animator and AnimationTracks with markers, R6, R15 and custom
-  rigs, death and respawn, Tools and accessories, HumanoidDescription, and Character Controller
-  Library movement. Use when a character script breaks after reset or respawn, callbacks fire
-  twice after death, animations do not play or replicate, a tool vanishes on equip, sprint or
-  dash code fights the Humanoid, or a custom StarterCharacter is needed. Not for remote trust and
-  hit validation (use `roblox-networking`), forces, constraints and raycasts (`roblox-physics`),
-  or camera logic (`camera-systems`).
+  Roblox player characters: CharacterAdded lifecycle, Humanoid and HumanoidRootPart, R6, R15 and
+  custom rigs, respawn and Tools. Use when a character script breaks after respawn, animations do
+  not play or replicate, or sprint code fights the Humanoid. Not for hit validation
+  (`roblox-networking`), forces and raycasts (`roblox-physics`) or cameras (`camera-systems`).
 ---
 
 # Roblox characters

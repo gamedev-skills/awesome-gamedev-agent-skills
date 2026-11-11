@@ -1,16 +1,11 @@
 ---
 name: defold-core
 description: >
-  Builds and debugs the core of a Defold game in Lua: game.project settings, collections,
-  game objects and components, the script lifecycle and self state, go.property, input
-  focus and bindings, URLs and message passing, factories, collection factories and
-  collection proxies, plus a Bob build and headless smoke run. Use whenever a project has
-  game.project or .collection, .go, .script, .gui_script or .input_binding files, or the
-  user mentions Defold, msg.post, on_message, on_input never firing, acquire_input_focus,
-  factory.create, a collection proxy that never loads, bob.jar, "could not be found when
-  dispatching message", or a Defold build error. Not for LÖVE or plain Lua projects (use
-  `love2d-core`), menu and HUD design rules (use `game-ui-ux`) or physics feel and
-  tunnelling (use `physics-tuning`).
+  Builds and debugs Defold 1.14 games in Lua: collections, game objects, input focus, msg.post
+  messaging, factories, collection proxies and Bob builds. Use for .collection or .script files,
+  on_input never firing, a proxy that never loads, or "could not be found when dispatching
+  message". Not for LÖVE (`love2d-core`), HUD rules (`game-ui-ux`) or physics feel
+  (`physics-tuning`).
 ---
 
 # Defold Core

@@ -1,14 +1,10 @@
 ---
 name: unity-scriptableobjects
 description: >
-  Designs Unity 6.3 LTS data and decoupling with ScriptableObjects: config and data assets
-  made with CreateAssetMenu, shared runtime variables, event channels, runtime sets, and
-  creating or editing .asset files from code. Use when replacing singletons or manager
-  references, building data-driven items, weapons, enemies or cards, values changed after
-  leaving Play mode, a reset in OnEnable stops working with Enter Play Mode options, or the
-  user mentions ScriptableObject, SO architecture, data assets or event channels in Unity.
-  Not for saving player progress to disk (use `save-systems`), per-object runtime state, or
-  Godot Resources (use `godot-resources`).
+  Unity 6.3 LTS data and decoupling with ScriptableObjects: CreateAssetMenu config assets, shared
+  runtime variables, event channels and .asset files made from code. Use for replacing singletons,
+  data-driven items or cards, or values that persist after leaving Play mode. Not for saving
+  progress (`save-systems`) or Godot Resources (`godot-resources`).
 ---
 
 # Unity ScriptableObject Architecture

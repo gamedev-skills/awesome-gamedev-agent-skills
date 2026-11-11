@@ -1,14 +1,11 @@
 ---
 name: unreal-cpp-gameplay
 description: >
-  Writes and debugs Unreal Engine 5 C++ gameplay code: UCLASS/UPROPERTY/UFUNCTION reflection,
-  the Gameplay Framework (GameMode, Pawn, Character, PlayerController, components), GC-safe
-  pointers, basic replication, Build.cs dependencies, and command-line builds and automation
-  tests. Use for Unreal C++ work, GENERATED_BODY, ACharacter, UActorComponent, TObjectPtr, Live
-  Coding, and errors like "unresolved external symbol", "cannot open generated.h", UHT errors or
-  crashes from garbage-collected pointers. Not for Blueprint graphs (use `unreal-blueprints`),
-  Enhanced Input setup (use `unreal-enhanced-input`) or packaging (use `unreal-packaging`);
-  building the engine from source is out of scope.
+  Unreal Engine 5 (UE 5.8) C++ gameplay code: UCLASS and UPROPERTY reflection, the Gameplay
+  Framework, GC-safe pointers, Build.cs and command-line builds. Use for GENERATED_BODY, Live
+  Coding, "unresolved external symbol" or UHT errors. Not for Blueprints (`unreal-blueprints`),
+  Enhanced Input (`unreal-enhanced-input`) or packaging (`unreal-packaging`); engine source builds
+  are out of scope.
 ---
 
 # Unreal C++ Gameplay

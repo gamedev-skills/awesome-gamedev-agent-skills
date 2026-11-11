@@ -1,14 +1,10 @@
 ---
 name: unreal-behavior-trees
 description: >
-  Builds NPC AI in Unreal Engine 5 with Behavior Tree and Blackboard assets, EQS queries and
-  StateTree: Selector/Sequence branches, decorators with Observer Aborts, services, custom C++
-  BTTask/BTService nodes, the Run EQS Query task, and running a tree or StateTree from an
-  AIController. Use for any UE enemy or NPC AI work, BT_/BB_/EQS_/ST_ assets, UBTTaskNode,
-  RunBehaviorTree or UStateTreeAIComponent, and for symptoms like "my AI just stands there",
-  "MoveTo fails", "the tree doesn't react when it sees the player" or "my task never finishes".
-  Not for engine-neutral behavior tree or utility AI code (use `ai-behavior-trees-utility-ai`)
-  or choosing FSM vs BT vs steering (use `game-ai`).
+  Unreal Engine 5 (UE 5.8) NPC AI with Behavior Trees, Blackboards, EQS and StateTree: decorators
+  with Observer Aborts, C++ BTTask nodes and running trees from an AIController. Use for UE enemy
+  AI, BT_, BB_ or EQS_ assets, "my AI just stands there" or "MoveTo fails". Not for engine-neutral
+  BT or utility code (`ai-behavior-trees-utility-ai`) or choosing FSM vs BT (`game-ai`).
 ---
 
 # Unreal Behavior Trees, EQS and StateTree

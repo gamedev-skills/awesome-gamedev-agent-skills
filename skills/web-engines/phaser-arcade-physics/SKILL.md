@@ -1,14 +1,11 @@
 ---
 name: phaser-arcade-physics
 description: >
-  Adds movement and collision to Phaser 4 games with Arcade Physics: enabling the world,
-  sprite bodies, velocity, acceleration, gravity, drag and bounce, colliders vs overlaps,
-  static and dynamic groups, bullet pools, hitboxes, collision categories and world bounds.
-  Use when a Phaser game needs a platformer or top-down controller, pickups or projectiles,
-  or the user reports a sprite that ignores physics, onFloor() always false, bodies passing
-  through each other or thin walls, or platforms pushed by the player. Not for game config, scenes or the loader (use `phaser-core`), coyote
-  time and jump buffering (use `platformer`), or engine-neutral timestep and tunnelling
-  theory (use `physics-tuning`).
+  Phaser 4 Arcade Physics movement and collision: bodies, velocity, gravity, colliders vs
+  overlaps, groups and bullet pools. Use for a Phaser platformer or top-down controller, or a
+  sprite that ignores physics, onFloor() always false or bodies passing through walls. Not for
+  scenes and the loader (`phaser-core`), coyote time (`platformer`) or tunnelling theory
+  (`physics-tuning`).
 ---
 
 # Phaser 4 Arcade Physics

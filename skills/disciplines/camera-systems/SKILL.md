@@ -1,15 +1,11 @@
 ---
 name: camera-systems
 description: >
-  Build and tune game cameras, engine-neutral with Godot Camera2D/SpringArm3D and Unity
-  Cinemachine 3 mappings: 2D follow with deadzone, look-ahead, frame-rate-independent smoothing
-  and level-bounds clamping; third-person orbit with collision push-in; first-person mouse and
-  stick look; multi-target group framing and split-screen; cutscene blends and an additive
-  shake offset. Use when the camera lags, snaps, jitters while following a moving player,
-  shows past the level edge, clips through walls, flips over the top, feels different at 30
-  and 144 FPS, or when setting up a follow, orbit or first-person camera. Not for shake
-  strength and hit feedback (use `game-feel`), or physics-body jitter caused by the timestep
-  itself (use `physics-tuning`).
+  Builds and tunes game cameras, engine-neutral with Godot and Cinemachine 3 mappings: 2D follow
+  with deadzone and look-ahead, third-person orbit, first-person look and split-screen. Use when
+  the camera lags, jitters while following, shows past the level edge, clips through walls or
+  changes with frame rate. Not for shake (`game-feel`) or physics timestep jitter
+  (`physics-tuning`).
 ---
 
 # Camera systems

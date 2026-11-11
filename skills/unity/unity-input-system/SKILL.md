@@ -1,14 +1,11 @@
 ---
 name: unity-input-system
 description: >
-  Wires player input in Unity 6.3 LTS with the Input System package: .inputactions assets,
-  project-wide actions, action maps, PlayerInput, control schemes, and reading values by
-  callback or polling. Use when a Unity project has an .inputactions file or
-  com.unity.inputsystem, input does nothing or fires while a menu is open, FindAction
-  returns null, an exception mentions the old Input class, buttons read 0, or the user asks
-  about InputAction, PlayerInput, gamepad or touch, or porting Input.GetAxis code. Not for
-  engine-neutral input design such as buffering, remapping UX or dead zones (use
-  `input-systems`), or coyote time and jump feel (use `platformer`).
+  Wires Unity 6.3 LTS player input with the Input System package: .inputactions assets, action
+  maps, PlayerInput and control schemes. Use when input does nothing or fires under a menu,
+  FindAction returns null, the old Input class throws, or Input.GetAxis code needs porting. Not
+  for engine-neutral buffering, remapping or deadzones (`input-systems`) or jump feel
+  (`platformer`).
 ---
 
 # Unity Input System

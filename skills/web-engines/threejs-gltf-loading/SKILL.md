@@ -1,15 +1,10 @@
 ---
 name: threejs-gltf-loading
 description: >
-  Loads glTF/GLB models into three.js games and plays their animations: GLTFLoader and
-  loadAsync, LoadingManager progress, DRACO, Meshopt and KTX2 decoders, AnimationMixer clips
-  and cross-fades, cloning skinned characters with SkeletonUtils, and checking or shrinking
-  files with gltf-transform. Use when the user wants to load a 3D model or character in
-  three.js, or reports an invisible or tiny model, a 404 for draco or basis decoder files,
-  setKTX2Loader or setMeshoptDecoder errors, animations that never play, clones sharing one
-  skeleton, or named parts missing after optimizing. Not for scene, camera or loop setup (use
-  `threejs-scene-setup`), lighting the model (use `threejs-materials-lighting`), or Blender
-  export.
+  Loads glTF/GLB models into three.js r187 and plays their animations: GLTFLoader, DRACO, Meshopt
+  and KTX2 decoders, AnimationMixer cross-fades and SkeletonUtils clones. Use when a model is
+  invisible or tiny, decoder files 404, animations never play, or clones share one skeleton. Not
+  for scene setup (`threejs-scene-setup`) or lighting (`threejs-materials-lighting`).
 ---
 
 # three.js glTF loading

@@ -1,15 +1,11 @@
 ---
 name: game-ui-ux
 description: >
-  Engine-neutral design rules for game HUDs and menus: anchor-and-container layout, scaling
-  and aspect policy, safe areas, gamepad and keyboard focus, a screen stack for pause,
-  settings and dialogs, event-driven HUD updates, and accessibility minimums (text size,
-  contrast). Use when building or fixing a main menu, pause menu, settings screen, health bar
-  or inventory screen, or when UI breaks on ultrawide or phones, hides under a notch, or does
-  not work with a controller. Load it with the engine UI skill (`godot-ui-control`,
-  `roblox-ui`): this skill owns the rules, that one the API. Not for button pops or damage
-  numbers (use `game-feel`), dialogue flow (use `dialogue-systems`) or rebinding (use
-  `input-systems`).
+  Engine-neutral design rules for game HUDs and menus: anchors and containers, scaling, safe
+  areas, gamepad focus and accessibility minimums. Use for menus or inventory screens, or UI that
+  breaks on ultrawide or phones or ignores the controller. Pair with `godot-ui-control` or
+  `roblox-ui`. Not for button juice (`game-feel`), dialogue flow (`dialogue-systems`) or rebinding
+  (`input-systems`).
 ---
 
 # Game UI/UX

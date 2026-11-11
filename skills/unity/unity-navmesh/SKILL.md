@@ -1,14 +1,11 @@
 ---
 name: unity-navmesh
 description: >
-  Sets up Unity 6.3 LTS pathfinding with the AI Navigation package: baking NavMeshSurface,
-  moving NavMeshAgent with SetDestination, NavMeshObstacle carving, NavMeshLink jumps and
-  gaps, and runtime rebakes. Use when an enemy should chase or patrol in Unity, an agent
-  does not move or warps to the origin, a path comes back partial, there is no Bake tab or
-  Navigation Static flag, OffMeshLink is deprecated, or the user mentions NavMesh,
-  NavMeshAgent or Unity pathfinding. Not for deciding when and where NPCs move (use
-  `game-ai`, or `ai-behavior-trees-utility-ai` for behavior trees and utility AI) or
-  force-driven movement (use `unity-physics`).
+  Unity 6.3 LTS pathfinding with the AI Navigation package: NavMeshSurface baking, NavMeshAgent,
+  NavMeshLink jumps and runtime rebakes. Use when a Unity enemy should chase or patrol, an agent
+  will not move or warps, a path is partial, or the Bake tab is missing. Not for deciding when
+  NPCs move (`game-ai`, `ai-behavior-trees-utility-ai`) or force-driven movement
+  (`unity-physics`).
 ---
 
 # Unity NavMesh (AI Navigation)

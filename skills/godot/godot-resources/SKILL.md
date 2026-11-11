@@ -1,14 +1,10 @@
 ---
 name: godot-resources
 description: >
-  Godot 4 data-driven design with custom Resource classes: class_name plus @export
-  fields, .tres/.res files written as text or saved with ResourceSaver, shared
-  references vs duplicate()/duplicate_deep(), resource_local_to_scene, uids, and
-  threaded ResourceLoader loading. Use when modelling items, stats, enemy or level
-  configs as data in a Godot project, when editing one enemy changes every enemy, a
-  .tres stops loading after a script moved, a deep copy still shares a sub-resource, or
-  loading a level hitches. Not for save slots, autosave and save-file versioning (use
-  `save-systems`) or the C# version of this pattern (use `godot-csharp`).
+  Godot 4.7 data-driven design with custom Resources: class_name and @export fields, .tres files,
+  shared references vs duplicate_deep(), uids and threaded loading. Use for items, stats or enemy
+  configs as data, or when editing one enemy changes every enemy or a .tres stops loading. Not for
+  save slots (`save-systems`) or the C# version (`godot-csharp`).
 ---
 
 # Godot Resources (4.x)

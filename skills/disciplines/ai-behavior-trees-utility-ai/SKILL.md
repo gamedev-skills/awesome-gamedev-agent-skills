@@ -1,15 +1,10 @@
 ---
 name: ai-behavior-trees-utility-ai
 description: >
-  Write engine-neutral behavior-tree and Utility AI code for NPCs and enemies: a BT runtime
-  (Blackboard, Success/Failure/Running leaves, Sequence/Selector/Parallel, reactive vs memory
-  composites, Inverter/Cooldown/Repeat decorators) and a utility scorer (response curves,
-  considerations, compensation, argmax/softmax with hysteresis), plus BT-plus-utility hybrids.
-  Use when the user asks for a behavior tree or utility AI in C#, GDScript, TypeScript or any
-  language, or reports an enemy that keeps chasing after losing sight, restarts its action
-  every frame, ignores a cooldown, or flip-flops between two choices. Not for FSMs, steering,
-  pathfinding or perception (use `game-ai`), or Unreal BT/Blackboard assets, EQS and StateTree
-  (use `unreal-behavior-trees`).
+  Engine-neutral behavior tree and utility AI code for NPCs in any language: Blackboard, reactive
+  composites, decorators and response-curve scoring. Use when an enemy keeps chasing after losing
+  sight, restarts its action every frame or flip-flops between choices. Not for FSMs, steering or
+  pathfinding (`game-ai`) or Unreal BT, EQS and StateTree (`unreal-behavior-trees`).
 ---
 
 # Behavior trees and Utility AI

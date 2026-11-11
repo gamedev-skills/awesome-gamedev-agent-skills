@@ -1,14 +1,10 @@
 ---
 name: godot-csharp
 description: >
-  C# and .NET in Godot 4: partial classes that extend nodes, the PascalCase lifecycle
-  (_Ready, _Process, _PhysicsProcess with double delta), [Export] and [Signal] attributes,
-  signals as C# events, typed GetNode, ToSignal async, Godot.Collections, the .csproj and
-  .NET SDK setup, and calling between C# and GDScript. Use when writing or fixing .cs
-  scripts in a Godot project, translating GDScript to C#, or when the build fails, a script
-  will not attach, an override is never called, an [Export] does not show, or a C# project
-  will not export to web or Android. Not for GDScript itself (use `godot-gdscript`), Unity C#
-  (use `unity-csharp-scripting`), or export presets in general (use `godot-export`).
+  C# and .NET in Godot 4.7: partial node classes, the PascalCase lifecycle, [Export] and [Signal],
+  signals as C# events, the .csproj and calling GDScript. Use for .cs scripts in Godot, porting
+  GDScript to C#, a failed build, or a failed web or Android export. Not for GDScript
+  (`godot-gdscript`), Unity C# (`unity-csharp-scripting`) or export presets (`godot-export`).
 ---
 
 # Godot C# / .NET (4.x)

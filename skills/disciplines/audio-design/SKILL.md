@@ -1,14 +1,10 @@
 ---
 name: audio-design
 description: >
-  Engine-neutral game audio technique: bus and mixer layout, slider-to-decibel mapping,
-  loudness targets and headroom, ducking music under dialogue with a sidechain, adaptive music
-  (vertical layering, horizontal re-sequencing, stingers, intensity with hysteresis), SFX
-  variation and beat-synced gameplay, with Godot, Unity and FMOD/Wwise mappings. Use when the
-  user asks how to mix or balance a game, set up music/SFX/voice buses and volume sliders,
-  make music react to combat, stop repetitive footsteps, duck audio, sync events to the beat,
-  or reports a mix that clips, pumps or drifts off beat. Not for Godot `AudioStreamPlayer`,
-  bus and import API details (use `godot-audio`), or making the sound files themselves.
+  Engine-neutral game audio technique: bus layout, volume sliders in decibels, loudness, ducking
+  music under dialogue, adaptive music and SFX variation, with Godot, Unity and FMOD/Wwise
+  mappings. Use when mixing a game, making music react to combat, fixing repetitive footsteps or
+  beat sync, or a mix that clips or pumps. Not for the Godot audio API (`godot-audio`).
 ---
 
 # Audio design

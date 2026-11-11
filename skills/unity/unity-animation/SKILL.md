@@ -1,14 +1,10 @@
 ---
 name: unity-animation
 description: >
-  Drives Unity 6.3 LTS character animation with the Animator (Mecanim): controller states
-  and transitions, parameters from script, blend trees, layers with Avatar Masks, root
-  motion, humanoid IK, and building controllers from editor code. Use when wiring an
-  Animator or SetFloat/SetTrigger, a transition lags or never fires, a trigger fires late,
-  the character slides with root motion, an upper-body layer overrides the legs, IK does
-  nothing, or the user mentions Animator, Mecanim, blend tree or .controller files. Not for
-  AI decision state machines (use `game-ai`), juice like squash or hit-stop (use
-  `game-feel`), or Godot animation (use `godot-animation`).
+  Unity 6.3 LTS character animation with the Animator (Mecanim): states and transitions, blend
+  trees, Avatar Mask layers, root motion and humanoid IK. Use for SetTrigger wiring, a transition
+  that lags or never fires, sliding root motion, or an upper-body layer overriding the legs. Not
+  for AI state machines (`game-ai`), juice (`game-feel`) or Godot (`godot-animation`).
 ---
 
 # Unity Animation (Animator / Mecanim)

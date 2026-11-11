@@ -1,14 +1,10 @@
 ---
 name: unreal-niagara
 description: >
-  Creates and controls Unreal Engine 5 Niagara VFX: systems and emitters, module stacks, User
-  parameters, spawning effects from C++ or Blueprints (SpawnSystemAtLocation,
-  SpawnSystemAttached), pooling, bounds, GPU vs CPU simulation, and debugging with the Niagara
-  Debugger. Use for any Unreal particle effect, NS_/NE_ assets, UNiagaraComponent, muzzle
-  flashes, impacts, fire or magic, and symptoms like "my effect doesn't show", "particles vanish
-  at the screen edge", "I can't set the parameter from Blueprint" or "the effect never stops".
-  Not for Unity VFX Graph or other engines' particles, material and shader authoring (use
-  `shader-programming`), or screen shake and hit-stop (use `game-feel`).
+  Unreal Engine 5 (UE 5.8) Niagara VFX: systems, emitters, User parameters, spawning from C++ or
+  Blueprints, bounds and GPU vs CPU sim. Use for any Unreal particle effect, NS_ assets, muzzle
+  flashes or impacts, or effects that do not show, vanish at the screen edge or never stop. Not
+  for Unity VFX Graph, shader authoring (`shader-programming`) or hit-stop (`game-feel`).
 ---
 
 # Unreal Niagara VFX

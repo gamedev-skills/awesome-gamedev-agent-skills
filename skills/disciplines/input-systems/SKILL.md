@@ -1,14 +1,10 @@
 ---
 name: input-systems
 description: >
-  Engine-neutral game input architecture with Godot InputMap code: named actions instead of
-  raw keys, keyboard, gamepad and touch bindings, radial stick deadzones, buffering attack and
-  dodge presses, a rebind-controls menu with conflict checks and physical keys, button-prompt
-  swapping, and accessible controls. Use when adding controller support or rebinding, or when
-  a stick drifts, WASD lands wrong on AZERTY, a press is dropped or fires twice, glyphs are
-  wrong, or a rebound button works only for player 1. Not for coyote time, jump buffering or
-  variable jump (use `platformer`), or .inputactions and IA_/IMC_ assets (use
-  `unity-input-system`, `unreal-enhanced-input`).
+  Engine-neutral input architecture with Godot InputMap code: named actions, stick deadzones,
+  buffered presses and rebinding with conflict checks. Use for controller support or a rebind
+  menu, or a drifting stick, WASD on AZERTY, or a dropped press. Not for coyote time
+  (`platformer`) or Unity and Unreal input assets (`unity-input-system`, `unreal-enhanced-input`).
 ---
 
 # Input systems

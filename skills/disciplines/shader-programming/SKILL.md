@@ -1,14 +1,10 @@
 ---
 name: shader-programming
 description: >
-  Cross-engine shader technique in GLSL with HLSL equivalents: vertex and fragment stages,
-  coordinate spaces, UV maths, and how effects work (tint, scrolling UVs, dissolve, outline,
-  fresnel rim, vignette, colour grading), plus porting and glslangValidator checks. Use when
-  writing or debugging a fragment or vertex shader, building a dissolve, outline, rim or post
-  effect, converting GLSL to HLSL, or when an effect shows specks, wrong lighting, a flipped
-  texture or mobile shimmer. Not for engine syntax and wiring (use `godot-shaders` for
-  .gdshader, `threejs-materials-lighting` for three.js and TSL, `pixijs-rendering` for
-  filters) or particles (use `unreal-niagara`).
+  Cross-engine shader technique in GLSL with HLSL equivalents: vertex and fragment stages, and how
+  dissolve, outline, fresnel rim and post effects work. Use for a dissolve, outline or rim effect,
+  porting GLSL to HLSL, or specks or mobile shimmer. Not for engine syntax (`godot-shaders`,
+  `threejs-materials-lighting`, `pixijs-rendering`) or particles (`unreal-niagara`).
 ---
 
 # Shader programming (cross-engine)

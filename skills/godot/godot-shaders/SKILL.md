@@ -1,15 +1,10 @@
 ---
 name: godot-shaders
 description: >
-  Godot 4 Shading Language syntax and pipeline: shader_type canvas_item, spatial,
-  particles, sky and fog; built-ins such as COLOR, ALBEDO, UV, TIME and SCREEN_UV;
-  uniform hints (source_color, hint_range, hint_screen_texture, repeat_enable);
-  ShaderMaterial wiring in .tscn files or code; render modes; a headless compile check;
-  and porting 3.x shaders (SCREEN_TEXTURE, hint_color). Use when writing or fixing a
-  .gdshader, reading a SHADER ERROR, a Godot effect that looks washed out, sorts wrong or
-  loses its shadow, or setting shader parameters from GDScript. Not for the effect maths
-  itself, such as how dissolve, outline or fresnel work across engines (use
-  `shader-programming`), or for Unity, Unreal or three.js materials.
+  Godot 4.7 Shading Language syntax and pipeline: canvas_item, spatial and particle shaders,
+  built-ins, ShaderMaterial wiring, a headless compile check and 3.x porting. Use for a .gdshader,
+  a SHADER ERROR, shader parameters set from GDScript, or an effect that looks washed out or sorts
+  wrong. Not for effect maths such as dissolve or outline (`shader-programming`).
 ---
 
 # Godot Shaders (4.x)

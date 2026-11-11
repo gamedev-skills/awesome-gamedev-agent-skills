@@ -1,13 +1,10 @@
 ---
 name: performance-optimization
 description: >
-  Find and fix game frame-rate problems by measurement: frame budgets, profiling in Godot,
-  Unity, Unreal or Roblox, CPU-bound vs GPU-bound, then the one biggest fix (draw calls,
-  pooling, GC spikes, overdraw, less work) proven with before/after frame times. Use when the
-  user reports low or dropping FPS, stutter, a hitch the first time an effect appears, a phone
-  that slows after a few minutes, GC spikes or too many draw calls, or asks to optimize or
-  profile. Not for build size (use `unity-build-size`), physics jitter or tunnelling (use
-  `physics-tuning`), or network lag (use `roblox-networking`, `godot-multiplayer`).
+  Finds and fixes game frame-rate problems by measurement in Godot, Unity, Unreal or Roblox: CPU-
+  vs GPU-bound, then the biggest fix (draw calls, pooling, GC spikes). Use for low FPS, stutter, a
+  first-use hitch, or requests to optimize or profile. Not for build size (`unity-build-size`),
+  physics jitter (`physics-tuning`) or network lag (`roblox-networking`, `godot-multiplayer`).
 ---
 
 # Performance optimization

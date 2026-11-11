@@ -1,14 +1,11 @@
 ---
 name: create-game-assets
 description: >
-  Plan, generate or source, normalize and validate consistent game art: art direction and
-  style guides, sprites and sprite sheets, pixel art, tilesets, backgrounds, UI art, icons,
-  textures and 3D asset briefs, with an asset manifest, raster QA scripts (size, alpha, colour
-  count, contact sheets) and licence and AI-provenance records. Use when the user wants to make
-  or AI-generate game art, keep assets in one style, fix fake transparency or a character that
-  drifts between frames, or check licences and Steam AI disclosure. Not for engine import or
-  sprite-sheet playback (use `godot-tilemap`, `unity-tilemap-2d`, `godot-animation`), UI
-  layout (use `game-ui-ux`) or sound (use `audio-design`).
+  Plans, generates or sources, and validates consistent game art: style guides, sprites, pixel
+  art, tilesets, icons and textures, with QA and licence records. Use when making or AI-generating
+  game art, fixing fake transparency, or checking Steam AI disclosure. Not for engine import
+  (`godot-tilemap`, `godot-animation`, `unity-tilemap-2d`), UI layout (`game-ui-ux`) or sound
+  (`audio-design`).
 ---
 
 # Create Game Assets

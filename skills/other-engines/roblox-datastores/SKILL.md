@@ -1,14 +1,10 @@
 ---
 name: roblox-datastores
 description: >
-  Roblox DataStoreService persistence: load on PlayerAdded, save on PlayerRemoving and
-  BindToClose, pcall and retry, UpdateAsync vs SetAsync, session locking across servers,
-  versioning and metadata, OrderedDataStore leaderboards, request budgets and throttling, and
-  Right to be Forgotten. Use when the user mentions DataStore, GetAsync, SetAsync, UpdateAsync,
-  saving or losing player data, items duplicating after a teleport or rejoin, "too many requests"
-  or 301-306 errors, StudioAccessToApisNotAllowed, or a global leaderboard. Not for engine-neutral
-  save formats (use `save-systems`), Luau basics (`roblox-luau`), or economy numbers and repairing
-  tampered save values (`roblox-simulator-economy`).
+  Roblox DataStoreService persistence: load on join, save on leave and BindToClose, UpdateAsync vs
+  SetAsync, session locking and OrderedDataStore leaderboards. Use for lost player data, items
+  duplicating after teleport, or "too many requests" errors. Not for engine-neutral saves
+  (`save-systems`), Luau basics (`roblox-luau`) or economy numbers (`roblox-simulator-economy`).
 ---
 
 # Roblox DataStores

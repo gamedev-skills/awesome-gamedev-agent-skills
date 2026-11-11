@@ -1,16 +1,10 @@
 ---
 name: love2d-core
 description: >
-  Builds and debugs LÖVE (Love2D) 11.x games in Lua: main.lua callbacks and conf.lua,
-  delta-time and fixed-step updates, keyboard and mouse input, crisp pixel-art scaling with
-  nearest filtering and canvases, camera transforms with push and pop, saving through
-  love.filesystem, screen states, and a scripted run that exits on errors. Use whenever a
-  folder has main.lua calling love.* functions, a conf.lua or a .love file, or the user
-  mentions LÖVE, Love2D, love.update, love.draw, blurry pixel art, a save file in the wrong
-  place, the blue error screen, colours that come out white, the same random level every
-  run, or speed that changes with frame rate. Not for Defold projects (use `defold-core`),
-  plain Lua questions, or engine-neutral save formats and rebinding (use `save-systems`,
-  `input-systems`).
+  Builds and debugs LÖVE (Love2D) 11.x games in Lua: main.lua callbacks, conf.lua, fixed steps,
+  crisp pixel-art scaling, love.filesystem saves and a scripted run. Use when main.lua calls
+  love.*, or on blurry pixel art, the blue error screen or speed tied to frame rate. Not for
+  Defold (`defold-core`) or engine-neutral saves and input (`save-systems`, `input-systems`).
 ---
 
 # LÖVE (Love2D) Core

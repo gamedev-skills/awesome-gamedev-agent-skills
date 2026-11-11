@@ -1,14 +1,10 @@
 ---
 name: unreal-enhanced-input
 description: >
-  Sets up player input in Unreal Engine 5 with Enhanced Input: Input Actions (IA_), Input
-  Mapping Contexts (IMC_), modifiers and triggers, adding contexts through the local player
-  subsystem, binding by ETriggerEvent in C++ or Blueprints, and player-remappable keys. Use when
-  wiring move, look, jump or fire input, creating IA_/IMC_ assets, building a rebind-controls
-  menu, or when input does nothing, works only in single player, stops after respawn, fires
-  every frame, or WASD moves on the wrong axis. Not for engine-neutral input design, buffering
-  or rebinding strategy (use `input-systems`) or the Character class itself (use
-  `unreal-cpp-gameplay`).
+  Unreal Engine 5 (UE 5.8) player input with Enhanced Input: Input Actions (IA_), Mapping Contexts
+  (IMC_), ETriggerEvent bindings and remappable keys. Use when wiring move, look or fire, building
+  a rebind menu, or input does nothing, stops after respawn or fires every frame. Not for
+  engine-neutral input design (`input-systems`) or the Character class (`unreal-cpp-gameplay`).
 ---
 
 # Unreal Enhanced Input

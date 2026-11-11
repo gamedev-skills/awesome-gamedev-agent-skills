@@ -1,15 +1,10 @@
 ---
 name: godot-3d-essentials
 description: >
-  Godot 4 3D scene setup: Node3D transforms, Camera3D, DirectionalLight3D/OmniLight3D/
-  SpotLight3D/AreaLight3D, WorldEnvironment (sky, ambient, tonemap, glow, fog),
-  StandardMaterial3D, and GridMap with a MeshLibrary. Use when building or fixing a 3D scene
-  in a Godot project, or when it renders black, grey, flat, washed out or empty, looks
-  different in the game than in the editor, a mesh is invisible, or look_at misbehaves.
-  Ships a headless scene check for camera, light, ambient and mesh placement. Not for
-  spatial shaders (use `godot-shaders`), 3D bodies, CharacterBody3D or raycasts (use
-  `godot-physics`), orbit or follow camera feel (use `camera-systems`), or frame-rate work
-  (use `performance-optimization`).
+  Godot 4.7 3D scene setup: Camera3D, lights, WorldEnvironment (sky, ambient, tonemap, fog),
+  StandardMaterial3D and GridMap, with a headless scene check. Use when a 3D scene renders black,
+  grey or washed out, differs from the editor, or a mesh is invisible. Not for spatial shaders
+  (`godot-shaders`), bodies and raycasts (`godot-physics`) or camera feel (`camera-systems`).
 ---
 
 # Godot 3D Essentials (4.x)

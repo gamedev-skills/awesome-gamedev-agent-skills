@@ -1,14 +1,11 @@
 ---
 name: roblox-physics
 description: >
-  Roblox physics simulation and spatial query APIs: assemblies and anchoring, mass, impulses,
-  modern constraints (LinearVelocity, AlignPosition, VectorForce), collision groups,
-  CanCollide/CanTouch/CanQuery, Raycast, Shapecast and overlap queries, network ownership of
-  parts, vehicles, and replacing deprecated BodyMovers. Use when parts fall through, jitter or will
-  not move, Touched is unreliable, a ray hits the shooter, knockback is too strong, or
-  BodyVelocity/BodyGyro code needs replacing. Not for deciding whether a client's hit is legitimate
-  (use `roblox-networking`), Humanoid movement and respawn (`roblox-characters`), or
-  engine-neutral jitter, tunnelling and feel tuning (`physics-tuning`).
+  Roblox physics and spatial queries: assemblies, constraints, collision groups, Raycast and
+  Shapecast, and network ownership. Use when parts fall through or jitter, Touched is unreliable,
+  a ray hits the shooter, or BodyMovers need replacing. Not for hit legitimacy
+  (`roblox-networking`), Humanoid movement (`roblox-characters`) or engine-neutral tuning
+  (`physics-tuning`).
 ---
 
 # Roblox physics

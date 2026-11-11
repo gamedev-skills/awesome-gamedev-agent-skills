@@ -1,14 +1,10 @@
 ---
 name: game-feel
 description: >
-  Add juice to a mechanic that already works: trauma-based screen shake, hit-stop and freeze
-  frames, eased and overshooting tweens, squash and stretch, hit flash, knockback impulses,
-  damage-number pops and layered feedback scaled by event importance, with Godot and Unity
-  bindings. Use when the user says the game feels flat, weightless or not punchy,
-  asks to make hits, jumps, pickups or deaths feel satisfying, or mentions juice, screen
-  shake, hit stop, impact frames, easing or polish. Not for coyote time, jump buffering or
-  variable jump height (use `platformer`), input buffering (use `input-systems`), camera
-  follow and deadzones (use `camera-systems`), or menu and HUD layout (use `game-ui-ux`).
+  Adds engine-neutral juice to a working mechanic: trauma-based screen shake, hit-stop, eased
+  tweens, squash and stretch, and knockback. Use when the game feels flat, weightless or not
+  punchy, or hits and jumps should feel satisfying. Not for coyote time (`platformer`), input
+  buffering (`input-systems`), camera follow (`camera-systems`) or HUD layout (`game-ui-ux`).
 ---
 
 # Game feel (juice)

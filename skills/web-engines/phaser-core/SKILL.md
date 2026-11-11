@@ -1,14 +1,10 @@
 ---
 name: phaser-core
 description: >
-  Sets up and debugs Phaser 4 games (and pinned Phaser 3.90 projects): the Phaser.Game config,
-  Scene lifecycle (init/preload/create/update), the loader, cameras, scene transitions,
-  cross-scene data, DOM overlays and Phaser 3 to 4 migration. Use when code imports phaser or
-  the user mentions Phaser, this.load, this.add, this.scene.start or launch, a black screen,
-  assets undefined in create, a HUD scene drawn behind the game, state leaking after a
-  restart, keys stuck down, or two canvases after hot reload. Not for velocity, gravity,
-  colliders or overlaps (use `phaser-arcade-physics`), HUD and menu layout rules (use
-  `game-ui-ux`), or PixiJS (use `pixijs-rendering`).
+  Sets up and debugs Phaser 4 games (and pinned Phaser 3.90): Game config, Scene lifecycle, the
+  loader, scene transitions and Phaser 3 to 4 migration. Use when code imports phaser, or on a
+  black screen, assets undefined in create, or a HUD scene behind the game. Not for colliders
+  (`phaser-arcade-physics`), HUD layout (`game-ui-ux`) or PixiJS (`pixijs-rendering`).
 ---
 
 # Phaser 4 core

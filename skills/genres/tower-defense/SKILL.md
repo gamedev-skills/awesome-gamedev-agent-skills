@@ -1,14 +1,10 @@
 ---
 name: tower-defense
 description: >
-  Design tower defense games in any engine: lane, maze and hybrid pathing, wave composition
-  and pacing, tower targeting priorities, armoured, flying, swarm and boss counters, the gold
-  economy (kill bounty, wave bonus, interest, sell refunds, early-call bonus) and enemy HP
-  growth against income. Ships a curve checker that flags waves that wall the player or turn
-  trivial. Use for a Bloons-, Kingdom Rush-, Plants vs. Zombies- or Defense Grid-like, a mazing
-  TD or a TD hybrid, or when later waves are impossible or trivial, one tower wins everything,
-  enemies get stuck or slow down at corners, or a tower placement blocks the path. Not for
-  pathfinding algorithms (use `game-ai`) or survival base building (use `survival-crafting`).
+  Designs tower defense games in any engine: lane and maze pathing, wave pacing, targeting
+  priorities, armoured and flying counters, and the gold economy, with a wave-curve checker. Use
+  for a Bloons- or Kingdom Rush-like, or late waves that are impossible or trivial or a dominant
+  tower. Not for pathfinding (`game-ai`) or survival base building (`survival-crafting`).
 ---
 
 # Tower defense

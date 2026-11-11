@@ -1,14 +1,10 @@
 ---
 name: godot-audio
 description: >
-  Godot 4 audio APIs: AudioStreamPlayer, AudioStreamPlayer2D and 3D, the bus layout
-  (default_bus_layout.tres), AudioServer volume and mute by bus, bus effects, polyphony,
-  looping imports, and playback-position timing for beat sync. Use when playing SFX or music
-  in a Godot project, wiring volume sliders or mute buttons, routing players to Music/SFX
-  buses, or when a sound is silent, cut off, too loud, does not loop, ignores its bus, or
-  drifts off the beat. Ships a headless check that every bus name used exists. Not for
-  engine-neutral mixing, ducking strategy, adaptive music design or beat-sync technique
-  (use `audio-design`), or audio in Unity or other engines.
+  Godot 4.7 audio APIs: AudioStreamPlayer 2D and 3D, the bus layout, AudioServer volume and mute,
+  polyphony, looping imports and playback position for beat sync. Use when wiring SFX, music or
+  volume sliders in Godot, or a sound is silent, cut off, does not loop or ignores its bus. Not
+  for engine-neutral mixing, ducking or adaptive music (`audio-design`).
 ---
 
 # Godot Audio (4.x)

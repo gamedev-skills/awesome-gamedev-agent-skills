@@ -1,14 +1,10 @@
 ---
 name: pixijs-rendering
 description: >
-  Builds and debugs the render layer of 2D browser games with PixiJS v8: async Application
-  init, Assets loading and bundles, the Container/Sprite scene graph, the ticker game loop,
-  pointer input and dragging, sprite sheets, ParticleContainer, render groups, cleanup, and
-  v7-to-v8 migration. Use when a game, game prototype or playable ad uses pixi.js and the
-  user mentions PixiJS, app.init, Assets.load, app.stage, the ticker, eventMode, a blank
-  canvas, Texture.from returning nothing, clicks not firing, or drag stopping at the sprite's
-  edge. Not for business dashboards, charts or data-visualisation UIs, Phaser games (use
-  `phaser-core`), or 3D (use `threejs-scene-setup`).
+  Builds and debugs 2D browser game rendering with PixiJS v8: async init, Assets loading, the
+  Container and Sprite scene graph, pointer dragging and v7-to-v8 migration. Use when a game or
+  playable ad uses pixi.js, or on a blank canvas, clicks not firing, or drag stopping at the
+  sprite edge. Not for dashboards or charts, Phaser (`phaser-core`) or 3D (`threejs-scene-setup`).
 ---
 
 # PixiJS 8 rendering for games

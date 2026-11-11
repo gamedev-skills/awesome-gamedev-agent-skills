@@ -1,14 +1,11 @@
 ---
 name: roblox-ui
 description: >
-  Roblox UI implementation with ScreenGui, StarterGui and PlayerGui: ResetOnSpawn, UDim2 scale
-  and offset, AnchorPoint, UIListLayout flex, UIGridLayout, AutomaticSize, ScrollingFrame canvas,
-  ScreenInsets and safe areas, StyleSheet and StyleQuery, PreferredInput, gamepad selection, touch
-  controls, and reduced-motion tweens. Use for Roblox HUDs, shops, inventories, settings menus, or
-  UI that clips on phones, resets on respawn, loses controller focus, looks generic, or is one
-  giant LocalScript. Load `game-ui-ux` too for engine-neutral layout, scaling, focus and
-  safe-area design rules. Not for gameplay input mapping (use `input-systems`) or server checks
-  on UI purchases (`roblox-networking`).
+  Roblox UI with ScreenGui and PlayerGui: ResetOnSpawn, UDim2 scale and offset, UIListLayout flex,
+  safe areas, StyleSheet, gamepad selection and touch controls. Use for Roblox HUDs, shops or
+  settings menus, or UI that clips on phones, resets on respawn or loses controller focus. Load
+  `game-ui-ux` too. Not for input mapping (`input-systems`) or purchase checks
+  (`roblox-networking`).
 ---
 
 # Roblox UI

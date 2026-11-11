@@ -1,15 +1,10 @@
 ---
 name: router
 description: >
-  Routes any game-development request to the right specialized skill(s): it detects the engine
-  (Godot, Unity, Unreal, Ebitengine, Bevy, Phaser, PixiJS, three.js, Defold, LÖVE, pygame, Roblox) and the task, then
-  reads the chosen skill before acting. Use to make a game or to decide which skill applies — for
-  players, levels, enemies, shaders, art direction, sprites, tiles, textures, 3D assets, UI/UX,
-  cameras, game feel, physics, input, audio, saving, multiplayer, AI, dialogue, procedural
-  generation, or performance, for genres (platformer,
-  roguelike, RPG, FPS, tower-defense, card game, visual novel, survival-crafting, puzzle), and for
-  shipping (game jam, Steam, itch). Start here
-  when unsure which gamedev skill to use.
+  Routes any game-development request to the right skills: detects the engine (Godot, Unity,
+  Unreal, Ebitengine, Bevy, Phaser, PixiJS, three.js, Defold, LÖVE, pygame, Roblox) and the task,
+  then reads the chosen skill. Use to make a game or when unsure which gamedev skill fits a
+  gameplay, art, UI, audio, AI, genre or shipping task.
 ---
 
 # Master Router — Game-Development Skill Dispatcher

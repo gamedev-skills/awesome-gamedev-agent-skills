@@ -1,14 +1,11 @@
 ---
 name: save-systems
 description: >
-  Engine-neutral save and load with Godot and Python code: what to serialize, JSON vs binary,
-  slots and autosave, atomic writes with a backup, a version field and migration chain, load
-  validation, where save files live, Steam Cloud, and a round-trip test. Use when adding
-  save/load, a continue button, slots or autosave, or when saves corrupt after a crash, old
-  saves break after a patch, numbers load back as floats, or progress does not reach another
-  device. Not for Roblox DataStores (use `roblox-datastores`), game data as Godot Resources or
-  Unity ScriptableObjects (use `godot-resources`, `unity-scriptableobjects`), or genre save
-  screens (use `rpg`, `visual-novel`).
+  Engine-neutral save and load with Godot and Python code: what to serialize, slots and autosave,
+  atomic writes and versioned migration. Use for save/load or a continue button, or saves that
+  corrupt after a crash or break after a patch. Not for Roblox DataStores (`roblox-datastores`),
+  data assets (`godot-resources`, `unity-scriptableobjects`) or genre save screens (`rpg`,
+  `visual-novel`).
 ---
 
 # Save systems

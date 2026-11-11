@@ -1,14 +1,10 @@
 ---
 name: game-jam
 description: >
-  Plans and ships a game jam entry against a fixed deadline: reads the jam's rules (length,
-  AI policy, platforms, upload lock), turns the theme into a one-sentence concept, scopes to
-  the clock, keeps a cut list and a ship buffer, and checks the exported build before
-  submitting. Use for Ludum Dare, GMTK Game Jam, Global Game Jam, Brackeys or any itch.io
-  jam, a 48-hour or weekend game, "what can I build in 72 hours", "we're behind, what do we
-  cut", or "how do I submit to the jam". Not for an untimed experiment (use
-  `prototype-fast`), the upload commands (use `itch-publish`), the game's code (use the engine
-  or genre skill), or a months-long production schedule.
+  Plans and ships a game jam entry against a fixed deadline: reads the jam rules, scopes to the
+  clock, keeps a cut list and checks the build before submitting. Use for Ludum Dare, GMTK, Global
+  Game Jam or any itch.io jam, a 48-hour game, or "we're behind, what do we cut". Not for untimed
+  experiments (`prototype-fast`) or upload commands (`itch-publish`).
 ---
 
 # Game Jam

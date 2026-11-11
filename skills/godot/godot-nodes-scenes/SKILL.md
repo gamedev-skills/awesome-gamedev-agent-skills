@@ -1,14 +1,10 @@
 ---
 name: godot-nodes-scenes
 description: >
-  Godot 4 scene-tree structure: splitting a feature into nodes and reusable .tscn
-  scenes, instancing PackedScenes with instantiate() and add_child(), safe node lookup
-  ($Path, %UniqueName, get_node_or_null), autoload singletons, change_scene_to_file,
-  and a bundled checker for broken res:// paths, uids and ExtResource ids. Use when
-  spawning bullets or enemies, wiring an autoload, or fixing "Node not found", a null
-  $Path, "previously freed instance", or a scene that stops opening after files were
-  moved or renamed, even if the user only says the project broke. Not for GDScript
-  syntax (use `godot-gdscript`) or signal wiring (use `godot-signals-groups`).
+  Godot 4.7 scene-tree structure: reusable .tscn scenes, instantiate(), autoloads and a checker
+  for broken res:// paths and uids. Use when spawning bullets or enemies, or on "Node not found",
+  "previously freed instance" or scenes broken after files moved, even if the user only says the
+  project broke. Not for GDScript syntax (`godot-gdscript`) or signals (`godot-signals-groups`).
 ---
 
 # Godot Nodes & Scenes (4.x)

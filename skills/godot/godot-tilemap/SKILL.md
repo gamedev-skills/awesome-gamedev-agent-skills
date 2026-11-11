@@ -1,14 +1,10 @@
 ---
 name: godot-tilemap
 description: >
-  Godot 4 tile maps with TileMapLayer and TileSet: atlas sources, per-tile physics,
-  navigation and custom data layers, terrain autotiling, building a TileSet in code,
-  and reading or writing cells (set_cell, erase_cell, get_cell_tile_data,
-  local_to_map, set_cells_terrain_connect). Use when painting or generating a 2D tile
-  level in Godot, tiles have no collision, a mouse click picks the wrong cell, terrains
-  connect wrongly, or a deprecated TileMap node must become TileMapLayer nodes. Not for
-  Unity tilemaps (use `unity-tilemap-2d`), drawing the tile art itself (use
-  `create-game-assets`) or dungeon and map generation algorithms (use `procedural-gen`).
+  Godot 4.7 tile maps with TileMapLayer and TileSet: atlas sources, data layers, terrain
+  autotiling and set_cell or local_to_map at runtime. Use for 2D tile levels in Godot, tiles with
+  no collision, a click on the wrong cell or porting a deprecated TileMap. Not for Unity
+  (`unity-tilemap-2d`), tile art (`create-game-assets`) or generation (`procedural-gen`).
 ---
 
 # Godot TileMap (4.7 TileMapLayer)

@@ -1,16 +1,11 @@
 ---
 name: fps-shooter
 description: >
-  Design first-person shooter combat in any engine: hitscan versus projectile shots,
-  time-to-kill math, damage falloff, headshot multipliers, spread and learnable recoil
-  patterns, frame-rate-proof fire rate, FOV and ADS sensitivity scaling, hit feedback, enemy
-  reaction times and server-side hit checks with lag compensation. Use for a boomer, arena,
-  tactical or hero shooter (Doom-, Counter-Strike-, Valorant- or Call of Duty-like), or
-  when guns feel weak or spongy, shots do not register,
-  recoil fights the mouse, fire rate drops at low FPS, or aim feels different when zoomed.
-  Not for the camera rig (use `camera-systems`), shake and hit-stop (use `game-feel`), engine
-  raycast APIs (use `godot-physics` or `unity-physics`) or netcode plumbing (use the engine
-  multiplayer skill).
+  Designs first-person shooter combat in any engine: hitscan vs projectiles, time-to-kill, damage
+  falloff, recoil patterns, ADS sensitivity and lag-compensated hits. Use for a Doom- or
+  Counter-Strike-like, or guns that feel weak or shots that do not register. Not for the camera
+  rig (`camera-systems`), shake and hit-stop (`game-feel`) or raycast APIs (`godot-physics`,
+  `unity-physics`).
 ---
 
 # FPS shooter

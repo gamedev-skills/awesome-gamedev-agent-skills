@@ -1,14 +1,10 @@
 ---
 name: unreal-packaging
 description: >
-  Packages and ships an Unreal Engine 5 project: Development, Test and Shipping builds, cooking,
-  staging and pak/IoStore output, the Game Default Map and Packaging settings, the Zen cooked
-  output store, and command-line builds with RunUAT BuildCookRun, including reading UAT and cook
-  logs. Use when packaging or cooking, making a shipping or CI build, or when the user reports
-  "the packaged game is a black screen", "a map is missing in the build", "BUILD FAILED",
-  "AutomationTool exiting with ExitCode", "Saved/Cooked is empty" or a platform SDK error. Not
-  for uploading to a store (use `steam-publish` or `itch-publish`) or gameplay compile errors
-  (use `unreal-cpp-gameplay`).
+  Packages and ships Unreal Engine 5 (UE 5.8) projects: Shipping builds, cooking, pak/IoStore and
+  RunUAT BuildCookRun with UAT and cook log reading. Use for a packaged game with a black screen,
+  a map missing in the build, "BUILD FAILED" or an AutomationTool exit code. Not for store uploads
+  (`steam-publish`, `itch-publish`) or gameplay compile errors (`unreal-cpp-gameplay`).
 ---
 
 # Unreal Packaging & Cooking

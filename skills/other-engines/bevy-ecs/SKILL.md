@@ -1,16 +1,11 @@
 ---
 name: bevy-ecs
 description: >
-  Builds and debugs Bevy games in Rust around the Entity Component System: the App and
-  plugins, Component and Resource types, systems with Query, Res and Commands, schedules,
-  ordering and run conditions, States, messages and observers, and headless cargo test
-  checks. Use whenever Cargo.toml depends on bevy or the user mentions Bevy, App::new,
-  add_systems, Query, Commands, a B0001 or B0002 query-conflict panic, an entity that is
-  missing right after spawning, systems running in the wrong order, or older Bevy code that
-  no longer compiles (EventReader, SpriteBundle, delta_seconds, two-argument On observers).
-  Not for
-  engine-neutral AI or generation algorithms (use `game-ai`, `procedural-gen`), physics
-  feel and tunnelling (use `physics-tuning`) or shader technique (use `shader-programming`).
+  Builds and debugs Bevy 0.20 games in Rust: components, Query and Commands systems, schedules,
+  States, observers and headless tests. Use when Cargo.toml depends on bevy, on a B0001
+  query-conflict panic, or pre-0.20 code (EventReader, SpriteBundle). Not for engine-neutral AI,
+  generation, physics or shaders (`game-ai`, `procedural-gen`, `physics-tuning`,
+  `shader-programming`).
 ---
 
 # Bevy ECS

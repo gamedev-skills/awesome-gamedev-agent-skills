@@ -1,14 +1,11 @@
 ---
 name: godot-multiplayer
 description: >
-  Godot 4 high-level multiplayer: ENetMultiplayerPeer host and join, @rpc annotations
-  called with rpc()/rpc_id(), per-node multiplayer authority, MultiplayerSpawner and
-  MultiplayerSynchronizer replication, SceneMultiplayer authentication, and a
-  two-instance headless smoke test. Use when adding online or LAN co-op to a Godot
-  game, or when an RPC is rejected ("not allowed", Mode is "authority"), RPC checksum
-  errors appear, spawned nodes never show up on clients, one player moves another, or
-  state does not sync. Not for Roblox replication (use `roblox-networking`), exporting a
-  dedicated server build (use `godot-export`) or local split-screen.
+  Godot 4.7 high-level multiplayer: ENet host and join, @rpc with rpc_id(), MultiplayerSpawner and
+  MultiplayerSynchronizer, with a two-instance headless test. Use for online or LAN co-op in
+  Godot, or a rejected RPC, spawned nodes missing on clients, or state that does not sync. Not for
+  Roblox (`roblox-networking`), server exports (`godot-export`) or local split-screen
+  (`camera-systems`).
 ---
 
 # Godot Multiplayer (4.x high-level)
