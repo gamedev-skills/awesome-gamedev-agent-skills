@@ -1,10 +1,11 @@
 ---
 name: roguelike
 description: >
-  Designs run-based roguelikes and roguelites in any engine: run structure, permadeath, meta-
-  progression, seeded and daily runs, turn order and symmetric field of view. Use for NetHack- or
-  Hades-style games, or runs that feel cheap. Pair with `procedural-gen` for dungeon generation
-  and `save-systems` for run vs meta saves. Not for roguelike deckbuilders (`card-game`).
+  Designs run-based roguelikes and roguelites in any engine: run structure, permadeath,
+  meta-progression, seeded and daily runs, turn order and symmetric field of view. Use for
+  NetHack- or Hades-style games, or runs that feel cheap. Pair with `procedural-gen` for dungeon
+  generation and `save-systems` for run vs meta saves. Not for roguelike deckbuilders
+  (`card-game`).
 ---
 
 # Roguelike

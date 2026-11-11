@@ -3,8 +3,9 @@ name: game-ui-ux
 description: >
   Engine-neutral design rules for game HUDs and menus: anchors and containers, scaling, safe
   areas, gamepad focus, HUDs driven by events instead of polling, and accessibility minimums. Use
-  for menus, health bars or inventory screens that break on ultrawide or phones. Pair with `godot-
-  ui-control` or `roblox-ui`. Not for button juice (`game-feel`) or rebinding (`input-systems`).
+  for menus, health bars or inventory screens that break on ultrawide or phones. Pair with
+  `godot-ui-control` or `roblox-ui`. Not for button juice (`game-feel`) or rebinding
+  (`input-systems`).
 ---
 
 # Game UI/UX
