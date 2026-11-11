@@ -2,7 +2,7 @@
 
 Steps for each mode in SKILL.md's workflow. Read only the section you need. "The docs folder" is the folder the project already uses, or `docs/` when there is none. Where each fact lives, decision rows and proof rules are in [doc-rules.md](doc-rules.md). The question rules and the "what to write, and when" table are in SKILL.md.
 
-**A GDD not in this layout** (one long file, a wiki page): run modes B, C, D and F against the GDD's own sections, in its own format. Add or edit the section that covers the feature; add a line to its change log if it has one. Create no index, folders or headers.
+**A GDD not in this layout** (one long file, a wiki page): run modes B, C, D and F against the GDD's own sections, in its own format. Make the smallest edit that keeps the doc true, in the user's own style: change the line that holds the old value and, if the doc keeps notes or a change log, record old → new there. Create no index, folders or headers, and don't suggest restructuring unless the user asks.
 
 - [Mode A: Draft the GDD](#mode-a-draft-the-gdd)
 - [Mode B: New feature](#mode-b-new-feature)
@@ -15,10 +15,10 @@ Steps for each mode in SKILL.md's workflow. Read only the section you need. "The
 
 1. **Gather.** Take every answer you can from the pitch, the planning chat and the repo. Then ask the one round of questions SKILL.md allows, or none.
 2. **Cut the game into features.** List the MVP features (usually 4 to 10) and the likely later ones as rows in the GDD index. Name each with a short noun slug (`combo`, `day-night`); slugs never change once a folder exists.
-3. **Write `GDD.md`** from [gdd-template.md](gdd-template.md) in the docs folder. Aim for one page, around 100 lines: if a section grows past a screen, that detail belongs in a feature note.
-4. **Write feature notes** (`features/<slug>/design.md` from [feature-templates.md](feature-templates.md)) only for MVP features the user has already described with rules or numbers. Set those rows to `designed`. Every other row stays `idea`, with a one-line summary and no folder.
+3. **Write `GDD.md`** from [gdd-template.md](gdd-template.md) in the docs folder. Aim for one page, around 100 lines: if a section grows past a screen, that detail belongs in a feature note. The summary, pillars and core loop must state the actual design in concrete words (what the player spends, does, risks and wins), not placeholders.
+4. **Design the core; don't hand back a template.** A draft the user can react to beats an empty form. For the 2 or 3 features the core loop needs (the ones milestone 1 builds), write `features/<slug>/design.md` from [feature-templates.md](feature-templates.md) with a concrete first proposal: rules, starting numbers, how a fight or level is won and lost. Mark every value the user didn't give `[ASSUMPTION]` so they can change it. Set those rows to `designed`. Every other row stays `idea`, with a one-line summary and no folder.
    - **The game already has code:** features that are built get status `implemented` and a note whose numbers are read from the code. Don't write their `implementation.md` or `testing.md` in this pass; offer them as the next step. The checker's `feature-doc-missing` warnings for those features are expected then, and say so in the handoff.
-5. **Verify and hand off.** Offer to write notes for the remaining features, and suggest the next step: usually prototyping the core loop (`$prototype-fast`) or building milestone 1 with the engine skills. Don't start coding in the same turn unless the user asked.
+5. **Verify and hand off.** Say which values are assumptions, and name one next step only if it isn't obvious (usually prototyping the core loop with `$prototype-fast`). Don't start coding in the same turn unless the user asked.
 
 ## Mode B: New feature
 
@@ -30,7 +30,7 @@ Steps for each mode in SKILL.md's workflow. Read only the section you need. "The
 ## Mode C: Change a feature
 
 1. **Find the new values first.** Check `git diff`, `git log -p` on config or tuning files, and the conversation. Playtest tuning often lands in code before the docs, and a number in the diff is not a question for the user.
-2. **Edit `design.md` in place** so it describes the current design, not its history. Add a dated History line with the old and new value and the reason ("2026-11-02: multiplier cap ×5 → ×6 after playtest, D-014"). Playtest notes earn their place here: what was seen, what changed, what to watch next.
+2. **Edit `design.md` in place** so it describes the current design, not its history. Add a dated History line with the old and new value and the reason ("2026-11-02: multiplier cap ×5 → ×6 after playtest, D-014"). Playtest notes earn their place here: what was seen and what changed. Don't write to-dos or follow-ups into the user's doc unless they asked; put open questions in your reply instead.
 3. **Follow it through.** If the code already has the change, update the numbers in `implementation.md` and `testing.md` (when they exist). If the code doesn't have the change yet, set `changed — code pending` in `design.md` and the GDD index. Check the notes of other features that link here.
 4. **Log a decision** (mode F) if the change reverses an earlier choice or picks between real alternatives.
 5. **Cutting:** set the status to `cut`, keep the folder, and add a short note at the top of `design.md` saying why. Cut ideas come back, and the reasoning is the valuable part.

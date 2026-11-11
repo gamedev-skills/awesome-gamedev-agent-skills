@@ -1,17 +1,10 @@
 ---
 name: game-docs
 description: >
-  Writes and maintains a game's design docs: a one-page GDD with a feature index,
-  short per-feature design notes, and implementation and testing notes once a
-  feature has code, kept true to the code and checked by a read-only link and
-  status checker. Use when the user asks for a GDD or game design doc ("draft a
-  GDD", "write up the combo system", "spec out this mechanic"), wants the GDD or
-  design docs updated after a playtest, a tuning change or new code, wants a game
-  design decision recorded, or asks to split an old GDD into feature docs. Also
-  use after changing gameplay code in a project that already has a GDD, to keep
-  it true. Not for building, prototyping or jamming a game when no docs were asked
-  for (build it, then offer docs in one line), and not for READMEs, API
-  references, code comments or level layouts.
+  Writes and maintains a game's design docs: a one-page GDD with a feature index and short feature
+  notes, kept true to the code by a link and status checker. Use for "draft a GDD", "spec out this
+  mechanic", or updating docs after a playtest or code change. Not for building a game when no
+  docs were asked for (`prototype-fast`, `game-jam`), READMEs or level layouts (`level-design`).
 ---
 
 # Game docs
@@ -30,7 +23,7 @@ Run only when the user asked for game design docs, or when the project already h
    - Sort the project into one of three cases. This decides everything below:
      - **No GDD.** Only a request for a GDD starts one.
      - **A GDD in this layout** (a feature index plus `features/<slug>/design.md`). Use the modes as written.
-     - **A GDD in any other form** (one long file, a wiki page, spec-tool folders). **Edit it in place, in its own format.** Don't add an index, folders or headers to it. Mention once, in one line, that it could be split into feature notes (mode E); never do it unasked.
+     - **A GDD in any other form** (one long file, a wiki page, spec-tool folders). **Edit it in place, in its own format.** Make the smallest edit, in the user's style. Don't add an index, folders or headers to it, and don't suggest restructuring unless the user asks (mode E).
 2. **Pick the mode** and read its section in [references/workflow-modes.md](references/workflow-modes.md):
 
    | The user wants | Mode |
@@ -49,13 +42,13 @@ Run only when the user asked for game design docs, or when the project already h
    python3 scripts/check_docs.py <project>/design --gdd game-design.md   # GDD under another name
    ```
    Exit 0: no errors. Exit 1: fix each `ERROR`, and each `WARNING` that is real; say why the others don't apply. Exit 2: wrong folder or `--gdd` name. A `NOTE gdd-no-index` means the GDD is not in this layout; that is fine, so leave its structure alone. Then reread every number you touched against its source (the code, the diff or the user's message).
-5. **Hand off** in a few lines: the docs created or changed (as links), the substance in 2 to 4 lines, the `[ASSUMPTION]`s and open questions, decisions logged and statuses changed, and one suggested next step. Don't commit unless asked.
+5. **Hand off** in a few lines: the docs created or changed (as links, or the diff for a small edit), the substance in 2 to 4 lines, the `[ASSUMPTION]`s and the questions that really matter, and decisions logged or statuses changed. Add a next step only if it isn't obvious. No to-dos or offers of more docs unless the user asked. Don't commit unless asked.
 
 ## What to write, and when
 
 | Moment | Write |
 |---|---|
-| The user asks for a GDD | `GDD.md` from the template, about one page. A feature note (`design.md`) only for MVP features the user has already described with rules or numbers; the rest are index rows with status `idea` |
+| The user asks for a GDD | `GDD.md` from the template, about one page, with the real design in it, plus a `design.md` with a concrete first proposal (rules and starting numbers, `[ASSUMPTION]`-marked) for the 2 or 3 features the core loop needs. Other features are index rows with status `idea` |
 | A feature is designed | its `features/<slug>/design.md` |
 | A feature first gets code (status `in progress`) | its `implementation.md` and `testing.md`, short, written against the real code |
 | Code that several features share appears (save format, event bus, scene flow) | `ARCHITECTURE.md`. Until then, one line in the GDD summary names the engine |
@@ -68,7 +61,9 @@ Write more only when the user asks for it. A plan for code that doesn't exist ye
 
 ## Gotchas
 
-- **"Draft a GDD" produced 20+ files.** Writing a design note, an implementation plan and a test plan for every MVP feature, plus an ARCHITECTURE.md, before any code exists. Follow the table above: one GDD page, notes only for features with real substance.
+- **"Draft a GDD" produced 20+ files.** Writing a design note, an implementation plan and a test plan for every MVP feature, plus an ARCHITECTURE.md, before any code exists. Follow the table above: one GDD page plus notes for the core-loop features only.
+- **The GDD came back as an empty template.** Pillars and a feature list with every rule deferred give the user nothing to build or argue with. Propose the core mechanics with starting numbers, mark them `[ASSUMPTION]`, and let the user change them.
+- **Unasked extras in the user's doc or reply.** To-dos written into their GDD, offers to restructure, "want me to write more docs?" lines. Edit what was asked; put real open questions in the reply.
 - **A plain GDD got restructured.** The user asked to "update the dash in our GDD" and the agent added a feature index or folders, often to clear checker messages. Edit the GDD where it is; the checker's `gdd-no-index` is only a note.
 - **"Record this decision" started a doc set.** With no GDD, add the decision where the project keeps notes; mode F says where.
 - **Asking for numbers that are already in the code.** Playtest tuning often lands in code before the docs. In modes C and D, read the diff first, and set `changed — code pending` only when the code really lacks the change.
