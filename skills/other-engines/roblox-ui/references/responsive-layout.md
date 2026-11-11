@@ -1,7 +1,15 @@
 # Responsive Roblox UI
 
 Read this when a screen must adapt across viewport sizes or when layout defects appear outside the
-author's primary monitor. This reference targets Roblox's rolling platform APIs.
+author's primary monitor.
+
+Contents:
+- Choose structure before coordinates
+- Roblox layout primitives (and flex distribution)
+- Safe areas and reserved controls
+- Density and visual rhythm
+- Required verification matrix
+- Bundled Instance fixture
 
 ## Choose structure before coordinates
 

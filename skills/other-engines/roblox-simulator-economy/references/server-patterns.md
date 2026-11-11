@@ -5,6 +5,14 @@ rebirth, offline earnings on join, repairing loaded data, and rolling paid rando
 calls (`GetAsync`/`UpdateAsync`, session locking, retries) belong to `roblox-datastores`; remote
 rate limits and payload validation in depth belong to `roblox-networking`.
 
+Contents:
+- Layout
+- Sessions and the income tick
+- Buy one and buy max
+- Rebirth
+- Loading: repair first, then pay offline income
+- Paid random items (eggs, crates, spins)
+
 The snippets use only `Players`, `ReplicatedStorage`, `PolicyService`, `RemoteEvent`, `Random`,
 `task`, and `os.time()`. They were compiled and run under Lune 0.11.0 against minimal stand-ins
 for those services (not shipped with this skill); behaviour inside Studio still needs a Server &
