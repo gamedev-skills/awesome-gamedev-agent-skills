@@ -4,31 +4,19 @@ Depth behind the glTF skill: combining decoders, async loading with progress,
 cloning skinned meshes, and exporter hygiene. Notes call out where older releases
 differ.
 
+Contents:
+
+- Compression: DRACO, Meshopt, KTX2 (hosting decoder files, version matching)
+- Async loading with a progress bar
+- Reusing a model many times (`SkeletonUtils.clone`, `InstancedMesh`)
+- AnimationMixer detail
+- Exporter hygiene (Blender → glTF)
+
 ## Compression: DRACO, Meshopt, KTX2
 
 A production glTF pipeline often compresses geometry (DRACO or Meshopt) and
-textures (KTX2/Basis). Attach the matching loaders to `GLTFLoader`:
-
-```js
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader, DRACO_GLTF_CONFIG } from 'three/addons/loaders/DRACOLoader.js';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-
-// r185+: both loaders default to the decoder files bundled with three
-// (examples/jsm/libs/draco/ and examples/jsm/libs/basis/).
-const draco = new DRACOLoader().setDecoderPath(DRACO_GLTF_CONFIG); // glTF-only WASM build
-const ktx2 = new KTX2Loader().detectSupport(renderer);
-
-const loader = new GLTFLoader()
-  .setDRACOLoader(draco)
-  .setKTX2Loader(ktx2)
-  .setMeshoptDecoder(MeshoptDecoder);   // EXT_ and KHR_meshopt_compression (r183+)
-
-loader.load('assets/scene.glb', (gltf) => scene.add(gltf.scene));
-```
-
-Notes:
+textures (KTX2/Basis). The loader setup is Pattern 4 in `SKILL.md`; these notes
+cover hosting and version matching:
 
 - If the default files 404 (some bundler/host setups don't serve them), copy
   `examples/jsm/libs/draco/` and `examples/jsm/libs/basis/` from the installed
@@ -109,7 +97,7 @@ it draws them in one call.
   `to.crossFadeFrom(from, duration, warp)`.
 - Listen for completion: `mixer.addEventListener('finished', (e) => {...})`.
 
-Always advance with real time: call `timer.update(time)` then
+Always advance with real time: call `timer.update()` then
 `mixer.update(timer.getDelta())` inside the loop (`THREE.Timer`; `Clock` is deprecated
 since r183).
 
