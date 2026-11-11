@@ -184,7 +184,8 @@ def validate_file(path: Path) -> tuple[list[str], list[str]]:
     if unexpected:
         errors.append(f"unexpected skill-root entry/entries: {', '.join(unexpected)}")
 
-    targets = set(MD_LINK_RE.findall(text)) | set(CODE_PATH_RE.findall(text))
+    # Code such as Lua's `t[k](args)` looks like a Markdown link, so match links outside code fences.
+    targets = set(MD_LINK_RE.findall(_without_fenced_code(text))) | set(CODE_PATH_RE.findall(text))
     for target in sorted(targets):
         link = _local_link_target(target)
         if link is None:
