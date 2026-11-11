@@ -2,6 +2,10 @@
 
 Depth companion to `godot-multiplayer`.
 
+Contents: the @rpc annotation in full · MultiplayerSpawner · MultiplayerSynchronizer
+(replication modes, visibility) · SceneMultiplayer authentication · transfer mode
+guidance · dedicated server export · minimal lobby flow
+
 ## The @rpc annotation in full
 
 ```gdscript
@@ -55,8 +59,10 @@ func server_spawn_player(id: int) -> void:
 
 Replicates chosen properties from the authority to other peers each network tick.
 
-- Add it as a child of the node to sync. In the **Replication** dock, add property paths
-  (e.g. `:position`, `:velocity`, `Sprite2D:modulate`).
+- Add it as a child of the node to sync. Add property paths (e.g. `.:position`,
+  `.:velocity`, `Sprite2D:modulate`, relative to `root_path`) in the editor's
+  **Replication** panel, or in code with `SceneReplicationConfig.add_property()` and
+  assign the config to `replication_config`.
 - Per property: **Spawn** (sent once when the node is spawned) and a **Replicate** mode:
   *Always* (unreliable, every `replication_interval`), *On Change* (reliable, checked every
   `delta_interval` and sent only when the value changed) or *Never*. In code use
@@ -68,6 +74,7 @@ Replicates chosen properties from the authority to other peers each network tick
   `set_visibility_for(peer, true)`. So `set_visibility_for` alone does nothing until
   `public_visibility` is off:
   ```gdscript
+  sync.public_visibility = false                 # otherwise every peer still receives it
   sync.set_visibility_for(peer_id, true)
   sync.add_visibility_filter(func(peer): return _can_see(peer))
   sync.update_visibility()
