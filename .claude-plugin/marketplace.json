@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 78 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 79 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
