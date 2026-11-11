@@ -5,6 +5,8 @@ and releases use [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-11
+
 ### v2 quality release
 
 - **Every skill rewritten to Anthropic's skill-authoring guidance:** a description that says what
@@ -127,6 +129,7 @@ First stable release: 62 skills and a master router.
 - `router/SKILL.md`, which detects the engine and task and loads only the skills needed.
 - The authoring standard, the skill template and `scripts/validate-skills.py`.
 
-[Unreleased]: https://github.com/gamedev-skills/awesome-gamedev-agent-skills/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/gamedev-skills/awesome-gamedev-agent-skills/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/gamedev-skills/awesome-gamedev-agent-skills/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/gamedev-skills/awesome-gamedev-agent-skills/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/gamedev-skills/awesome-gamedev-agent-skills/releases/tag/v1.0.0

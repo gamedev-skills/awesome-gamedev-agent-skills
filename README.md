@@ -7,9 +7,17 @@
        alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 79 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**79 game-dev skills for your AI coding agent — install once, and a router loads the
-right skill for whatever you're building.**
+**Make games with your AI coding agent, in the engine you already use.** 79 skills for 12
+engines: say what you're building, and a router loads the right 2 or 3 skills before your agent
+writes code.
 
+```bash
+npx skills add gamedev-skills/awesome-gamedev-agent-skills
+```
+
+[![Latest release](https://img.shields.io/github/v/release/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/releases/latest)
+[![skills.sh installs](https://skills.sh/b/gamedev-skills/awesome-gamedev-agent-skills)](https://skills.sh/gamedev-skills/awesome-gamedev-agent-skills)
+[![Engines checked](https://img.shields.io/badge/engines%20checked-2026--11--11-brightgreen)](docs/VERSION-SUPPORT.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-79%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
@@ -25,9 +33,12 @@ task skills before it writes code.
 - **You don't pick skills.** The router detects your engine and task and loads only what fits.
 - **Art direction, not one-off generations.** The asset workflow locks a visual target, builds
   families, normalizes outputs deterministically, and checks them inside the game.
-- **Built to trust.** Every skill is written from primary docs, version-pinned to a stated
-  engine release, and checked by a [validator](scripts/validate-skills.py). Current baselines and
-  upgrade policy live in [version support](docs/VERSION-SUPPORT.md).
+- **Checked on the real engines.** Every skill is written from official engine docs and pinned to
+  a current release (Godot 4.7.2, Unity 6.3 LTS, Unreal 5.8, Phaser 4.2.1, three.js r187 and
+  more, checked 2026-11-11). Code examples were run or compiled on the real toolchains for 10 of
+  the 12 engines, and in 366 blind test prompts the right skill loaded for 98.7% of the requests
+  that needed one. [Results, method and limits](evals/RESULTS.md) ·
+  [version support](docs/VERSION-SUPPORT.md).
 
 ## Sponsors
 
