@@ -55,6 +55,7 @@ When two skills both match, the router's ownership table (§3c) decides who lead
 | `unity-tilemap-2d` | "Unity tilemap", Tile Palette, Rule Tile, `SetTile`, Tilemap Collider 2D seams, hex/isometric grid |
 | `unity-navmesh` | `NavMeshSurface`, `NavMeshAgent`, `NavMeshLink`, "pathfinding in Unity", agent won't move, Bake tab missing |
 | `unity-build-pipeline` | "build Unity", Build Profiles, player settings, IL2CPP vs Mono, code stripping, `BuildPipeline.BuildPlayer`, CI/headless builds, Addressables |
+| `unity-build-size` | "build too big", "reduce build size", "size limit", APK/AAB/IPA or WebGL build too large, itch/Steam download size, huge `sharedassets*.assets.resS`, glTF/GLB textures in a build |
 
 ### Unreal (`skills/unreal/`, target UE 5.8)
 
@@ -147,6 +148,7 @@ gives no detail.
 | `prototype-fast` | "prototype this", "just get something playable", "rough it in", "is this fun", greybox a mechanic, keep or kill the prototype |
 | `steam-publish` | publish on Steam, SteamPipe, depots, `app_build` `.vdf`, `steamcmd` upload, ContentBuilder, beta branch, SetLive, store review, Coming Soon, Steam Deck Verified, "Failed to get application info"; `steam_appid.txt` |
 | `itch-publish` | upload to itch, `butler push`, channels, HTML5 game downloads instead of playing, blank or 403 web build, "invalid target", `--userversion`; `.itch.toml` |
+| `game-docs` | GDD, game design doc, spec out / write up a feature, update or sync the GDD or design docs, record a design decision, split a GDD into features; an existing GDD (`GDD.md`, `features/*/design.md`). Only when asked for docs or a GDD already exists, never for a plain "make a game" |
 
 ## Keyword traps with no owner
 

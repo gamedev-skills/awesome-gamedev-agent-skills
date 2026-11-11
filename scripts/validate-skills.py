@@ -247,8 +247,8 @@ def skill_warnings(path: Path, text: str, description: str) -> list[str]:
             if link is None:
                 continue
             resolved = (ref.parent / link).resolve()
-            if resolved == ref.resolve() or resolved.suffix != ".md":
-                continue
+            if resolved == ref.resolve() or resolved.suffix != ".md" or not resolved.exists():
+                continue  # self links, non-Markdown files and template placeholders
             if resolved.is_relative_to(references.resolve()):
                 linked.add(_display(resolved))
         for other in sorted(linked):

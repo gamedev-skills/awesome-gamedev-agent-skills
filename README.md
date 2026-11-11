@@ -4,20 +4,20 @@
 
 <p align="center">
   <img src="docs/assets/awesome-gamedev-agent-skills-banner.png" width="820"
-       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 77 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
+       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 79 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**77 game-dev skills for your AI coding agent — install once, and a router loads the
+**79 game-dev skills for your AI coding agent — install once, and a router loads the
 right skill for whatever you're building.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-77%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-79%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 [![Sponsor](https://img.shields.io/badge/sponsor-this%20project-ea4aaa)](#sponsors)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **77 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **79 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -59,7 +59,7 @@ Sponsored entries are labelled as sponsored and have no effect on which skills t
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 77 skills into the right place:
+coding agent you already use and installs the router plus all 79 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -146,7 +146,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-77 skills across 9 categories — each links to its `SKILL.md` below.
+79 skills across 9 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -171,7 +171,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`godot-csharp`](skills/godot/godot-csharp/SKILL.md) | C#/.NET in Godot: partial classes, `[Export]`/`[Signal]`, signals as events, GDScript interop |
 | [`godot-gdscript-headless-testing`](skills/godot/godot-gdscript-headless-testing/SKILL.md) | GDScript tests with `godot --headless`, non-zero exit on failure, CI jobs |
 
-#### Unity — 8 ([`skills/unity/`](skills/unity/)) · Unity 6.3 LTS (6000.3)
+#### Unity — 9 ([`skills/unity/`](skills/unity/)) · Unity 6.3 LTS (6000.3)
 
 | Skill | Scope |
 |-------|-------|
@@ -183,6 +183,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`unity-tilemap-2d`](skills/unity/unity-tilemap-2d/SKILL.md) | Tile Palette, Tilemap Collider 2D with a Composite Collider, Rule Tiles, runtime `SetTile` |
 | [`unity-navmesh`](skills/unity/unity-navmesh/SKILL.md) | AI Navigation: `NavMeshSurface` baking, `NavMeshAgent`, `NavMeshLink`, runtime rebakes |
 | [`unity-build-pipeline`](skills/unity/unity-build-pipeline/SKILL.md) | Build and player settings, IL2CPP vs Mono, code stripping, scripted and CI builds, Addressables |
+| [`unity-build-size`](skills/unity/unity-build-size/SKILL.md) | Build Report triage, uncompressed glTF/GLB textures, texture/audio import budgets, per-platform size levers (Web, Android, iOS, desktop, Steam) |
 
 #### Unreal — 6 ([`skills/unreal/`](skills/unreal/)) · Unreal Engine 5.8 (5.9 in Preview)
 
@@ -268,7 +269,7 @@ primitives.
 | [`survival-crafting`](skills/genres/survival-crafting/SKILL.md) | Gathering, recipes and tech trees, carry weight, spoilage, needs, base building |
 | [`puzzle`](skills/genres/puzzle/SKILL.md) | Match-3 cascades, Sokoban, unique-solution grids, exact undo, solver-checked levels |
 
-### Workflows — 4 ([`skills/workflows/`](skills/workflows/))
+### Workflows — 5 ([`skills/workflows/`](skills/workflows/))
 
 | Skill | Scope |
 |-------|-------|
@@ -276,6 +277,7 @@ primitives.
 | [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | One-question throwaway prototype: greybox, debug HUD, playtest, then keep, kill or retune |
 | [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | SteamPipe: depots, `app_build` scripts, `steamcmd` uploads, beta branches, SetLive, store review |
 | [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | `butler push` to channels, platform tags, HTML5 builds, `--userversion`, CI uploads |
+| [`game-docs`](skills/workflows/game-docs/SKILL.md) | One-page GDD with a feature index and short per-feature notes, kept in sync with the code |
 
 ## Agent compatibility
 
@@ -320,7 +322,7 @@ Here's the shape of a single exchange (illustrative):
 > add a double jump to my player
 
 Detected Godot (project.godot). Loading godot-2d-movement for the controller
-and platformer for jump feel — skipping the other 75 skills.
+and platformer for jump feel — skipping the other 76 skills.
 ```
 
 ```gdscript
@@ -349,7 +351,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        77 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        79 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template

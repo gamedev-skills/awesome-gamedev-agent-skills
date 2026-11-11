@@ -5,6 +5,11 @@ arguments, stamps a version, and returns a proper exit code. Verified against
 `ScriptReference/BuildPipeline.BuildPlayer`, `ScriptReference/EditorUserBuildSettings.SwitchActiveBuildTarget`
 and the 6000.3 Manual page "Editor command line arguments".
 
+Contents: [A parameterised build method](#a-parameterised-build-method) ·
+[Invoking from CI](#invoking-from-ci) ·
+[Building a saved Build Profile with no script](#building-a-saved-build-profile-with-no-script) ·
+[Addressables content build](#addressables-content-build-when-used) · [Gotchas](#gotchas)
+
 **Pick the platform with Unity's own `-buildTarget` flag, not from inside the script.**
 `EditorUserBuildSettings.SwitchActiveBuildTarget` is not available in batch mode: a platform
 switch needs a script recompile, which cannot happen while your `-executeMethod` code runs.

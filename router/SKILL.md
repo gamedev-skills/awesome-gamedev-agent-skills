@@ -100,7 +100,9 @@ After the engine, read the request for task signals (three **additive** categori
   `tower-defense`, `card-game`, `visual-novel`, `survival-crafting`, `puzzle`. Triggered by genre
   words or a reference game ("make a roguelike", "Celeste-like", "deckbuilder").
 - **workflows** (process/shipping): `game-jam`, `prototype-fast`, `steam-publish`,
-  `itch-publish`. Triggered by process words ("publish on Steam", "is this fun", "48-hour jam").
+  `itch-publish`, `game-docs`. Triggered by process words ("publish on Steam", "is this fun",
+  "48-hour jam", "draft a GDD"). Add `game-docs` only when the user asks for docs or the project
+  already has a GDD; a plain "make a game" or "add a feature" does not pull it in.
 
 File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel`; `*.rpy` →
 `visual-novel`; `steam_appid.txt` → `steam-publish`; `.itch.toml` → `itch-publish`;
@@ -119,7 +121,8 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
 - **Unity** (`skills/unity/`): scripting `unity-csharp-scripting`; input `unity-input-system`;
   3D **and 2D** physics (`Rigidbody`, `Rigidbody2D`, `Physics2D`) `unity-physics`; animation
   `unity-animation`; data `unity-scriptableobjects`; tilemaps `unity-tilemap-2d`; AI nav
-  `unity-navmesh`; builds `unity-build-pipeline`. Unity VFX Graph has no skill here (§7).
+  `unity-navmesh`; builds `unity-build-pipeline`; build too large `unity-build-size`. Unity VFX
+  Graph has no skill here (§7).
 - **Unreal** (`skills/unreal/`): visual scripting `unreal-blueprints`; C++ gameplay
   `unreal-cpp-gameplay`; input `unreal-enhanced-input`; AI (Behavior Trees, Blackboard, EQS,
   StateTree) `unreal-behavior-trees`; VFX `unreal-niagara`; ship `unreal-packaging`.
@@ -217,7 +220,8 @@ the engine skill together, then only the disciplines the request needs.
 
 `game-jam` (jam, 48-hour, Ludum Dare/GMTK, "what do we cut") · `prototype-fast` ("prototype
 this", "is this fun", greybox a mechanic) · `steam-publish` (SteamPipe uploads, depots, store
-review; `steam_appid.txt`) · `itch-publish` (itch.io, butler; `.itch.toml`). Steamworks SDK calls
+review; `steam_appid.txt`) · `itch-publish` (itch.io, butler; `.itch.toml`) · `game-docs` (GDD,
+feature design note, sync the GDD; only when asked or an existing GDD). Steamworks SDK calls
 in game code (achievements, overlay, lobbies) have no skill: point to the engine binding
 (GodotSteam, Steamworks.NET or Facepunch.Steamworks, Online Subsystem Steam) and say so.
 
