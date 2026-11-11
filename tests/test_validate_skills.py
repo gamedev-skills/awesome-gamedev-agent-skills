@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
@@ -33,13 +35,14 @@ class ValidatorTests(unittest.TestCase):
         category: str,
         name: str,
         frontmatter: str | None = None,
-        body: str = "# Test\n",
+        body: str = "# Test\n\n## Gotchas\n\n- A fixture gotcha.\n",
     ) -> Path:
         path = self.repo_root / "skills" / category / name / "SKILL.md"
         path.parent.mkdir(parents=True)
         fields = frontmatter or (
             f"name: {name}\n"
-            "description: Handles test fixtures. Use when validating a test skill."
+            "description: Handles test fixtures. Use when validating a test skill. "
+            "Not for real skills (use other-skill)."
         )
         path.write_text(f"---\n{fields}\n---\n\n{body}", encoding="utf-8")
         return path
@@ -229,6 +232,104 @@ class ValidatorTests(unittest.TestCase):
             errors = validate_skills.validate_marketplace([skill, router])
 
         self.assertFalse(any("does not exactly match" in error for error in errors), errors)
+
+    def write_reference(self, skill: Path, name: str, text: str) -> Path:
+        path = skill.parent / "references" / name
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_missing_not_for_clause_is_a_warning(self) -> None:
+        path = self.write_skill(
+            "disciplines",
+            "test-skill",
+            "name: test-skill\ndescription: Handles fixtures. Use when validating a test skill.",
+        )
+
+        errors, warnings = validate_skills.validate_file(path)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("no 'Not for ...' clause", warnings[0])
+
+    def test_not_for_clause_matches_any_case(self) -> None:
+        path = self.write_skill(
+            "disciplines",
+            "test-skill",
+            "name: test-skill\ndescription: >\n  Handles fixtures. Use when testing,\n  not for real work.",
+        )
+
+        _, warnings = validate_skills.validate_file(path)
+
+        self.assertEqual(warnings, [])
+
+    def test_missing_gotchas_heading_is_a_warning(self) -> None:
+        for body in ("# Test\n\n## Pitfalls\n\n- old name\n", "# Test\n\n```md\n## Gotchas\n```\n"):
+            with self.subTest(body=body):
+                path = self.write_skill("disciplines", f"test-skill-{len(body)}", body=body)
+
+                errors, warnings = validate_skills.validate_file(path)
+
+                self.assertEqual(errors, [])
+                self.assertEqual([w.split(": ", 1)[1] for w in warnings], ["no '## Gotchas' heading"])
+
+    def test_long_reference_needs_a_contents_list(self) -> None:
+        path = self.write_skill("disciplines", "test-skill")
+        filler = "".join(f"line {i}\n" for i in range(110))
+        self.write_reference(path, "long.md", "# Long\n\n" + filler)
+        for name, opening in (
+            ("heading.md", "# Ok\n\n## Contents\n\n- Setup\n- Usage\n\n"),
+            ("inline.md", "# Ok\n\nContents: setup · usage · gotchas\n\n"),
+            ("anchors.md", "# Ok\n\n- [Setup](#setup)\n- [Usage](#usage)\n- [Gotchas](#gotchas)\n\n"),
+        ):
+            self.write_reference(path, name, opening + filler)
+        self.write_reference(path, "short.md", "# Short\n\n" + "x\n" * 90)
+
+        errors, warnings = validate_skills.validate_file(path)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1, warnings)
+        self.assertIn("references/long.md: 112 lines but no contents list", warnings[0])
+
+    def test_reference_linking_to_another_reference_is_a_warning(self) -> None:
+        path = self.write_skill("disciplines", "test-skill", body="# Test\n\n## Gotchas\n\n[A](references/a.md) [B](references/b.md)\n")
+        self.write_reference(path, "a.md", "# A\n\nSee [B](b.md#part) and [self](#a) and [skill](../SKILL.md).\n\n```md\n[c](c.md)\n```\n")
+        self.write_reference(path, "b.md", "# B\n")
+
+        errors, warnings = validate_skills.validate_file(path)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1, warnings)
+        self.assertIn("references/a.md: links to another reference (skills/disciplines/test-skill/references/b.md)", warnings[0])
+
+    def run_main(self, *args: str) -> tuple[int, str]:
+        output = io.StringIO()
+        empty: list[str] = []
+        with patch.object(validate_skills, "find_skill_files", return_value=[self.warned_skill]), \
+                patch.object(validate_skills, "validate_unique_names", return_value=empty), \
+                patch.object(validate_skills, "validate_json_assets", return_value=empty), \
+                patch.object(validate_skills, "validate_markdown_links", return_value=empty), \
+                patch.object(validate_skills, "validate_marketplace", return_value=empty), \
+                patch.object(validate_skills, "validate_router_and_catalog", return_value=empty), \
+                contextlib.redirect_stdout(output):
+            code = validate_skills.main(list(args))
+        return code, output.getvalue()
+
+    def test_warnings_print_and_only_fail_with_strict(self) -> None:
+        self.warned_skill = self.write_skill(
+            "disciplines", "test-skill", "name: test-skill\ndescription: Handles fixtures. Use when testing.", body="# Test\n"
+        )
+
+        code, output = self.run_main()
+        strict_code, strict_output = self.run_main("--strict")
+
+        self.assertEqual(code, 0, output)
+        self.assertIn("WARNING: skills/disciplines/test-skill/SKILL.md: no '## Gotchas' heading", output)
+        self.assertIn("2 warning(s).", output)
+        self.assertIn("All checks passed.", output)
+        self.assertEqual(strict_code, 1, strict_output)
+        self.assertIn("warnings are errors with --strict", strict_output)
+
 
 if __name__ == "__main__":
     unittest.main()
