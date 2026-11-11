@@ -11,6 +11,9 @@ Log locations: macOS ~/Library/Logs/Unity/Editor.log, Windows
 %LOCALAPPDATA%\\Unity\\Editor\\Editor.log, Linux ~/.config/unity3d/Editor.log, or
 the file passed to -logFile in batch mode.
 
+Sizes are binary: 1 MB here is 1024 * 1024 bytes, as in the Editor log. Store and
+host limits are often decimal (1 MB = 1,000,000 bytes).
+
 Standard library only. Read-only: nothing is ever written.
 """
 
@@ -30,6 +33,10 @@ UNITS = {"b": 1, "kb": 1024, "mb": 1024**2, "gb": 1024**3}
 SIZE = r"([0-9]+(?:\.[0-9]+)?) (b|kb|mb|gb)"
 
 REPORT_START = "Build Report"
+USER_ASSETS = "Total User Assets"
+OLD_COMPLETE = "Complete size"
+# Other threads can write to the Editor log while the asset list is printed; allow a few such lines.
+MAX_FOREIGN_LINES = 3
 CATEGORY_RE = re.compile(rf"^(\S.*?)\s+{SIZE}\s+([0-9.]+)%\s*$")
 COMPLETE_RE = re.compile(rf"^Complete build size\s+{SIZE}\s*$")
 ASSET_RE = re.compile(rf"^\s*{SIZE}\s+([0-9.]+)%\s+(.+?)\s*$")
@@ -44,18 +51,21 @@ def to_bytes(number: str, unit: str) -> int:
 class Report:
     start_line: int
     categories: list[dict] = field(default_factory=list)
+    user_assets_bytes: int | None = None
     complete_bytes: int | None = None
     assets: list[dict] = field(default_factory=list)
 
+    @property
+    def empty(self) -> bool:
+        return not (self.categories or self.assets or self.complete_bytes is not None)
 
-def parse_last_report(lines: list[str]) -> Report | None:
-    starts = [index for index, line in enumerate(lines) if line.strip() == REPORT_START]
-    if not starts:
-        return None
-    report = Report(start_line=starts[-1] + 1)
+
+def parse_report(lines: list[str], start: int) -> Report:
+    report = Report(start_line=start + 1)
     in_assets = False
-    for line in lines[starts[-1] + 1 :]:
-        if END_RE.match(line):
+    foreign = 0
+    for line in lines[start + 1 :]:
+        if END_RE.match(line) or line.strip() == REPORT_START:
             break
         if line.startswith("Used Assets and files"):
             in_assets = True
@@ -63,7 +73,11 @@ def parse_last_report(lines: list[str]) -> Report | None:
         if in_assets:
             match = ASSET_RE.match(line)
             if not match:
-                break
+                foreign += 1
+                if foreign > MAX_FOREIGN_LINES:
+                    break
+                continue
+            foreign = 0
             number, unit, percent, path = match.groups()
             report.assets.append({"path": path, "bytes": to_bytes(number, unit), "percent": float(percent)})
             continue
@@ -74,8 +88,24 @@ def parse_last_report(lines: list[str]) -> Report | None:
         category = CATEGORY_RE.match(line)
         if category:
             name, number, unit, percent = category.groups()
+            if name == USER_ASSETS:
+                report.user_assets_bytes = to_bytes(number, unit)
+                continue
+            if name == OLD_COMPLETE:  # pre-2022 layout: "Complete size  220.6 mb  100.0%"
+                report.complete_bytes = to_bytes(number, unit)
+                continue
             report.categories.append({"name": name, "bytes": to_bytes(number, unit), "percent": float(percent)})
     return report
+
+
+def parse_last_report(lines: list[str]) -> Report | None:
+    """The last Build Report block with content; a bare 'Build Report' line alone is skipped."""
+    starts = [index for index, line in enumerate(lines) if line.strip() == REPORT_START]
+    for start in reversed(starts):
+        report = parse_report(lines, start)
+        if not report.empty:
+            return report
+    return None
 
 
 def human(size: int) -> str:
@@ -93,6 +123,8 @@ def build_parser() -> argparse.ArgumentParser:
             "example:\n"
             "  python scripts/build_report.py ~/Library/Logs/Unity/Editor.log\n"
             "  python scripts/build_report.py build.log --top 30 --budget-mb 200 --json\n\n"
+            "sizes: MB means MiB (1024 * 1024 bytes), as in the Editor log; the sizes are\n"
+            "       uncompressed, so measure the shipped file for a store or host limit.\n\n"
             "exit codes: 0 report found (and within --budget-mb), 1 no report in the log,\n"
             "            over budget, or --budget-mb set but the report has no complete build size,\n"
             "            2 usage problem or unreadable log"
@@ -108,7 +140,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--budget-mb",
         type=float,
         metavar="MB",
-        help="exit 1 when the complete build size (uncompressed) is above this many MB, "
+        help="exit 1 when the complete build size (uncompressed) is above this many MiB, "
         "or when the report has no complete build size to compare",
     )
     return parser
@@ -135,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     report = parse_last_report(lines)
     if report is None:
         print(
-            f"error: no 'Build Report' block in '{args.log}'; build a player first, "
+            f"error: no 'Build Report' block with sizes in '{args.log}'; build a player first, "
             "and pass the log of the Editor session that built it",
             file=sys.stderr,
         )
@@ -159,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
                     "over_budget": over,
                     "budget_checked": budget is not None and not unchecked,
                     "categories": report.categories,
+                    "user_assets_bytes": report.user_assets_bytes,
                     "asset_count": len(report.assets),
                     "assets": top,
                 },
@@ -169,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Build Report at line {report.start_line} of {path.name}")
         for category in report.categories:
             print(f"  {category['name']:<20} {human(category['bytes']):>10}  {category['percent']:5.1f}%")
+        if report.user_assets_bytes is not None:
+            print(f"Total user assets: {human(report.user_assets_bytes)}")
         if report.complete_bytes is not None:
             print(f"Complete build size (uncompressed): {human(report.complete_bytes)}")
         print(f"Largest {len(top)} of {len(report.assets)} used assets:")

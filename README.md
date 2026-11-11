@@ -157,7 +157,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`unity-tilemap-2d`](skills/unity/unity-tilemap-2d/SKILL.md) | 2D Tilemap/Tile Palette, rule tiles, tilemap colliders |
 | [`unity-navmesh`](skills/unity/unity-navmesh/SKILL.md) | AI navigation: NavMesh bake, `NavMeshAgent` |
 | [`unity-build-pipeline`](skills/unity/unity-build-pipeline/SKILL.md) | Build/player/quality settings, code stripping, Addressables |
-| [`unity-build-size`](skills/unity/unity-build-size/SKILL.md) | Build Report triage, uncompressed glTF/GLB textures, texture/audio import budgets, packaging under a size limit |
+| [`unity-build-size`](skills/unity/unity-build-size/SKILL.md) | Build Report triage, uncompressed glTF/GLB textures, texture/audio import budgets, per-platform size levers (Web, Android, iOS, desktop, Steam) |
 
 #### Unreal — 6 ([`skills/unreal/`](skills/unreal/)) · Unreal Engine 5.8
 

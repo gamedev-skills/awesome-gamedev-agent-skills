@@ -63,7 +63,8 @@ class BuildReportTests(unittest.TestCase):
         self.assertEqual(data["assets"][0], expected)
         self.assertEqual(data["assets"][2]["path"], "Assets/Audio/ring tone.wav")
         names = [category["name"] for category in data["categories"]]
-        self.assertEqual(names, ["Textures", "Meshes", "Sounds", "Total User Assets"])
+        self.assertEqual(names, ["Textures", "Meshes", "Sounds"])  # the total is not a category
+        self.assertEqual(data["user_assets_bytes"], round(246.3 * 1024**2))
         self.assertFalse(data["over_budget"])
         self.assertFalse(data["budget_checked"])
 
@@ -91,6 +92,36 @@ class BuildReportTests(unittest.TestCase):
         self.assertFalse(data["budget_checked"])
         self.assertIsNone(data["complete_bytes"])
         self.assertEqual(self.run_script(str(self.log)).returncode, 0)
+
+    def test_a_later_bare_build_report_line_is_skipped(self) -> None:
+        with self.log.open("a", encoding="utf-8") as handle:
+            handle.write("Build Report\nRefresh completed\n")
+        data = json.loads(self.run_script(str(self.log), "--json").stdout)
+        self.assertEqual(data["complete_bytes"], round(340.1 * 1024**2))
+        self.assertEqual(data["asset_count"], 3)
+
+    def test_old_complete_size_layout_is_read(self) -> None:
+        self.log.write_text(
+            "Build Report\nTextures   137.5 mb\t 60.0% \nComplete size   220.6 mb\t 100.0% \n"
+            "Used Assets and files from the Resources folder, sorted by uncompressed size:\n"
+            " 68.1 mb\t 20.0% Assets/Models/plant.glb\n" + "-" * 40 + "\n",
+            encoding="utf-8",
+        )
+        result = self.run_script(str(self.log), "--budget-mb", "200", "--json")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["complete_bytes"], round(220.6 * 1024**2))
+        self.assertTrue(data["over_budget"])
+        self.assertEqual([category["name"] for category in data["categories"]], ["Textures"])
+
+    def test_other_log_lines_inside_the_asset_list_are_skipped(self) -> None:
+        text = self.log.read_text(encoding="utf-8").replace(
+            " 22.1 mb\t 6.5% Assets/Models/shelf.glb\n",
+            "[Licensing::Client] Successfully resolved entitlements\n 22.1 mb\t 6.5% Assets/Models/shelf.glb\n",
+        )
+        self.log.write_text(text, encoding="utf-8")
+        data = json.loads(self.run_script(str(self.log), "--json").stdout)
+        self.assertEqual(data["asset_count"], 3)
 
     def test_log_without_report(self) -> None:
         empty = Path(self.temp_dir.name) / "empty.log"

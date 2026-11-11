@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import shlex
 import struct
 import subprocess
@@ -220,6 +221,75 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         self.assertIn("Fix B", fixes["Assets/Models/table.gltf"])
         self.assertNotIn("sRGB", fixes["Assets/Models/room.glb"])
 
+    def test_gltf_fix_moves_the_model_when_other_gltf_files_share_its_folder(self) -> None:
+        image = {"uri": "data:image/png;base64," + base64.b64encode(png(4096, 4096)).decode()}
+        text = json.dumps({"asset": {"version": "2.0"}, "images": [image]})
+        self.write("Assets/Shared/a.gltf", text)
+        self.write("Assets/Shared/b.gltf", text)
+        self.write("Assets/Alone/c.gltf", text)
+        fixes = {item["file"]: item["fix"] for item in self.report()["warnings"]}
+        shared = fixes["Assets/Shared/a.gltf"]
+        self.assertIn("first move this file and its .meta into Assets/Shared/a/", shared)
+        self.assertIn("resize Assets/Shared/a/a.gltf Assets/Shared/a/a.gltf", shared)
+        self.assertIn("overwrites files with those names", shared)
+        alone = fixes["Assets/Alone/c.gltf"]
+        self.assertNotIn("first move", alone)
+        self.assertIn("resize Assets/Alone/c.gltf Assets/Alone/c.gltf --width 2048", alone)
+        self.assertIn("baseColor_1.png", alone)
+        self.assertNotIn(";", alone)
+
+    def test_broken_package_manifest_does_not_crash(self) -> None:
+        self.write("Assets/Models/room.glb", glb([png(4096, 4096)]))
+        for manifest in ("[]", '{"dependencies": 5}', "{not json"):
+            self.write("Packages/manifest.json", manifest)
+            result = self.run_checker("--json")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertEqual(self.codes(json.loads(result.stdout), "notes"), [("gltf-not-checked", "Assets/Models/room.glb")])
+
+    def test_buffer_uri_outside_the_project_is_not_read(self) -> None:
+        outside = Path(self.temp_dir.name) / "secret.bin"
+        outside.write_bytes(png(4096, 4096))
+        gltf = {
+            "asset": {"version": "2.0"},
+            "buffers": [{"uri": "../../../secret.bin", "byteLength": len(outside.read_bytes())}],
+            "bufferViews": [{"buffer": 0, "byteLength": len(outside.read_bytes())}],
+            "images": [{"bufferView": 0, "mimeType": "image/png"}],
+        }
+        self.write("Assets/Models/escape.gltf", json.dumps(gltf))
+        self.assertEqual(self.report()["warning_count"], 0)
+        # The same layout inside the project, with a percent-encoded name, is read.
+        self.write("Assets/Models/my buffer.bin", png(4096, 4096))
+        gltf["buffers"][0]["uri"] = "my%20buffer.bin"
+        self.write("Assets/Models/inside.gltf", json.dumps(gltf))
+        self.assertEqual(
+            self.codes(self.report(), "warnings"), [("gltf-embedded-texture", "Assets/Models/inside.gltf")]
+        )
+
+    def test_implausible_image_sizes_are_ignored(self) -> None:
+        self.write("Assets/Models/zero.glb", glb([png(0, 0)]))
+        self.write("Assets/Models/huge.glb", glb([png(4294967295, 4294967295)]))
+        self.write("Assets/Textures/huge.png", png(4294967295, 4294967295))
+        self.write("Assets/Textures/huge.png.meta", texture_meta(default_compression=0, default_max=8192))
+        data = self.report()
+        self.assertEqual(data["warning_count"], 0)
+        self.assertEqual(data["note_count"], 0)
+
+    def test_named_pipes_are_skipped(self) -> None:
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("no named pipes on this platform")
+        os.mkfifo(self.root / "Assets" / "pipe.glb")
+        os.mkfifo(self.root / "Assets" / "pipe.png")
+        self.write("Assets/pipe.png.meta", texture_meta())
+        result = subprocess.run(
+            [sys.executable, str(CHECKER), str(self.root), "--json"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_malformed_gltf_warns_without_a_traceback(self) -> None:
         nested = "[" * 100_000 + "]" * 100_000
         cases = {
@@ -293,6 +363,37 @@ class CheckUnityBuildSizeTests(unittest.TestCase):
         self.assertIn("Format is RGBA32 in the Standalone override", warning["message"])
         self.assertIn("about 21.3 MB", warning["message"])
         self.assertIn("Format to Automatic", warning["fix"])
+
+    def test_signed_uncompressed_formats_warn_and_obsolete_automatic_formats_use_compression(self) -> None:
+        self.write("Assets/Textures/wall.png", png(2048, 2048))
+        signed = {"max": 2048, "compression": 1, "overridden": 1, "format": 78}  # RGBA32_SIGNED
+        self.write("Assets/Textures/wall.png.meta", texture_meta(override=signed))
+        data = self.report()
+        self.assertIn("Format is RGBA32_SIGNED", data["warnings"][0]["message"])
+
+        # -3 is the obsolete AutomaticTruecolor: Unity reads it as automatic, so Compression decides.
+        for compression, expected in ((1, 0), (0, 1)):
+            old = {"max": 2048, "compression": compression, "overridden": 1, "format": -3}
+            self.write("Assets/Textures/wall.png.meta", texture_meta(override=old))
+            self.assertEqual(self.report()["warning_count"], expected)
+
+    def test_estimate_has_no_mip_chain_when_mipmaps_are_off(self) -> None:
+        self.write("Assets/UI/panel.png", png(2048, 2048))
+        meta = texture_meta(default_compression=0).replace(
+            "  isReadable: 0\n", "  mipmaps:\n    mipMapMode: 0\n    enableMipMap: 0\n  isReadable: 0\n"
+        )
+        self.write("Assets/UI/panel.png.meta", meta)
+        self.assertIn("about 16.0 MB", self.report()["warnings"][0]["message"])
+
+    def test_streaming_assets_is_special_only_at_the_root(self) -> None:
+        self.sized("Assets/StreamingAssets/.hidden/video.bin", 9 * MIB)
+        self.write("Assets/StreamingAssets/scene.glb", glb([png(8192, 8192)]))
+        self.sized("Assets/Sub/StreamingAssets/data.bin", 9 * MIB)
+        data = self.report()
+        self.assertEqual(data["warning_count"], 0)  # the raw .glb ships as is; glTFast settings do not apply
+        self.assertEqual(
+            self.codes(data, "notes"), [("large-streaming-asset", "Assets/StreamingAssets/.hidden/video.bin")]
+        )
 
     def test_small_uncompressed_texture_is_ignored(self) -> None:
         self.write("Assets/UI/icon.png", png(512, 512))

@@ -8,10 +8,12 @@ WARNINGS (probably wasting space; each one might still be intentional)
   gltf-embedded-texture  A .glb/.gltf imported by glTFast embeds a PNG/JPEG image
                          larger than --max-texture-size. glTFast decodes embedded
                          images with Texture2D.LoadImage, so they ship as
-                         uncompressed RGBA32/RGB24 with a full mip chain.
+                         uncompressed RGBA32/RGB24 (with mipmaps by default).
   uncompressed-texture   A texture whose effective platform setting has
                          Compression = None (or an explicit uncompressed Format)
-                         and whose source is at least 1024 px.
+                         and whose source is at least 1024 px. A sprite packed
+                         into a Sprite Atlas ships with the atlas settings, so
+                         this can be a false positive for packed sprites.
   texture-max-size       A texture whose effective Max Size is above
                          --max-texture-size and whose source is that large too.
   pcm-audio              An AudioClip of 1 MB or more whose default settings use
@@ -26,8 +28,10 @@ NOTES (informational, never affect the exit status)
                          limit, with the estimated bytes they add to the build.
   audio-platform-override  A PCM AudioClip with platform overrides this tool does
                          not read; check the override in the Inspector.
-  large-streaming-asset  A file of 8 MB or more in StreamingAssets, which is
-                         copied into the build byte for byte.
+  large-streaming-asset  A file of 8 MB or more in Assets/StreamingAssets, which
+                         is copied into the build byte for byte. Models and
+                         textures there are not checked as imported assets,
+                         because the raw file is what ships.
   gltf-heavy-geometry    A glTFast model holding 32 MB or more of non-image buffer
                          data. glTFast turns it into Unity meshes of about the
                          same size, and the Model Importer's Mesh Compression
@@ -53,6 +57,7 @@ import struct
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import unquote
 
 TOOL = "check_unity_build_size"
 SCHEMA = 1
@@ -67,12 +72,14 @@ AUDIO_EXTENSIONS = frozenset({".wav", ".aif", ".aiff", ".mp3", ".ogg", ".flac", 
 UNCOMPRESSED = 0
 PCM = 0
 
-# TextureImporterFormat.Automatic. Any other value is an explicit format, and Unity then ignores
-# textureCompression for that platform.
+# TextureImporterFormat.Automatic. Any value of 0 or more is an explicit format, and Unity then
+# ignores textureCompression for that platform. The other negative values are obsolete automatic
+# modes from old .meta files; they are treated like Automatic.
 AUTOMATIC_FORMAT = -1
 
 # Explicit TextureImporterFormat values that store pixels uncompressed: value -> (name, bytes per pixel).
 # Every other explicit format is block-compressed (DXT, BC, ETC, EAC, ASTC, PVRTC, crunched).
+# Values from UnityCsReference Editor/Mono/AssetPipeline/TextureImporterEnums.cs.
 UNCOMPRESSED_FORMATS = {
     1: ("Alpha8", 1),
     2: ("ARGB16", 2),
@@ -88,15 +95,25 @@ UNCOMPRESSED_FORMATS = {
     18: ("RFloat", 4),
     19: ("RGFloat", 8),
     20: ("RGBAFloat", 16),
-    21: ("YUY2", 2),
     22: ("RGB9E5", 4),
     62: ("RG16", 2),
     63: ("R8", 1),
     72: ("RG32", 4),
     73: ("RGB48", 6),
     74: ("RGBA64", 8),
+    75: ("R8_SIGNED", 1),
+    76: ("RG16_SIGNED", 2),
+    77: ("RGB24_SIGNED", 3),
+    78: ("RGBA32_SIGNED", 4),
+    79: ("R16_SIGNED", 2),
+    80: ("RG32_SIGNED", 4),
+    81: ("RGB48_SIGNED", 6),
+    82: ("RGBA64_SIGNED", 8),
 }
 UNCOMPRESSED_AUTOMATIC_BPP = 4
+
+# Largest texture edge Unity imports; a header claiming more (or 0) is treated as unreadable.
+MAX_TEXTURE_EDGE = 16384
 
 UNCOMPRESSED_MIN_PX = 1024
 PCM_MIN_BYTES = 1024 * 1024
@@ -128,7 +145,8 @@ PLATFORM_KEY_RE = re.compile(
     r"^    (buildTarget|maxTextureSize|textureFormat|textureCompression|overridden):\s*(\S+)\s*$"
 )
 IMPORTER_RE = re.compile(r"^[A-Za-z]+Importer:$")
-AUDIO_FORMAT_RE =re.compile(r"^    compressionFormat:\s*(-?\d+)\s*$")
+MIPMAP_RE = re.compile(r"^    enableMipMap:\s*([01])\s*$")
+AUDIO_FORMAT_RE = re.compile(r"^    compressionFormat:\s*(-?\d+)\s*$")
 AUDIO_OVERRIDES_RE = re.compile(r"^  platformSettingOverrides:\s*(\{\})?\s*$")
 
 
@@ -209,8 +227,7 @@ def jpeg_size(head: bytes) -> tuple[int, int] | None:
     return None
 
 
-def image_size(head: bytes, suffix: str = "") -> tuple[int, int] | None:
-    """Width and height from the first bytes of a PNG, JPEG, TGA or PSD file."""
+def header_size(head: bytes, suffix: str) -> tuple[int, int] | None:
     kind = image_kind(head)
     if kind == "png":
         return png_size(head)
@@ -224,12 +241,23 @@ def image_size(head: bytes, suffix: str = "") -> tuple[int, int] | None:
     return None
 
 
-def mip_chain_bytes(width: int, height: int, bpp: int) -> int:
-    """Bytes of a full mip chain, as Unity stores it for an uncompressed texture."""
+def image_size(head: bytes, suffix: str = "") -> tuple[int, int] | None:
+    """Width and height from the first bytes of a PNG, JPEG, TGA or PSD file.
+
+    None when the header is unknown or claims a size Unity cannot import (0, or above 16384).
+    """
+    size = header_size(head, suffix)
+    if size is None or min(size) < 1 or max(size) > MAX_TEXTURE_EDGE:
+        return None
+    return size
+
+
+def mip_chain_bytes(width: int, height: int, bpp: int, mips: bool = True) -> int:
+    """Bytes of an uncompressed texture as Unity stores it: one level, or a full mip chain."""
     total = 0
     while True:
         total += width * height * bpp
-        if width == 1 and height == 1:
+        if not mips or (width == 1 and height == 1):
             return total
         width, height = max(1, width // 2), max(1, height // 2)
 
@@ -294,7 +322,19 @@ def read_glb_chunks(path: Path) -> tuple[dict, int | None, int]:
         return gltf, bin_offset, bin_length
 
 
-def buffer_view_head(path: Path, gltf: dict, view_index: int, bin_offset: int | None) -> bytes | None:
+def external_file(path: Path, uri: str, root: Path) -> Path | None:
+    """The file a relative glTF URI names, or None when it is missing or outside the project."""
+    if "://" in uri or uri.startswith("/"):
+        return None
+    target = Path(os.path.realpath(path.parent / unquote(uri)))
+    if not target.is_relative_to(Path(os.path.realpath(root))) or not target.is_file():
+        return None
+    return target
+
+
+def buffer_view_head(
+    path: Path, gltf: dict, view_index: int, bin_offset: int | None, root: Path
+) -> bytes | None:
     views = gltf.get("bufferViews") or []
     buffers = gltf.get("buffers") or []
     if not 0 <= view_index < len(views):
@@ -315,8 +355,8 @@ def buffer_view_head(path: Path, gltf: dict, view_index: int, bin_offset: int | 
     data = decode_data_uri(uri)
     if data is not None:
         return data[start : start + size]
-    external = path.parent / uri
-    if not external.is_file():
+    external = external_file(path, uri, root)
+    if external is None:
         return None
     with external.open("rb") as handle:
         handle.seek(start)
@@ -329,7 +369,7 @@ class Model:
     geometry_bytes: int  # buffer bytes not used by images
 
 
-def read_model(path: Path) -> Model:
+def read_model(path: Path, root: Path) -> Model:
     """Images stored inside the model (bufferView or data: URI) and the remaining buffer bytes."""
     if path.suffix.lower() == ".glb":
         gltf, bin_offset, _ = read_glb_chunks(path)
@@ -346,7 +386,7 @@ def read_model(path: Path) -> Model:
             view = image["bufferView"]
             if isinstance(view, int) and 0 <= view < len(views):
                 image_bytes += views[view].get("byteLength", 0)
-            head = buffer_view_head(path, gltf, view, bin_offset)
+            head = buffer_view_head(path, gltf, view, bin_offset, root)
         else:
             head = decode_data_uri(image.get("uri", ""))  # None for an external file
         if not head:
@@ -369,21 +409,40 @@ def unreadable(scan: Scan, path: Path, message: str) -> None:
     )
 
 
-def resize_fix(scan: Scan, path: Path) -> str:
-    command = (
-        f"from the project folder run {GLTF_TRANSFORM} resize {quoted(scan.rel(path))} "
-        f"{quoted(scan.rel(path))} --width {scan.max_texture_size} --height {scan.max_texture_size}"
-    )
-    if path.suffix.lower() == ".gltf":
-        # gltf-transform writes a .gltf's images as separate files, so this is really Fix B.
-        return (
-            f"{command}; for a .gltf this writes the images out as separate files that the Texture "
-            "Importer compresses, so turn sRGB (Color Texture) off on every data map such as normal, "
-            "metallic-roughness and occlusion (references/gltf-textures.md, Fix B)"
-        )
+def resize_command(scan: Scan, rel: str) -> str:
     return (
-        f"{command}, or move the images out of the model so the Texture Importer compresses them "
-        "(references/gltf-textures.md)"
+        f"from the project folder run {GLTF_TRANSFORM} resize {quoted(rel)} {quoted(rel)} "
+        f"--width {scan.max_texture_size} --height {scan.max_texture_size}"
+    )
+
+
+def resize_fix(scan: Scan, path: Path) -> str:
+    rel = scan.rel(path)
+    if path.suffix.lower() != ".gltf":
+        return (
+            f"{resize_command(scan, rel)}, or move the images out of the model so the Texture Importer "
+            "compresses them (references/gltf-textures.md)"
+        )
+    # gltf-transform 4.x writes a .gltf's images as separate files named after the texture slot
+    # (baseColor_1.png, normal_1.png, ...) and overwrites files of that name, so this is Fix B, and two
+    # .gltf files in one folder end up sharing (and overwriting) each other's images.
+    after = (
+        ". It writes the images out as separate files named after their texture slot "
+        "(baseColor_1.png, normal_1.png, ...) and overwrites files with those names. The Texture Importer "
+        "compresses them. Turn sRGB (Color Texture) off on every data map such as normal, "
+        "metallic-roughness and occlusion (references/gltf-textures.md, Fix B)"
+    )
+    siblings = [
+        other for other in path.parent.iterdir() if other != path and other.suffix.lower() == ".gltf"
+    ]
+    if not siblings:
+        return resize_command(scan, rel) + after
+    folder = path.parent / path.stem
+    moved = scan.rel(folder / path.name)
+    return (
+        f"other .gltf files share this folder and would overwrite each other's images, so first move "
+        f"this file and its .meta into {scan.rel(folder)}/ (in the Editor, or with git mv, which keeps "
+        f"the GUID). Then {resize_command(scan, moved)}" + after
     )
 
 
@@ -400,7 +459,7 @@ def check_gltf(scan: Scan, path: Path) -> None:
                 "run git lfs pull so Unity and this check see the real file",
             )
             return
-        model = read_model(path)
+        model = read_model(path, scan.root)
     except (OSError, ValueError, UnicodeDecodeError, struct.error) as exc:
         unreadable(scan, path, f"could not read the model: {exc}")
         return
@@ -414,8 +473,9 @@ def check_gltf(scan: Scan, path: Path) -> None:
             path,
             None,
             f"about {mb(model.geometry_bytes)} of mesh and animation data, which ships at a similar size",
-            f"{GLTF_TRANSFORM} simplify {quoted(scan.rel(path))} {quoted(scan.rel(path))} --ratio 0.5, "
-            "then check the silhouette in the scene",
+            f"{GLTF_TRANSFORM} weld {quoted(scan.rel(path))} {quoted(scan.rel(path))}, then "
+            f"{GLTF_TRANSFORM} simplify {quoted(scan.rel(path))} {quoted(scan.rel(path))} --ratio 0.5 "
+            "--error 0.001, then check the silhouette in the scene",
         )
     images = model.images
     if not images:
@@ -503,9 +563,13 @@ def effective_platform(platforms: list[PlatformSetting], platform: str) -> Platf
     return None
 
 
+def explicit_format(setting: PlatformSetting) -> bool:
+    return setting.format >= 0
+
+
 def uncompressed_storage(setting: PlatformSetting) -> tuple[str, int, int | None] | None:
     """(what the setting says, bytes per pixel, .meta line) when the texture ships uncompressed."""
-    if setting.format != AUTOMATIC_FORMAT:
+    if explicit_format(setting):
         if setting.format not in UNCOMPRESSED_FORMATS:
             return None
         name, bpp = UNCOMPRESSED_FORMATS[setting.format]
@@ -513,6 +577,15 @@ def uncompressed_storage(setting: PlatformSetting) -> tuple[str, int, int | None
     if setting.compression == UNCOMPRESSED:
         return "Compression is None", UNCOMPRESSED_AUTOMATIC_BPP, setting.compression_line
     return None
+
+
+def texture_mipmaps(lines: list[str]) -> bool:
+    """Generate Mipmaps from the importer's mipmaps block (on unless the .meta says 0)."""
+    for line in lines:
+        match = MIPMAP_RE.match(line)
+        if match:
+            return match.group(1) == "1"
+    return True
 
 
 def check_texture(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None:
@@ -536,7 +609,7 @@ def check_texture(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None
         width, height = max(1, round(size[0] * scale)), max(1, round(size[1] * scale))
         fix = (
             "set Format to Automatic (or a compressed format) unless this texture must stay lossless"
-            if setting.format != AUTOMATIC_FORMAT
+            if explicit_format(setting)
             else "set Compression to Normal Quality (or High Quality) unless this texture must stay lossless"
         )
         scan.add(
@@ -545,7 +618,7 @@ def check_texture(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None
             meta,
             line,
             f"{said} in the {where} for a {size[0]}x{size[1]} source; "
-            f"about {mb(mip_chain_bytes(width, height, bpp))} in the build",
+            f"about {mb(mip_chain_bytes(width, height, bpp, texture_mipmaps(lines)))} in the build",
             fix,
         )
     if max_size > scan.max_texture_size and longest > scan.max_texture_size:
@@ -592,6 +665,8 @@ def check_audio(scan: Scan, asset: Path, meta: Path, lines: list[str]) -> None:
 
 
 def check_meta(scan: Scan, asset: Path, meta: Path) -> None:
+    if not meta.is_file():
+        return
     try:
         lines = meta.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
@@ -605,6 +680,11 @@ def check_meta(scan: Scan, asset: Path, meta: Path) -> None:
         check_audio(scan, asset, meta, lines)
 
 
+def in_streaming_assets(parts: tuple[str, ...]) -> bool:
+    """Only Assets/StreamingAssets is special; a StreamingAssets folder deeper down is ordinary."""
+    return parts[:2] == ("Assets", "StreamingAssets")
+
+
 def check_special_folder(scan: Scan, asset: Path, parts: tuple[str, ...]) -> None:
     try:
         size = asset.stat().st_size
@@ -612,7 +692,7 @@ def check_special_folder(scan: Scan, asset: Path, parts: tuple[str, ...]) -> Non
         return
     if size < LARGE_FILE_BYTES:
         return
-    if "StreamingAssets" in parts:
+    if in_streaming_assets(parts):
         scan.add(
             "note",
             "large-streaming-asset",
@@ -639,18 +719,25 @@ def check_special_folder(scan: Scan, asset: Path, parts: tuple[str, ...]) -> Non
 def gltfast_installed(root: Path) -> bool:
     for name in ("manifest.json", "packages-lock.json"):
         path = root / "Packages" / name
+        if not path.is_file():
+            continue
         try:
-            dependencies = json.loads(path.read_text(encoding="utf-8")).get("dependencies", {})
-        except (OSError, ValueError):
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        dependencies = data.get("dependencies") if isinstance(data, dict) else None
+        if not isinstance(dependencies, dict):
             continue
         if any(package in dependencies for package in GLTFAST_PACKAGES):
             return True
     return False
 
 
-def is_ignored(name: str) -> bool:
-    """Names the Unity asset database skips."""
-    return name.startswith(".") or name.endswith("~") or name.lower() == "cvs" or name.endswith(".tmp")
+def is_ignored(name: str, streaming: bool = False) -> bool:
+    """Names the Unity asset database skips. Under Assets/StreamingAssets, dot-names are kept."""
+    if name.startswith(".") and not streaming:
+        return True
+    return name.endswith("~") or name.lower() == "cvs" or name.endswith(".tmp")
 
 
 def run(root: Path, platform: str, max_texture_size: int) -> Scan:
@@ -658,16 +745,21 @@ def run(root: Path, platform: str, max_texture_size: int) -> Scan:
     with_gltfast = gltfast_installed(root)
     skipped_models: list[Path] = []
     for folder, dirs, files in os.walk(root / "Assets"):
-        dirs[:] = sorted(d for d in dirs if not is_ignored(d))
         folder_path = Path(folder)
         parts = folder_path.relative_to(root).parts
+        streaming = in_streaming_assets(parts)
+        dirs[:] = sorted(d for d in dirs if not is_ignored(d, in_streaming_assets((*parts, d))))
         names = set(files)
         for name in sorted(files):
-            if is_ignored(name) or name.endswith(".meta"):
+            if is_ignored(name, streaming) or name.endswith(".meta"):
                 continue
             asset = folder_path / name
+            if not asset.is_file():
+                continue  # named pipes, sockets and broken links would block or fail a read
             suffix = asset.suffix.lower()
-            if suffix in (".glb", ".gltf"):
+            if streaming:
+                pass  # shipped byte for byte; the importers' settings do not apply
+            elif suffix in (".glb", ".gltf"):
                 if with_gltfast:
                     check_gltf(scan, asset)
                 else:
@@ -746,8 +838,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--platform",
         default=DEFAULT_PLATFORM,
         metavar="NAME",
-        help="texture platform override to honour, as written in .meta buildTarget "
-        f"(default: {DEFAULT_PLATFORM}; e.g. Android, iPhone, WebGL)",
+        help="texture platform override to honour, as written in .meta buildTarget: Standalone "
+        f"(Windows, macOS, Linux), Android, iPhone (iOS) or WebGL (Web). Default: {DEFAULT_PLATFORM}. "
+        "Pass the platform you ship, or that platform's overrides are not checked.",
     )
     return parser
 

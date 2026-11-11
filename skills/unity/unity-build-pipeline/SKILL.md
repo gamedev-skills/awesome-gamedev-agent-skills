@@ -22,8 +22,9 @@ backend, stripping, and headless/CI builds. Targets **Unity 6.3 LTS (6000.3)**.
 
 **When *not* to use:** authoring a CI service config end-to-end is DevOps; this skill covers
 the Unity-side build API and settings. Console/platform certification specifics are
-platform-NDA territory. Storefront submission → `steam-publish` / `itch-publish`. A build that
-is too large because of its assets (textures, glTF models, audio) → `unity-build-size`.
+platform-NDA territory. Storefront submission → `steam-publish` / `itch-publish`. A build, APK
+or Web build that is too large (assets, compression, per-platform size settings) →
+`unity-build-size`, which sends stripping work back here.
 
 ## Core workflow
 
@@ -168,4 +169,4 @@ public static class ProfileBuild
 
 - `steam-publish` / `itch-publish` — distributing the player you just built.
 - `unity-csharp-scripting` — editor scripting conventions used by build scripts.
-- `unity-build-size` — finding and shrinking the assets that make a build large.
+- `unity-build-size` — finding and shrinking what makes a build, APK or Web build large.
