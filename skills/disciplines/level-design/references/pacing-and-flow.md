@@ -1,94 +1,80 @@
-# Pacing, flow, teaching, and guidance
+# Pacing, teaching, gating and guidance
 
-Geometry is the medium; the goal is a felt rhythm. This reference goes deeper on
-the curve, the teaching loop, guiding the player, and reviewing a blockout.
+Contents: the tension curve; the teaching loop; critical path, golden path and branches; gating
+tools; guidance without walls; 2D vs 3D; blockout review.
 
-## The difficulty / tension curve
+## The tension curve
 
-Plot intended intensity against progress. Two principles:
+Plot intended intensity against progress.
 
-- **Overall rise with local dips.** Difficulty and tension trend upward toward a
-  climax, but in a *sawtooth*: spikes (combat, platforming gauntlets, bosses)
-  separated by rests (exploration, story, safe rooms). A monotone high flatlines
-  the player's stress response; a monotone low bores them.
-- **Rest before climax.** Place a clear breather — a save point, a vista, a
-  resource cache — right before the hardest beat. The calm sharpens the spike.
+- **Overall rise with local dips.** Intensity trends up toward a climax in a sawtooth: spikes
+  (combat, platforming gauntlets, bosses) separated by rests (exploration, story, safe rooms).
+  A flat high numbs the player; a flat low bores them.
+- **Rest before the climax.** A save point, vista or resource cache right before the hardest
+  beat makes the spike land harder.
+- A useful rhythm is introduce, build, peak, release, then repeat higher. Each peak exceeds the
+  last and each release sits a little above the previous baseline.
 
-A useful rhythm: **introduce → build → peak → release → (repeat, higher)**. Each
-cycle's peak exceeds the last; each release sits a little above the previous
-baseline.
+## The teaching loop
 
-## The teaching loop (mechanic introduction)
+1. **Introduce** the mechanic alone, where failure is harmless.
+2. **Develop** it with movement or a second element so the player practises on purpose.
+3. **Twist** the context so the player applies the idea rather than a memorised motion.
+4. **Test** it under time or health pressure.
 
-Players learn by doing, in escalating safety-to-stakes:
+The level is a lesson plan: a new mechanic meets the player before a lethal test, never during
+one. In the beat list, a `teach` beat for each mechanic should come before its first `combat`
+or `climax` beat.
 
-1. **Introduce** the mechanic in isolation, where failure is harmless (a spike
-   you can see and step over; an enemy that can't yet hurt you).
-2. **Develop** it — combine with movement or a second element so the player
-   practices deliberately.
-3. **Twist** — change context so they apply the idea, not a memorized motion.
-4. **Test** — under time/health pressure, where the skill genuinely matters.
+## Critical path, golden path and branches
 
-This is why the first room is calm and the boss is last: the level *is* a lesson
-plan. New mechanics meet the player before, never during, a lethal test.
-
-## The critical path, golden path, and branches
-
-- **Critical path**: the minimal route from start to goal. Must always be
-  solvable with abilities/keys obtainable in order (validate it).
-- **Golden path**: the route most players will actually take. Design pacing along
-  this, not just the shortest line.
-- **Branches**: optional loops for exploration and reward. Keep them short enough
-  to rejoin the golden path without losing momentum; reward the detour.
-
-Loops and shortcuts (unlock a door back to an earlier hub) reduce backtracking
-fatigue and make the space feel coherent.
+- **Critical path:** the minimal route from start to goal, solvable with keys and abilities
+  obtained in order. Check it with the reachability graph.
+- **Golden path:** the route most players actually take. Pace along this one.
+- **Branches:** optional loops for exploration and reward. Keep them short enough to rejoin the
+  golden path without losing momentum, and make the reward worth the detour.
+- **Shortcuts** that unlock back to an earlier hub cut backtracking and make the space feel
+  coherent. Add them to the room graph as exits that need the unlock.
 
 ## Gating tools
 
-- **Locks and keys** — explicit, readable order control.
-- **Ability gates** — a chasm needs the double-jump found later; revisiting opens
-  it (the Metroidvania pattern). Validate the acquisition order.
-- **One-way drops / collapsing paths** — enforce direction; telegraph them so the
-  player chooses knowingly.
-- **Soft gates** — enemies, environmental hazards, or difficulty that suggest
-  "not yet" without a hard wall.
+- **Locks and keys:** explicit, readable order control.
+- **Ability gates:** a chasm that needs the double jump found later (the metroidvania
+  pattern). Check the acquisition order, not just connectivity.
+- **One-way drops and collapsing paths:** enforce direction. Telegraph them, and check that the
+  landing room can still reach a save or exit.
+- **Soft gates:** enemies, hazards or difficulty that say "not yet" without a hard wall.
 
-## Readability and guidance (lead without walls)
+## Guidance without walls
 
-Players follow attention, not signs. Direct the eye with:
+- **Light and contrast:** a bright doorway reads as "go here"; shadow reads as optional or
+  dangerous.
+- **Leading lines:** architecture, rails and paths that point at the objective.
+- **Landmarks:** a tall, unique silhouette visible from afar orients the player.
+- **Colour and material:** one consistent colour for interactive things or exits teaches players
+  to scan for it.
+- **Framing:** show the next goal from a high point before the player descends to it.
 
-- **Light and contrast** — the bright doorway reads as "go here"; shadows read as
-  optional or dangerous.
-- **Leading lines** — architecture, rails, and paths that point toward the
-  objective.
-- **Landmarks** — a tall, unique silhouette visible from afar orients the player
-  across the whole level.
-- **Color and material** — a consistent color for "interactive/exit" teaches the
-  player to scan for it (climbable ledges painted the same hue, etc.).
-- **Framing** — compose vistas so the next goal is visible from a high point
-  before the player descends to it.
+When playtest reports say "I got lost here", the fix is usually a sightline or a light.
 
-When players get lost in playtests, the fix is usually guidance (a sightline, a
-light), not a wall.
+## 2D vs 3D
 
-## 2D vs 3D considerations
+- **2D:** think in the tile grid and the camera window. The player sees a fixed slice, so
+  telegraph off-screen threats with sound or approach time. Platform spacing and sightlines
+  dominate.
+- **3D:** think in sightlines, verticality and navigation. Players lose their bearings in three
+  dimensions, so landmarks and framed vistas matter more. Tight interiors and the view cone
+  change what feels reachable.
 
-- **2D**: think in the tile grid and the camera window. The player sees a fixed
-  slice; telegraph off-screen threats (audio, approach time) so hits feel fair.
-  Sightlines and reachable platform spacing dominate.
-- **3D**: think in sightlines, verticality, and navigation. Players can get lost
-  in three dimensions; landmarks and framed vistas matter more. Mind the camera —
-  tight interiors and the player's view cone change what's "reachable" perceptually.
+## Blockout review
 
-## Blockout review checklist
+Run the agent checks first, then use this list to write the playtest questions for the user.
 
-- Critical path solvable with the keys/abilities available *in order* (no
-  soft-lock).
-- Every required jump/traversal within metrics (`SAFE_GAP`, reach, camera).
-- Pacing reads as a rising sawtooth; a rest precedes each major spike.
-- Each mechanic is introduced safely before it's tested.
-- The eye is guided toward the path (light/lines/landmarks); test for "lost".
+- Critical path solvable with keys and abilities in order; no one-way drop into a dead end.
+- Every required traversal within the measured metrics.
+- Pacing is a rising sawtooth with a rest before each major spike.
+- Each mechanic is taught before it is tested.
+- The eye is led toward the path. Ask the user where they were unsure where to go.
 - Optional content rewards the detour and rejoins smoothly.
-- Plays well as untextured geometry — dressing would not rescue a bad layout.
-- Validated with players, not just the designer.
+- It plays well as untextured geometry. Ask the user whether any room felt like a chore or
+  unfair, and how many attempts the hardest required jump took.

@@ -1,8 +1,8 @@
 # Fixed timestep, interpolation, CCD, and stability
 
-The root cause of most physics problems is the relationship between a **fixed**
-simulation step and a **variable** render frame. Get the loop right and most
-"jitter" and "frame-rate dependence" complaints disappear.
+Contents: why a fixed timestep; the accumulator loop; render interpolation;
+substepping; continuous collision detection; solver iterations and stability;
+sleeping; stability checklist.
 
 ## Why a fixed timestep
 
@@ -82,6 +82,9 @@ sweeps the body along its motion and catches the first contact.
   `Continuous` (static geometry only), `ContinuousDynamic` (static and dynamic)
   and `ContinuousSpeculative` (static and dynamic, cheaper, but can cause "ghost
   collisions" where a speculative contact deflects a body that would not have hit).
+  Godot `RigidBody3D.continuous_cd` is a bool; `RigidBody2D.continuous_cd` is
+  `CCD_MODE_DISABLED`, `CCD_MODE_CAST_RAY` or `CCD_MODE_CAST_SHAPE`. In a Godot
+  4.7.2 test only the ray mode stopped a small fast circle at a thin wall.
 - Complementary fixes: cap maximum velocity so
   `speed / PHYSICS_HZ < thinnest_collider`; thicken thin walls; raise PHYSICS_HZ.
   For bullets, a ray or shape cast along the frame's motion is often simpler

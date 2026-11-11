@@ -1,5 +1,9 @@
 # Noise for terrain, biomes, and scatter
 
+Contents: libraries and ranges; frequency and wavelength; octaves (fBm);
+redistribution; biome lookup from two fields; island shaping; object scatter;
+wraparound maps; determinism checklist.
+
 Gradient noise (Perlin, Simplex, OpenSimplex) is the workhorse of procedural
 terrain. A noise function maps a continuous 2D/3D coordinate to a smooth value;
 sampling it across a grid gives a coherent heightfield. **Use a library** —

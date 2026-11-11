@@ -1,8 +1,8 @@
 # Shader effects and GLSL↔HLSL mapping
 
-Full versions of the effects sketched in `SKILL.md`, plus the dialect mapping you
-need to port a shader between engines. Examples are GLSL-style; the mapping table
-shows the HLSL form.
+Contents: GLSL-to-HLSL quick reference (with matrix order and clip-space notes);
+2D sprite outline; vignette; colour grading; per-engine notes (Godot, Unity URP,
+Unreal, three.js, PixiJS, WGSL in browsers); performance checklist.
 
 ## GLSL ↔ HLSL quick reference
 
@@ -129,20 +129,19 @@ lookup texture indexed by the pixel's RGB instead.
   (you declare everything). `WebGPURenderer` (`three/webgpu`) only runs node
   materials: write the effect in TSL (`three/tsl`), which it compiles to WGSL on
   WebGPU and to GLSL on its WebGL 2 fallback.
-- **PixiJS 8 filters.** `Filter.from({ gl: { fragment }, resources })` takes a
-  GLSL ES 3.00 fragment shader (`in vec2 vTextureCoord; uniform sampler2D
-  uTexture; out vec4 finalColor;`) for the WebGL renderer; the WebGPU renderer
-  needs a WGSL program passed as `gpu`. `vTextureCoord` is **not** 0..1 over
+- **PixiJS 8 filters.** `Filter.from({ gl: { vertex, fragment }, resources })`
+  takes a GLSL ES 3.00 fragment shader (`in vec2 vTextureCoord; uniform sampler2D
+  uTexture; out vec4 finalColor;`) plus a vertex shader for the WebGL renderer;
+  Pixi's own is exported as `defaultFilterVert`. The WebGPU renderer needs a WGSL
+  program passed as `gpu`. `vTextureCoord` is **not** 0..1 over
   the sprite: it covers the filter's input texture, so for sprite-relative
   effects (vignette, dissolve by UV) compute
   `vTextureCoord * uInputSize.xy / uOutputFrame.zw` (declare both as
   `uniform vec4`; the filter system fills them).
-- **WGSL / WebGPU in browsers (gpuweb status, Oct 2026).** Default-on in Chrome
-  and Edge 113+ on Windows, macOS and ChromeOS, Chrome 121+ on Android 12+
-  (Qualcomm, ARM, Intel GPUs), Safari 26 on macOS, iOS, iPadOS and visionOS,
-  and Firefox 141+ on Windows and 147+ on Apple Silicon Macs. Chrome on Linux
-  enables it only for some GPUs; Firefox on Linux and Android does not yet.
-  Keep a WebGL 2 path for a web game.
+- **WGSL / WebGPU in browsers.** Support is on by default in current Chrome,
+  Edge, Safari, and Firefox on Windows and Apple Silicon Macs, but still patchy on Linux and Android;
+  the per-browser versions are in the SKILL.md Version notes. Keep a WebGL 2 path
+  for a web game.
 
 ## Performance checklist
 
