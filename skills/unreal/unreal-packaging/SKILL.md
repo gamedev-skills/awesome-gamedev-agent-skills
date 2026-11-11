@@ -1,131 +1,136 @@
 ---
 name: unreal-packaging
 description: >
-  Package and ship an Unreal Engine 5 project: the Platforms menu Package Project flow, build
-  configurations (Development vs Shipping), cooking content, packaging settings and the Game
-  Default Map, and command-line builds with RunUAT BuildCookRun. Use when packaging a build,
-  making a shipping build, cooking content, configuring packaging settings, or when the user
-  mentions package Unreal, cook content, shipping build, or BuildCookRun.
+  Packages and ships an Unreal Engine 5 project: Development, Test and Shipping builds, cooking,
+  staging and pak/IoStore output, the Game Default Map and Packaging settings, the Zen cooked
+  output store, and command-line builds with RunUAT BuildCookRun, including reading UAT and cook
+  logs. Use when packaging or cooking, making a shipping or CI build, or when the user reports
+  "the packaged game is a black screen", "a map is missing in the build", "BUILD FAILED",
+  "AutomationTool exiting with ExitCode", "Saved/Cooked is empty" or a platform SDK error. Not
+  for uploading to a store (use `steam-publish` or `itch-publish`) or gameplay compile errors
+  (use `unreal-cpp-gameplay`).
 ---
 
 # Unreal Packaging & Cooking
 
-Turn a UE5 project into a runnable, distributable build: choose the right build configuration,
-cook content, set the launch map, and package — from the editor or the command line. Targets
-**UE 5.8**.
+Turn a UE5 project into a build that starts on the right map and runs on a machine without the
+editor, and make that build reproducible from a command line. Targets **UE 5.8**.
 
 ## When to use
 
-- Use when producing a build (test or release), choosing Development vs Shipping, cooking
-  content, configuring Packaging / Maps & Modes settings, or automating builds with
-  `RunUAT BuildCookRun` for CI.
-- Use when the project has a `*.uproject` and `Config/Default*.ini`, and the goal is a packaged
-  player rather than running in-editor.
+- Producing a test or release build; choosing Development, Test or Shipping; setting the
+  launch map and which content gets cooked.
+- Scripting builds for CI with `RunUAT BuildCookRun`, or reading why one failed.
+- Understanding where cooked and staged output goes, including the Zen store.
 
-**When *not* to use:** storefront submission/release process → `steam-publish` / `itch-publish`.
-Editor-time gameplay/iteration is not packaging.
+**When *not* to use:** store submission and depots → `steam-publish` / `itch-publish`.
+Gameplay C++ compile errors → `unreal-cpp-gameplay`. Building the engine from source is out of
+scope.
 
-## Core workflow
+## Workflow
 
-1. **Set the launch map.** Project Settings → **Maps & Modes** → **Game Default Map** is what a
-   packaged build loads first. Wrong/empty here is the most common "packaged game is black"
-   cause.
-2. **Pick the build configuration:** **Development** (default; optimized but keeps logging/
-   stats/console for testing) vs **Shipping** (all optimizations, debugging tools stripped — for
-   release). `DebugGame`/`Debug` are for debugging engine/game code and aren't for distribution;
-   `DebugGame` isn't available for Blueprint-only projects.
-3. **Understand cook vs package.** **Cooking** converts assets to the target platform's format.
-   **Staging/packaging** copies the compiled executable + cooked content into a standalone,
-   distributable folder, with content in container files (`.pak`, plus `.utoc`/`.ucas` when
-   **Use Io Store** is on, which is the default). Packaging runs a cook as part of it.
-4. **Package from the editor:** the **Platforms** menu → choose the platform (e.g. Windows) →
-   set the Binary Configuration → **Package Project** → pick an output folder.
-5. **Or build from the command line** with the Unreal Automation Tool (`RunUAT BuildCookRun`)
-   for repeatable/CI builds. The **Project Launcher** (Platforms → Project Launcher) saves the
-   same build/cook/stage/deploy choices as reusable launch profiles.
-6. **Tune Packaging settings** (Project Settings → **Packaging**): which maps/directories to
-   cook, full-rebuild, compression, and whether to build all maps.
-7. **Validate assets before packaging when UnrealEditor-Cmd is available.** Run
-   `UnrealEditor-Cmd <Project>.uproject -run=DataValidation` (`UnrealEditor-Cmd.exe` on
-   Windows) and fix every reported validation error before cooking.
-8. **Verify** by *running the packaged build*, not just by a successful cook — launch the
-   executable and confirm it loads the right map and runs.
+1. **Read the project and engine.** `EngineAssociation` in the `.uproject` is a version such
+   as `5.8` for a Launcher engine and a GUID (or empty) for a source build; console platforms
+   need a source build. Check that the platform SDK on the build machine meets the engine's
+   minimum (see Version notes).
+2. **Set what loads and what cooks.** Project Settings → Maps & Modes → **Game Default Map**
+   (stored as `GameDefaultMap` in `Config/DefaultEngine.ini`). Maps that are only opened by
+   name at runtime must be listed in Packaging → "List of maps to include in a packaged build"
+   or cooked with `-map=`; assets loaded only by path need "Additional Asset Directories to
+   Cook".
+3. **Validate content:** `UnrealEditor-Cmd <Project>.uproject -run=DataValidation -unattended`
+   and fix every error before cooking.
+4. **Build with UAT** (default), even when the user packages from the editor, because the
+   command line is reproducible:
 
-## Patterns
+   ```bash
+   # From Engine/Build/BatchFiles (RunUAT.bat on Windows, RunUAT.sh on macOS and Linux)
+   RunUAT BuildCookRun -project="<abs path>/MyGame.uproject" -noP4 \
+     -platform=Win64 -clientconfig=Development \
+     -build -cook -stage -pak -archive -archivedirectory="<abs path>/Builds" \
+     -utf8output
+   ```
 
-### 1. Editor packaging (the menu path)
+   Swap `-clientconfig=Shipping` for release. Cook a subset with `-map=Start+Level01`.
+   The editor path (Platforms → Windows → Package Project) and Project Launcher profiles run
+   the same steps; a Launcher profile prints its full UAT command line in the Output Log.
+5. **Read the logs on failure.** UAT prints the path of its log (`Log.txt`) and of the cook log
+   (`Cook-*.txt`). Search them for `Error:`; the first error is usually the cause and the rest
+   follow from it. Launcher engines on Windows write them under
+   `%APPDATA%\Unreal Engine\AutomationTool\Logs\<engine path>`, source builds under
+   `Engine/Programs/AutomationTool/Saved/Logs`.
+6. **Run the packaged build (see Verify).** A finished cook proves the content converted, not
+   that the game starts.
 
-```text
-Platforms (toolbar)
-  -> Windows
-     -> Binary Configuration -> Development | Shipping
-     -> Content Management -> Package Project
-  -> choose/confirm the staging output folder
-```
+## Verify
 
-### 2. Command-line build with UAT (CI-friendly)
+Say which of these you ran and quote the lines that prove it.
 
-```bash
-# Cook + build + stage + pak + archive a Shipping Windows build.
-RunUAT BuildCookRun \
-  -project="C:/Path/MyGame.uproject" \
-  -noP4 -platform=Win64 -clientconfig=Shipping \
-  -cook -allmaps -build -stage -pak -archive \
-  -archivedirectory="C:/Builds/MyGame"
-```
+1. **UAT result:** the run ends with `BUILD SUCCESSFUL` and exit code 0, and the archive
+   directory contains the executable plus `.pak`/`.utoc`/`.ucas` files under
+   `<Project>/Content/Paks`.
+2. **Smoke-run a Development build** from the archive with a log file:
+   `<archive>/Windows/MyGame.exe -log -unattended -windowed -ResX=1280 -ResY=720 -abslog="<dir>/smoke.log"`
+   (on a machine without a GPU, add `-nullrhi`). Let it reach the first map, close it, then
+   check the log for the expected `LoadMap(/Game/...)` line and for any `Fatal error`, `Error:`
+   or missing-asset warnings.
+3. **Shipping builds** strip logging, so smoke-test the same content as Development or Test
+   first, then ask the user to launch the Shipping build and report whether it reaches the main
+   menu and can quit from the game's own menu.
+4. **Optional:** if the project has automation tests, run them on the packaged Development
+   build or in the editor as in `unreal-cpp-gameplay` before shipping.
 
-`RunUAT` lives in `Engine/Build/BatchFiles/` (`RunUAT.bat` on Windows, `RunUAT.sh` on
-macOS/Linux). Drop `-allmaps` and pass `-map=Map1+Map2` to cook a subset. UE 5.8 adds
-experimental Windows on Arm game builds: `-clientarchitecture=arm64` (or `arm64+x64` for both
-executables side by side); the editor itself is not supported on Arm64 in 5.8.
+## Gotchas
 
-### 3. Cook only (no packaging), e.g. to refresh content
-
-```bash
-RunUAT BuildCookRun -project="C:/Path/MyGame.uproject" -noP4 \
-  -platform=Win64 -clientconfig=Development -cook -skipstage
-```
-
-## Pitfalls
-
-- **Packaged build loads a black/empty level** — Game Default Map isn't set (or that map wasn't
-  cooked). Set it in Maps & Modes and ensure it's included in the cook.
-- **Shipping a Development build** — Development keeps logging/console/stats and is slower; ship
-  **Shipping**. Conversely, Shipping strips `UE_LOG`/console, so debugging a Shipping-only issue
-  needs Development or `Test`. A Shipping build has no console `quit`, so the game needs its own
-  exit option.
-- **A referenced map/asset is missing at runtime** — it wasn't cooked. Add it to the Packaging
-  settings' maps/directories to cook, or cook all maps.
-- **Build fails on the platform** — the platform SDK/toolchain isn't installed or is too old.
-  For UE 5.8 on Windows that means Visual Studio 2022 17.14+ (2026 recommended), MSVC 14.38+
-  and Windows SDK 10.0.22621.0+; macOS needs Xcode 15.2+. Check the release notes' Platform SDK
-  table for other targets. Console packaging also requires a source build of the engine, not
-  the Launcher build.
-- **`Saved/Cooked/<Platform>` has no `.uasset`/`.uexp` files** — in UE 5.8 Zen Server is the
-  cooked output store by default (unless the project turned it off in Packaging settings). The
-  folder only holds a small `ue.projectstore` marker and the data lives in the Zen data
-  directory. Staging with `-pak` still writes `.pak`/`.utoc`/`.ucas` to the staging folder; ship
-  that folder, not `Saved/Cooked`. Staging to loose files (no `-pak`) copies no cooked data, only
-  a `ue.projectstore` that streams content from your Zenserver, so that build is not
-  distributable. For team and CI machines Epic recommends
-  `LimitProcessLifetime=false` under `[Zen.AutoLaunch]` in `DefaultEngine.ini` so `zenserver`
-  is not started and stopped on every step; make sure your build automation tolerates that
-  long-running process.
-- **Expecting Blueprint Nativization** — it was **removed in UE5**; don't rely on it for
-  performance. Profile and move hot logic to C++ (`unreal-cpp-gameplay`) instead.
-- **First cook is very slow** — shaders and all assets cook from scratch; subsequent cooks are
-  incremental. Don't mistake a slow first cook for a hang.
+- **Black screen or empty level in the build:** Game Default Map is unset, or that map (or a
+  map it opens by name) wasn't cooked.
+- **Asset exists in the editor, missing in the build:** nothing hard-references it, so the
+  cooker skipped it. Add its directory to cook, or reference it from a cooked asset.
+- **`Saved/Cooked/<Platform>` has no `.uasset` files:** in 5.8 Zen Server is the cooked
+  output store by default, so that folder holds only a small `ue.projectstore` marker. Ship
+  the staged or archived folder, built with `-pak`. Staging to loose files without `-pak`
+  produces a build that streams content from your Zen server and is not distributable.
+- **Zen server starts and stops on every CI step:** for team and CI machines Epic recommends
+  `LimitProcessLifetime=false` under `[Zen.AutoLaunch]` in `DefaultEngine.ini`; make sure the
+  build agent tolerates the long-running `zenserver` process.
+- **Shipping-only bug with no log:** Shipping strips `UE_LOG` and the console. Reproduce in a
+  Test build, which keeps some tooling with Shipping-like optimizations.
+- **No way to quit a Shipping build:** the console `quit` command isn't there. The game needs
+  its own exit option.
+- **Platform SDK errors early in the build:** the installed Visual Studio, Windows SDK or Xcode
+  is older than the engine minimum, or a console platform is used with a Launcher engine.
+- **First cook takes very long:** shaders and every asset cook from scratch; later cooks are
+  incremental. A slow first cook is not a hang; watch the cook log grow.
+- **Expecting Blueprint Nativization:** it was removed in UE5. Profile and move hot logic to
+  C++ instead.
 
 ## References
 
-- Primary docs: "Packaging Your Project"
-  (`https://dev.epicgames.com/documentation/en-us/unreal-engine/packaging-your-project`), the
-  Build Configurations / `BuildCookRun` references, "Zenserver as Cooked Output Store"
-  (`https://dev.epicgames.com/documentation/en-us/unreal-engine/using-zen-storage-server-as-cooked-output-store-for-unreal-engine`)
-  and the Platform SDK table in the UE 5.8 release notes
-  (`https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-5-8-release-notes`).
+- Epic docs: [Packaging Your Project](https://dev.epicgames.com/documentation/unreal-engine/packaging-your-project),
+  [Build operations: cooking, packaging, deploying](https://dev.epicgames.com/documentation/unreal-engine/build-operations-cooking-packaging-deploying-and-running-projects-in-unreal-engine),
+  [Zenserver as Cooked Output Store](https://dev.epicgames.com/documentation/unreal-engine/using-zen-storage-server-as-cooked-output-store-for-unreal-engine),
+  [Unreal Automation Tool overview](https://dev.epicgames.com/documentation/unreal-engine/unreal-automation-tool-overview-for-unreal-engine).
 
 ## Related skills
 
-- `steam-publish` / `itch-publish` — distributing the packaged build to a storefront.
-- `unreal-cpp-gameplay` — moving hot logic to C++ now that BP nativization is gone.
+- `steam-publish` / `itch-publish`: uploading the archived build.
+- `unreal-cpp-gameplay`: compile errors and automation tests.
+- `performance-optimization`: profiling the packaged build.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Current release: UE 5.8 (5.8.4 hotfix, October 2026); UE 5.9 is in Preview and adds an
+  experimental WebAssembly target with WebGPU rendering.
+- UE 5.8 Windows: Visual Studio 2022 17.14 or newer (2026 recommended), MSVC 14.38 minimum
+  (14.50 recommended), Windows SDK 10.0.22621.0 minimum (10.0.26100.0 default). macOS:
+  Xcode 15.2 minimum (15.4 or newer recommended). Linux: clang 20.1.8. Other platforms: see the
+  release notes' Platform SDK Upgrades table.
+- UE 5.8 adds experimental Windows on Arm game builds: `-clientarchitecture=arm64`, or
+  `arm64+x64` for side-by-side executables. The editor itself does not run on Arm64 in 5.8.
+- UE 5.8 makes Zen Server the default cooked output store; projects that had the Zen store
+  turned off keep it off.
+- Sources: [UE 5.8 release notes](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-5-8-release-notes),
+  [UE 5.9 Preview release notes](https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-5-9-release-notes),
+  [5.8.4 hotfix announcement](https://forums.unrealengine.com/t/5-8-4-hotfix-released/2842775).

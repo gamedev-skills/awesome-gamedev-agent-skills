@@ -4,6 +4,13 @@ Depth for `unreal-cpp-gameplay`. Verified against the Gameplay Framework docs an
 C++ programming references. Covers component creation/attachment, the UPROPERTY/GC ownership
 rules that trip up newcomers, and a minimal replication example.
 
+Contents:
+- Creating and attaching components (constructor vs runtime)
+- Garbage collection ownership (`UPROPERTY`, `TObjectPtr`, `TWeakObjectPtr`, `TStrongObjectPtr`, `FGCObject`)
+- USTRUCT and UENUM for reflected data
+- Minimal replication (`ReplicatedUsing`, `DOREPLIFETIME`)
+- Gotchas
+
 ## Creating and attaching components
 
 Default subobjects are created in the constructor; runtime components use `NewObject` +
