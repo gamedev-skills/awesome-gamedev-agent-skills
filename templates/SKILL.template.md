@@ -1,8 +1,9 @@
 ---
 name: replace-with-skill-name
 description: >
-  State the concrete outcome this skill delivers. Use when the request mentions
-  specific tasks, files, APIs, symptoms, or goals that should activate it.
+  Engine and job first: state the concrete outcome this skill delivers. Use when the
+  request mentions the files, APIs, symptoms or phrases users actually type. Not for
+  the nearby job another skill owns (use related-skill).
 ---
 
 # Replace with skill title
@@ -22,7 +23,10 @@ existing project's pinned version unless migration is requested.
 1. **Inspect.** Read the project manifest, relevant files, existing conventions, and constraints.
 2. **Choose.** Select the smallest compatible approach and state any consequential assumption.
 3. **Implement.** Make the focused change using the project's current version and patterns.
-4. **Verify.** Run the smallest meaningful check and inspect the real output.
+   Where the usual answer is an editor click, also give the file, code or CLI way.
+4. **Check.** Run `python scripts/example.py PROJECT` (or a headless run, test, build log or
+   `grep`) and read the real output. Pass means … If a step needs a person, ask the user to …
+   and report …
 5. **Handoff.** Report changed files, evidence, caveats, and the next useful action.
 
 ## Patterns
@@ -33,17 +37,23 @@ existing project's pinned version unless migration is requested.
 Use a compact, verified example. Do not invent APIs.
 ```
 
-## Pitfalls
+## Gotchas
 
-- **Visible symptom** → likely cause; concrete fix and verification.
+- **Visible symptom** → likely cause; concrete fix and how to confirm it.
 - **Version mismatch** → inspect the installed version and use its matching docs or migration guide.
 
 ## Resources
 
-- Read `references/example.md` only when deeper detail is needed.
+- Read `references/example.md` when … (one branch of the workflow, not every run).
 - Run `scripts/example.py --help` before using the optional helper.
 - Copy `assets/example.ext` only when the task needs the starter asset.
 
 ## Related skills
 
-- `$related-skill` — the adjacent responsibility it owns.
+- `$related-skill`: the adjacent responsibility it owns.
+
+## Version notes
+
+Last verified YYYY-MM-DD.
+
+- Facts that go stale (versions, prices, SDK minimums, store rules) go here, not in the workflow.

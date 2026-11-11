@@ -7,6 +7,7 @@ runs locally and in CI.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -18,10 +19,20 @@ MD_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 CODE_PATH_RE = re.compile(r"`((?:references|scripts|assets)/[^`\s]+)`")
 HTML_SRC_RE = re.compile(r"\bsrc=[\"']([^\"']+)[\"']")
 YAML_VALUE_RE = re.compile(r'^\s{2}([a-z_]+):\s*["\'](.*)["\']\s*$')
+NOT_FOR_RE = re.compile(r"\bnot for\b", re.IGNORECASE)
+GOTCHAS_RE = re.compile(r"^##\s+Gotchas\s*$", re.MULTILINE)
+# "## Contents", "**Contents**", "Contents: a · b · c" or "Table of contents".
+CONTENTS_HEADING_RE = re.compile(
+    r"^(?:#{1,6}\s*(?:table of )?contents\s*$|\*\*(?:table of )?contents:?\*\*|(?:table of )?contents:)",
+    re.IGNORECASE,
+)
+ANCHOR_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+\.)\s+\[[^\]]+\]\(#[^)]+\)")
 
 MAX_NAME = 64
 MAX_DESCRIPTION = 1024
 MAX_LINES = 500
+LONG_REFERENCE_LINES = 100
+CONTENTS_WINDOW = 30
 ALLOWED_FRONTMATTER = frozenset({"name", "description"})
 ALLOWED_SKILL_ENTRIES = frozenset({"SKILL.md", "agents", "assets", "references", "scripts"})
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -195,7 +206,51 @@ def validate_file(path: Path) -> tuple[list[str], list[str]]:
             errors.append(f"local resource link does not resolve: {target!r}")
 
     errors.extend(error.removeprefix(f"{rel}: ") for error in validate_openai_yaml(path.parent, name))
-    return [f"{rel}: {error}" for error in errors], []
+    warnings = skill_warnings(path, text, description)
+    return [f"{rel}: {error}" for error in errors], warnings
+
+
+def _has_contents_list(text: str) -> bool:
+    """True when a contents heading or a list of in-page anchor links opens the file."""
+    head = text.splitlines()[:CONTENTS_WINDOW]
+    if any(CONTENTS_HEADING_RE.match(line.strip()) for line in head):
+        return True
+    return sum(1 for line in head if ANCHOR_ITEM_RE.match(line)) >= 3
+
+
+def skill_warnings(path: Path, text: str, description: str) -> list[str]:
+    """Authoring-guide checks that warn instead of failing (unless --strict)."""
+    rel = _display(path)
+    warnings: list[str] = []
+    if description and not NOT_FOR_RE.search(description):
+        warnings.append(f"{rel}: description has no 'Not for ...' clause naming the neighbouring skill")
+    if not GOTCHAS_RE.search(_without_fenced_code(text)):
+        warnings.append(f"{rel}: no '## Gotchas' heading")
+
+    references = path.parent / "references"
+    if not references.is_dir():
+        return warnings
+    for ref in sorted(references.rglob("*.md")):
+        ref_rel = _display(ref)
+        ref_text = ref.read_text(encoding="utf-8")
+        line_count = len(ref_text.splitlines())
+        if line_count > LONG_REFERENCE_LINES and not _has_contents_list(ref_text):
+            warnings.append(
+                f"{ref_rel}: {line_count} lines but no contents list in the first {CONTENTS_WINDOW} lines"
+            )
+        linked: set[str] = set()
+        for target in MD_LINK_RE.findall(_without_fenced_code(ref_text)):
+            link = _local_link_target(target)
+            if link is None:
+                continue
+            resolved = (ref.parent / link).resolve()
+            if resolved == ref.resolve() or resolved.suffix != ".md":
+                continue
+            if resolved.is_relative_to(references.resolve()):
+                linked.add(_display(resolved))
+        for other in sorted(linked):
+            warnings.append(f"{ref_rel}: links to another reference ({other}); link both from SKILL.md instead")
+    return warnings
 
 
 def validate_unique_names(files: list[Path]) -> list[str]:
@@ -335,7 +390,11 @@ def validate_router_and_catalog(files: list[Path]) -> list[str]:
     return errors
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Validate skills, resources, routing, catalogs and plugin manifests.")
+    parser.add_argument("--strict", action="store_true", help="fail when there are warnings too")
+    args = parser.parse_args(argv)
+
     files = find_skill_files()
     if not files:
         print("No SKILL.md files found.")
@@ -355,13 +414,17 @@ def main() -> int:
 
     print(f"Validated {len(files)} skill file(s) and repository wiring.")
     if warnings:
-        print(f"\nWARNINGS — {len(warnings)}")
+        print()
         for warning in warnings:
-            print(f"  - {warning}")
+            print(f"WARNING: {warning}")
+        print(f"{len(warnings)} warning(s)." + ("" if args.strict else " Run with --strict to fail on them."))
     if errors:
         print(f"\nFAILED — {len(errors)} problem(s):")
         for error in errors:
             print(f"  - {error}")
+        return 1
+    if warnings and args.strict:
+        print("\nFAILED — warnings are errors with --strict.")
         return 1
     print("All checks passed.")
     return 0
