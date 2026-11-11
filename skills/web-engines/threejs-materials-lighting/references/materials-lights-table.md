@@ -91,6 +91,8 @@ pmrem.dispose();  // the generated texture stays valid
 
 `RoomEnvironment` was repositioned in r183, so a project upgraded across that
 release lights slightly differently; re-check exposure and `scene.environmentIntensity`.
+r187 rebuilt PMREMs on cube render targets and removed `CubeUVReflectionMapping`, so
+IBL also shifts slightly when upgrading across r187; the code above is unchanged.
 
 `PMREMGenerator` pre-filters any environment (HDR, RoomEnvironment, or a rendered
 scene) into the mip-mapped format PBR materials sample for reflections at varying

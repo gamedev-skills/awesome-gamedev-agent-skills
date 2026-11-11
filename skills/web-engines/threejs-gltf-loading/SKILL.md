@@ -13,7 +13,7 @@ description: >
 
 Load `.gltf`/`.glb` models and play their animations in three.js, including
 compressed geometry (DRACO/Meshopt) and textures (KTX2). Patterns target
-**r186**; preserve an existing project's pinned release unless migration is requested.
+**r187**; preserve an existing project's pinned release unless migration is requested.
 
 ## When to use
 

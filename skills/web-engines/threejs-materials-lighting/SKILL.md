@@ -13,8 +13,8 @@ description: >
 # three.js Materials & Lighting
 
 Make three.js surfaces look right: pick the correct material, light the scene,
-enable shadows, and add image-based lighting. Patterns target **r186**, verified
-against **r186** (lighting is physically based by default since r155).
+enable shadows, and add image-based lighting. Patterns target **r187**, verified
+against **r187** (lighting is physically based by default since r155).
 
 ## When to use
 

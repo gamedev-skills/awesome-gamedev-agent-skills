@@ -126,8 +126,11 @@ func make_footsteps(samples: Array[AudioStream]) -> void:
     $Footsteps.max_polyphony = 4              # overlapping steps without new players
 ```
 
-Unity 6.3 LTS has no built-in randomizer: keep an array of clips, pick one that differs from the
-last, set `pitch` in a small range, and call `PlayOneShot` on a pooled `AudioSource`.
+Unity 6.3 LTS: put the takes in an **Audio Random Container** asset (Random or Shuffle playback,
+Avoid Repeating Last, volume and pitch randomization) and assign it to the `AudioSource`'s
+Audio Resource (`AudioSource.resource`); with Manual trigger each `Play()` picks a new take. For
+full script control, keep an array of clips, pick one that differs from the last, set `pitch` in
+a small range, and call `PlayOneShot` on a pooled `AudioSource`.
 
 ### 4. Beat-synced events (quantize to the music grid)
 

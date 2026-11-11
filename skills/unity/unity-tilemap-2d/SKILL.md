@@ -12,11 +12,12 @@ description: >
 Author and script tile-based 2D levels in Unity 6.3 LTS with the `Grid`/`Tilemap` system, the Tile
 Palette, colliders, and runtime painting. Targets **Unity 6.3 LTS (6000.3)**.
 
-> **Package note:** the core Tilemap (`Grid`, `Tilemap`, `Tile`, `TilemapCollider2D`) is
-> built in, and so is the Tile Palette with its default brush. **Rule Tiles, Animated Tiles,
-> and the extra brushes (Random, Line, GameObject, Group) live in the separate "2D Tilemap
-> Extras" package (`com.unity.2d.tilemap.extras`, 6.0.x for Unity 6.3)** — install it via
-> Package Manager before using `RuleTile`.
+> **Package note:** the Tilemap runtime types (`Grid`, `Tilemap`, `Tile`, `TilemapCollider2D`)
+> are built in. The Tile Palette and its default brush come from the **2D Tilemap Editor** core
+> package (`com.unity.2d.tilemap`): the 2D template includes it, other projects add it in Package
+> Manager. **Rule Tiles, Animated Tiles, and the extra brushes (Random, Line, GameObject,
+> Group) live in the separate "2D Tilemap Extras" package (`com.unity.2d.tilemap.extras`,
+> 6.0.x for Unity 6.3)** — install it via Package Manager before using `RuleTile`.
 
 ## When to use
 
@@ -116,8 +117,8 @@ tilemap.RefreshTile(cell);     // re-evaluate just this cell's rule/animated nei
 
 ## References
 
-- Primary docs: Unity Manual "Tilemaps"
-  (`https://docs.unity3d.com/Manual/tilemaps/work-with-tilemaps/tilemap-reference.html`),
+- Primary docs: Unity Manual "Tilemap component reference"
+  (`https://docs.unity.com/en-us/engine/6000.3/manual/unity2d/tilemaps/reference/tilemap`),
   `ScriptReference/Tilemaps.Tilemap`, `ScriptReference/Collider2D-compositeOperation`, the
   Manual "Tilemap Collider 2D component reference", and the 2D Tilemap Extras package manual
   (`https://docs.unity3d.com/Packages/com.unity.2d.tilemap.extras@6.0/manual/index.html`) for

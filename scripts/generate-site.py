@@ -61,7 +61,7 @@ CATEGORIES: dict[str, tuple[str, str]] = {
     ),
     "web-engines": (
         "Web Game Engine Agent Skills",
-        "Skills for browser game engines — Phaser 3, PixiJS v8 and three.js r165+.",
+        "Skills for browser game engines — Phaser 4, PixiJS v8 and three.js r187.",
     ),
     "other-engines": (
         "Bevy, pygame, LÖVE, Defold and Roblox Agent Skills",

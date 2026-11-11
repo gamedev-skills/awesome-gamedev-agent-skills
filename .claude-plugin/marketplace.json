@@ -167,7 +167,7 @@
       "name": "web-engines",
       "source": "./",
       "strict": false,
-      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r186.",
+      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r187.",
       "skills": [
         "./skills/web-engines/phaser-core",
         "./skills/web-engines/phaser-arcade-physics",
