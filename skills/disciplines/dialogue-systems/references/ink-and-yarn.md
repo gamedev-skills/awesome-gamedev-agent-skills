@@ -1,8 +1,13 @@
-# Ink and Yarn Spinner — syntax cheat sheet
+# Ink and Yarn Spinner: syntax cheat sheet
 
-Both are mature, open-source narrative tools. Pick **Ink** for prose-first,
-heavily branching writing; pick **Yarn Spinner** for node-graph dialogue with
-explicit engine commands. This sheet covers the constructs you reach for most;
+Contents:
+1. Side-by-side syntax table
+2. Ink essentials (includes, sticky choices, gathers, read counts, alternatives, functions)
+3. Yarn Spinner essentials (declare, options, commands, Yarn 3 additions)
+4. Integration notes (runtime loop, presenters, localization, variable bridging)
+
+Pick **Ink** for prose-first, heavily branching writing; pick **Yarn Spinner** for node-graph
+dialogue with explicit engine commands. This sheet covers the constructs you reach for most;
 consult the official docs for the full language.
 
 ## Side-by-side
@@ -106,7 +111,7 @@ Useful Yarn behaviors:
 
 ## Integration notes
 
-- **Ink** (1.2.x): compile `.ink` to JSON, then step the runtime: loop
+- **Ink**: compile `.ink` to JSON, then step the runtime: loop
   `Continue()` while `canContinue`, show `currentChoices`, call
   `ChooseChoiceIndex(i)`, and then `Continue()` again; the chosen branch does not
   print until you do. Integrations: Unity (official, inkle), web (inkjs), Godot
@@ -116,10 +121,8 @@ Useful Yarn behaviors:
 - **Yarn Spinner** (3.x): a `DialogueRunner` steps `.yarn` nodes and hands lines
   and options to **Dialogue Presenters** (`DialoguePresenterBase` subclasses; 3.0
   replaced 2.x Dialogue Views), while commands go to registered handlers. Official
-  integrations exist for Unity, Godot (C# and GDScript editions) and Unreal, but only
-  the Unity one is a stable release: the Godot C# edition is marked work in progress,
-  the GDScript edition is early access (Godot 4.6+), and the Unreal plugin is a
-  pre-release that its authors do not yet recommend for shipping.
+  integrations exist for Unity, Godot (C# and GDScript editions) and Unreal; only the
+  Unity one is a stable release (status per engine is in the skill's Version notes).
 - **Localization**: Yarn Spinner tags every line with a `#line:` ID and exports
   string tables per locale. Ink has no built-in line-ID localization: either
   translate whole `.ink` files per locale, or tag lines (`#id:guard_01`) and look the

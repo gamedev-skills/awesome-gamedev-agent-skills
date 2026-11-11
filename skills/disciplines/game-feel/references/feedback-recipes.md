@@ -1,8 +1,13 @@
-# Feedback recipes — depth for `game-feel`
+# Feedback recipes
 
-Detail the `game-feel` body defers here: the shake math, easing cheat sheet, the rest of the
-feedback menu (knockback, flash, number pop, freeze), importance-tier presets, and the
-per-engine bindings for tweens and particles. All snippets target **Godot 4.7** and **Unity 6.3 LTS**.
+Contents:
+1. The trauma model and tuning ranges
+2. Easing cheat sheet, plus an eased pop for Unity without a tween package
+3. The rest of the feedback menu (flash, knockback, number pop, particles, freeze)
+4. Accessibility toggles
+5. Per-engine binding summary
+
+Snippets target Godot 4.7 and Unity 6.3 LTS.
 
 ## 1. The trauma model (why shake feels good)
 
@@ -75,18 +80,7 @@ IEnumerator Pop(Transform t, float dur = 0.18f) {
   as weight; this is animation, not code (engine animation skill).
 - **Chromatic/vignette/zoom punch:** post-process nudges for big moments; keep brief.
 
-## 4. Importance tiers (keep the whole game proportional)
-
-Define three presets and assign every juicy event to one. This is what stops a game from
-feeling either dead (under-juiced) or exhausting (everything maxed).
-
-| Tier | Trauma | Hit-stop | Particles | Extra | Example events |
-|------|:------:|:--------:|:---------:|-------|----------------|
-| small | 0.10–0.20 | none | 0–4 | tick SFX | footstep, UI hover, coin |
-| medium | 0.30–0.50 | 0.04–0.06 s | 6–12 | flash | normal hit, jump-land, pickup |
-| large | 0.70–1.00 | 0.10–0.15 s | 20–40 | flash + zoom + number | crit, boss hit, death, explosion |
-
-## 5. Accessibility (ship these toggles)
+## 4. Accessibility (ship these toggles)
 
 - **Reduce screen shake** (scale trauma output by a 0–100% setting, default ~60–80%).
 - **Reduce/disable flashing** (photosensitivity) — replace white flashes with a static tint.
@@ -98,7 +92,7 @@ feeling either dead (under-juiced) or exhausting (everything maxed).
 
 These pair with `game-ui-ux` (settings menu) and `input-systems` (accessibility section).
 
-## 6. Per-engine binding summary
+## 5. Per-engine binding summary
 
 - **Godot 4.7:** `create_tween()` + `tween_property().set_trans().set_ease()`; `GPUParticles2D/3D`
   one-shot; `Engine.time_scale` + `ignore_time_scale` timer; shake on `Camera2D.offset`.

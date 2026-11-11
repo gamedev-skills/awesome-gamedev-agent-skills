@@ -1,6 +1,16 @@
-# Behavior Tree core — Blackboard, nodes, leaves, composites, decorators
+# Behavior Tree core: Blackboard, nodes, leaves, composites, decorators
 
-Depth for `ai-behavior-trees-utility-ai`. A complete, allocation-conscious C# behavior-tree
+Contents:
+1. Blackboard (dictionary and fields variants)
+2. Node base and the `Reset()` contract
+3. Base classes: leaf, composite, decorator
+4. Condition leaves
+5. Action leaves (`MoveToTarget`, `Wait`)
+6. Composites: `Sequence`, `Selector`, `ReactiveSelector`, `ReactiveSequence`, `Parallel`
+7. Decorators: `Inverter`, `ForceSuccess`, `Repeat`, `Cooldown`
+8. Running the tree (`BehaviorTree`, fluent assembly)
+
+A complete, allocation-conscious C# behavior-tree
 runtime. The tree logic is plain C# with no engine types; the example leaves use a `Vector2` with
 Unity's member names (`magnitude`, `normalized`, `sqrMagnitude`), so they compile as-is in
 Unity 6. In Godot 4 C# the same leaves need `Length()`, `Normalized()` and `LengthSquared()`;
@@ -467,5 +477,4 @@ var tree = new BehaviorTree(
     blackboard);
 ```
 
-The `Patrol` and `AttackTarget` leaves, and full agents that assemble these pieces, are in
-`references/practical-examples.md`.
+`Patrol` and `AttackTarget` are game-specific leaves; the skill's guard example defines both.

@@ -1,8 +1,15 @@
 # A custom dialogue runner
 
+Contents:
+1. Graph schema
+2. Variable store and sandboxed expression evaluation (`evaluate`)
+3. The runner state machine (`DialogueRunner`)
+4. Localization lookup (`make_localizer`)
+5. Validation pass (`validate_graph`)
+
 When Ink/Yarn are more than you need, a small data-driven runner is enough for
 lines, choices, conditions, and variable writes. Build a **graph interpreter**,
-not a language. This reference gives a complete, engine-neutral design.
+not a language. The Python below is engine-neutral and runs as written.
 
 ## Graph schema
 
@@ -127,11 +134,58 @@ placeholder rather than failing — easy to spot in QA.
 
 ## Validation pass
 
-Before shipping a dialogue file, statically check:
+Run this on every dialogue file in CI or before handing work back. It returns a list of
+problems; an empty list means every target exists, every node terminates, every expression
+parses and names only declared variables, and every node is reachable from `start`.
 
-- every `to`/`next` target exists in `nodes`;
-- every node has a terminator (`choices`, `next`, or `end`);
-- no choice references a variable never declared in `vars`;
-- (optional) reachability: flood from `start` and warn on orphan nodes.
+```python
+def validate_graph(graph):
+    problems = []
+    nodes, declared = graph.get("nodes", {}), set(graph.get("vars", {}))
 
-These catch the dead-ends and typos that otherwise strand the player mid-scene.
+    def check_expr(where, expr):
+        if not isinstance(expr, str) or expr == "":
+            return
+        try:
+            tree = ast.parse(expr, mode="eval")
+        except SyntaxError as exc:
+            problems.append(f"{where}: cannot parse {expr!r}: {exc.msg}")
+            return
+        for name in {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)} - declared:
+            problems.append(f"{where}: undeclared variable {name!r}")
+
+    def check_sets(where, sets):
+        for var, expr in sets.items():
+            if var not in declared:
+                problems.append(f"{where}: sets undeclared variable {var!r}")
+            check_expr(f"{where} set {var}", expr)
+
+    if graph.get("start") not in nodes:
+        problems.append(f"start node {graph.get('start')!r} does not exist")
+    for node_id, node in nodes.items():
+        exits = [k for k in ("choices", "next", "end") if node.get(k)]
+        if len(exits) != 1:
+            problems.append(f"{node_id}: needs exactly one of choices/next/end, has {exits or 'none'}")
+        check_sets(node_id, node.get("set", {}))
+        if node.get("next") and node["next"] not in nodes:
+            problems.append(f"{node_id}: next {node['next']!r} does not exist")
+        for i, choice in enumerate(node.get("choices", [])):
+            where = f"{node_id} choice {i}"
+            if choice.get("to") not in nodes:
+                problems.append(f"{where}: target {choice.get('to')!r} does not exist")
+            check_expr(f"{where} if", choice.get("if"))
+            check_sets(where, choice.get("set", {}))
+
+    seen, stack = set(), [graph.get("start")]
+    while stack:
+        node_id = stack.pop()
+        if node_id in seen or node_id not in nodes:
+            continue
+        seen.add(node_id)
+        node = nodes[node_id]
+        stack += [c.get("to") for c in node.get("choices", [])] + [node.get("next")]
+    problems += [f"{node_id}: unreachable from start" for node_id in nodes if node_id not in seen]
+    return problems
+```
+
+Print the problems and exit non-zero when the list is not empty, so CI fails. These checks catch the dead ends and typos that otherwise strand the player mid-scene.

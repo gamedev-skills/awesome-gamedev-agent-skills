@@ -1,60 +1,59 @@
 ---
 name: audio-design
 description: >
-  Implement game audio practice — bus/mixer architecture and gain in decibels,
-  ducking (sidechain), adaptive/dynamic music via layering and re-sequencing,
-  SFX variation, and beat synchronization. Engine-neutral. Use when the user
-  mentions audio mixing, audio buses, adaptive/dynamic music, ducking, SFX
-  variation, music layers, or syncing gameplay to the beat.
+  Engine-neutral game audio technique: bus and mixer layout, slider-to-decibel mapping,
+  loudness targets and headroom, ducking music under dialogue with a sidechain, adaptive music
+  (vertical layering, horizontal re-sequencing, stingers, intensity with hysteresis), SFX
+  variation and beat-synced gameplay, with Godot, Unity and FMOD/Wwise mappings. Use when the
+  user asks how to mix or balance a game, set up music/SFX/voice buses and volume sliders,
+  make music react to combat, stop repetitive footsteps, duck audio, sync events to the beat,
+  or reports a mix that clips, pumps or drifts off beat. Not for Godot `AudioStreamPlayer`,
+  bus and import API details (use `godot-audio`), or making the sound files themselves.
 ---
 
 # Audio design
 
-Game audio is a **mixing graph plus a music system**. Route every sound through a
-small set of buses so you can balance and process groups; make music *react* to
-play through layering and re-sequencing rather than looping one track. This skill
-teaches the portable practice; bind it to `godot-audio`, Unity's AudioMixer, or
-middleware (FMOD/Wwise) for concrete APIs.
+Game audio is a mixing graph plus a music system. Every sound plays into a small set of buses
+that the settings sliders and ducking act on, and music reacts to play through layers and
+segments instead of one loop. This skill owns those decisions; `godot-audio`, Unity's
+AudioMixer or FMOD/Wwise supply the API.
 
 ## When to use
 
-- Use to design a bus/mixer layout, set group volumes, and apply effects (reverb,
-  compression, EQ) to groups of sounds.
-- Use to duck music/ambience under dialogue or impacts (sidechain).
-- Use to build adaptive music that responds to combat/exploration intensity.
-- Use to add SFX variation (pitch/sample randomization) and sync events to a beat.
+- Design a bus layout, volume sliders, group effects and a loudness target.
+- Duck music and ambience under voice or big impacts.
+- Build adaptive music, SFX variation, or beat-quantized gameplay.
 
-**When *not* to use:** for the engine's concrete audio nodes/streams, use
-`godot-audio` or the engine's audio skill. Loading/streaming and asset import are
-engine concerns. For UI sliders that drive bus volume, see the engine UI skill.
+**Not this skill:** Godot node, bus and stream API questions go to `godot-audio`; settings menu
+layout goes to `game-ui-ux`; triggering sounds from hits goes through `game-feel`'s feedback
+bundle.
 
-## Core workflow
+## Workflow
 
-1. **Lay out buses, not per-sound volume.** A typical tree: `Master ← {Music,
-   SFX, Ambience, UI, Voice}`. Everything plays into a bus; the player's settings
-   sliders map to bus volumes. Never set hundreds of clip volumes by hand.
-2. **Work in decibels, not linear.** Perceived loudness is logarithmic. Volume
-   controls and automation should operate in dB; convert only at the edges.
-3. **Leave headroom and hit a loudness target.** Keep true peaks at or below -1 dBTP and
-   measure integrated loudness over a representative play session with an ITU-R BS.1770 meter.
-   Sony's ASWG-R001 recommendation, the usual reference, is -24 LUFS (±2) for console/PC
-   played on TVs and speakers and -18 LUFS (±2) for handheld/mobile. Music-streaming targets
-   such as -14 LUFS are not game targets.
-4. **Duck competing sources** with a sidechain compressor (or volume automation):
-   when voice/important SFX plays, the music bus dips, then recovers.
-5. **Make music adaptive** via *vertical* layering (stems faded in/out) and/or
-   *horizontal* re-sequencing (swap segments at musical boundaries). See the
-   reference.
-6. **Vary repeated SFX** with small random pitch/volume offsets and sample pools
-   so footsteps and hits don't sound robotic.
-7. **Verify on real output.** Listen on headphones and speakers; check that the
-   mix balances, ducking is audible but not pumping, and music transitions land
-   on the beat — never assume from the editor meters alone.
+1. **Inventory first.** List every player or `AudioSource` and the bus or mixer group it
+   outputs to; anything on Master or with no group bypasses the sliders.
+2. **Lay out buses**: `Master ← Music ← MusicDuck`, `SFX`, `Ambience`, `UI`, `Voice`. Sliders map
+   to bus gain; nobody sets per-clip volumes by hand.
+3. **Map sliders to decibels**: square the 0..1 slider, convert with `linear_to_db`, mute at 0.
+4. **Set headroom and a loudness target**: true peak at or below -1 dBTP; integrated loudness
+   about -24 LUFS (±2) for console/PC on TV or speakers and about -18 LUFS (±2) for handheld and
+   mobile. Streaming-music targets such as -14 LUFS are not game targets.
+5. **Duck** music under voice with a sidechain compressor or by tweening a dedicated duck bus.
+6. **Make music adaptive**: vertical layers for intensity, horizontal segments switched on bar
+   lines for state changes, stingers for one-off events (see the reference).
+7. **Vary repeated SFX** with sample pools and small pitch and volume offsets.
+8. **Measure, then listen.** Capture a representative 2-5 minute session and meter it:
+   - Godot: `xvfb-run -a godot --path . --write-movie capture.avi --fixed-fps 60 --quit-after 9000`
+     (needs a renderer; Movie Maker crashes under `--headless`). Other engines: ask the user to
+     record the game's output to a WAV and share the path.
+   - `ffmpeg -hide_banner -nostats -i capture.avi -vn -af ebur128=peak=true:framelog=quiet -f null -`
+     prints integrated loudness (`I:`) and true peak (`Peak:`). Compare with step 4.
+   - Then ask the user to listen on headphones and speakers and report whether ducking is
+     audible but not pumping and whether music transitions land on the beat.
 
 ## Patterns
 
-Snippets are Godot 4.7 GDScript; the Unity 6.3 LTS and middleware equivalents are noted
-under each one.
+Snippets are Godot 4.7 GDScript; the Unity 6.3 LTS and middleware equivalents follow each one.
 
 ### 1. Bus routing and slider-to-gain mapping
 
@@ -160,38 +159,58 @@ func time_until_next_beat() -> float:
 Unity 6.3 LTS: read `AudioSettings.dspTime` and schedule with `AudioSource.PlayScheduled(dspTime)`
 for sample-accurate starts.
 
-## Pitfalls
+## Gotchas
 
-- **Treating slider values as dB.** Map `0..1` to gain (`linear_to_db`, or
-  `set_bus_volume_linear`) and back with `db_to_linear`. A raw linear-amplitude
-  slider sounds almost unchanged over most of its travel and drops off at the
-  bottom; squaring (or cubing) the slider before conversion evens it out.
-- **Per-clip volume instead of buses** makes a global balance pass impossible and
-  bloats save/settings. Mix on buses.
-- **Sources that bypass the mix.** A Unity `AudioSource` with no Output group, or a
-  Godot player left on `Master`, ignores the category sliders. Route everything.
-- **Clipping the master.** Summed sounds exceed 0 dBFS and distort. Leave
-  headroom; put a limiter on Master as a safety net, not as the mixer.
-- **Pumping ducking**: too-fast release or too-high ratio makes music audibly
-  breathe. Lengthen release; lower ratio.
-- **Ducking that fights the volume slider.** Tweening the Music bus back to 0 dB
-  overwrites the player's setting. Duck a separate bus, or use the compressor.
-- **Looping a single music track** for the whole game feels flat. Use layers or
-  segments that respond to state (see the reference).
-- **Beat sync off frame time.** `delta` drifts; read the **audio playback
-  position**, add the time since the last mix, and subtract output latency.
-- **Unbounded one-shot players**: spawning AudioStreamPlayers without freeing
-  them leaks. Use `max_polyphony`/`AudioStreamRandomizer`, free on `finished`, or
-  pool them.
+- **Slider values used as dB.** `set_bus_volume_db(idx, 0.5)` is +0.5 dB, and 0 is full volume.
+  Convert, and square or cube the slider first: a raw linear-amplitude slider barely changes over
+  most of its travel and then drops off at the bottom.
+- **Sources that bypass the mix.** A Unity `AudioSource` with an empty Output, or a Godot player
+  left on `Master`, ignores the category sliders and snapshots.
+- **Ducking that overwrites the player's slider.** Tweening the Music bus back to 0 dB discards
+  their setting. Duck a separate bus between Music and Master, or use the compressor.
+- **Godot `attack_us` is in microseconds** (20-2000), while `release_ms` is milliseconds; a value
+  of 10 means 10 µs, not 10 ms.
+- **Pumping.** A fast release or high ratio makes the music audibly breathe after every line.
+  Lengthen release (300-500 ms) or lower the ratio.
+- **Clipping the master.** Summed sounds pass 0 dBFS and distort. Leave headroom; a limiter on
+  Master is a safety net, not the mixer.
+- **Beat sync from frame time** drifts within seconds. Use the playback position, plus time since
+  the last mix, minus output latency (Unity: `AudioSettings.dspTime` and `PlayScheduled`).
+- **Stems started by separate players** drift apart over a long loop. Use one synchronized
+  stream (Godot `AudioStreamSynchronized`) or middleware.
+- **Bar-quantized switches on `AudioStreamWAV`** never quantize: only Ogg Vorbis and MP3 streams
+  carry `bpm` and `bar_beats` for `AudioStreamInteractive`.
+- **Unbounded one-shot players** leak and stack. Use `max_polyphony`, a randomizer stream, or a
+  pool; free on `finished`.
+- **Measuring in the editor** with the meters alone. Editor meters show peak per bus, not
+  integrated loudness over a session; meter a capture as in step 8.
 
 ## References
 
-- `references/adaptive-music.md` — vertical layering vs horizontal re-sequencing,
-  transition timing (bars/quantize), stingers, intensity mapping, and crossfades.
+- `references/adaptive-music.md`: read when building layered or segmented music (stem sync,
+  bar-quantized switches, `AudioStreamSynchronized`, `AudioStreamInteractive`, stingers, an
+  intensity value with hysteresis).
 
 ## Related skills
 
-- `godot-audio` — buses, `AudioStreamPlayer`, effects, and sync-to-beat in Godot.
-- `input-systems` — trigger audio from input actions.
-- `physics-tuning` — collision events that drive impact SFX.
-- `platformer`, `roguelike` — genres whose feel leans on audio feedback.
+- `godot-audio`: Godot players, buses, effects and import settings.
+- `game-feel`: the feedback bundles that trigger impact sounds.
+- `game-ui-ux`: the settings screen that holds the volume sliders.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Loudness targets: Sony ASWG-R001 (2013), -24 LUFS home and -18 LUFS portable, measured to
+  ITU-R BS.1770; summarised at
+  https://audiomediainternational.com/mobile-loudness-an-adaptive-approach (the original PDF is
+  not publicly hosted by Sony).
+- Godot 4.7: `AudioServer.set_bus_volume_linear`, `AudioEffectCompressor.sidechain`/`attack_us`/
+  `release_ms`, `AudioStreamRandomizer`, `AudioStreamSynchronized` (`MAX_STREAMS` = 32),
+  `AudioStreamInteractive` with `TRANSITION_FROM_TIME_NEXT_BAR`; `bpm`/`bar_beats` exist on
+  `AudioStreamOggVorbis` and `AudioStreamMP3` only (Godot 4.7.2 class reference). Movie Maker
+  under `--headless` crashed in a local 4.7.2 test; it worked under `xvfb-run`.
+- Unity 6.3 LTS: Audio Random Container assigned via `AudioSource.resource`; mixer floor -80 dB;
+  `AudioSettings.dspTime` with `AudioSource.PlayScheduled`.
+- ffmpeg `ebur128` filter with `peak=true` reports BS.1770 integrated loudness and true peak
+  (https://ffmpeg.org/ffmpeg-filters.html#ebur128); tested with ffmpeg 6.1.

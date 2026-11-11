@@ -1,8 +1,15 @@
-# Follow & framing — depth for `camera-systems`
+# Follow and framing
 
-Detail the `camera-systems` body defers here: the smoothing math, a full 2D rig, 3D orbit/first-
-person specifics, multi-target framing, cinematic blends, and the per-engine rig mapping.
-Snippets target **Godot 4.7** and **Unity 6.3 LTS / Cinemachine 3**.
+Contents:
+1. Why `1 - exp(-rate*dt)` (frame-rate-independent smoothing)
+2. Full 2D rig: deadzone, look-ahead, bounds
+3. 3D third-person orbit
+4. First-person look
+5. Multi-target and group framing, split-screen
+6. Cinematic blends and transitions
+7. Per-engine rig summary (Godot 4.7, Cinemachine 3)
+
+Snippets target Godot 4.7 and Unity 6.3 LTS with Cinemachine 3.
 
 ## 1. Why `1 - exp(-rate*dt)` (frame-rate-independent smoothing)
 
@@ -83,8 +90,7 @@ Tunables: deadzone `32–64 px`, look-ahead `40–120 px` eased over `0.2–0.4 
 
 ## 7. Per-engine rig summary
 
-Unity column: Cinemachine 3.1 (3.1.7 is the current release, June 2026), namespace
-`Unity.Cinemachine`. The v2 components (`CinemachineVirtualCamera`, `CinemachineCollider`,
+Unity column: Cinemachine 3.x, namespace `Unity.Cinemachine`. The v2 components (`CinemachineVirtualCamera`, `CinemachineCollider`,
 `CinemachineFramingTransposer`) are marked deprecated in 3.x and point to `CinemachineCamera`,
 `CinemachineDeoccluder` and `CinemachinePositionComposer`; do not use them in new code.
 `CinemachineDeoccluder` keeps the target in line of sight; `CinemachineDecollider` only pulls the

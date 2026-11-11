@@ -1,5 +1,11 @@
 # Adaptive (dynamic) music
 
+Contents:
+1. Vertical layering (stems, `AudioStreamSynchronized`)
+2. Horizontal re-sequencing (bar-quantized switches, `AudioStreamInteractive`, transition types)
+3. Mapping gameplay to intensity (smoothing and hysteresis)
+4. Practical notes (audio clock, loop points, middleware, budget)
+
 Adaptive music changes with gameplay instead of looping one track. Two techniques
 dominate, and they combine:
 
