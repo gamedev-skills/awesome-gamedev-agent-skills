@@ -1,0 +1,3266 @@
+[
+  {
+    "id": "ai-behavior-trees-utility-ai.s1",
+    "prompt": "I want to write my own behavior tree runtime in TypeScript for my game, no engine BT. need a Blackboard, Sequence/Selector/Parallel and decorators like Cooldown and Inverter, tick returns Running/Success/Failure. where do i even start",
+    "expected": [
+      "ai-behavior-trees-utility-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ai-behavior-trees-utility-ai. custom BT runtime, explicit composites/decorators"
+  },
+  {
+    "id": "ai-behavior-trees-utility-ai.s2",
+    "prompt": "npcs in my colony sim pick dumb actions (they go to sleep while starving lol). thinking utility ai, score eat/sleep/work with response curves, maybe sigmoid for hunger? how do i build considerations + an evaluator so its not one giant if-else",
+    "expected": [
+      "ai-behavior-trees-utility-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ai-behavior-trees-utility-ai. utility AI with response curves, no engine"
+  },
+  {
+    "id": "ai-behavior-trees-utility-ai.s3",
+    "prompt": "monogame C# roguelite. my BT parallel node never resets its children and a sequence returns Success the frame after a child was Running. heres my Tick() impl, whats wrong with the status propagation",
+    "expected": [
+      "ai-behavior-trees-utility-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ai-behavior-trees-utility-ai. debugging a hand-rolled BT tick"
+  },
+  {
+    "id": "ai-behavior-trees-utility-ai.nm",
+    "prompt": "ue5 enemy BT_Grunt never leaves the MoveTo task. blackboard key TargetActor is set in my AIController, theres an 'Is Set' decorator on the sequence. what am i missing",
+    "expected": [
+      "unreal-behavior-trees"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for ai-behavior-trees-utility-ai. near-miss: shares behavior tree/blackboard/decorator but is Unreal BT assets. AMBIGUOUS: game-ai and ai-behavior-trees-utility-ai both list blackboard/decorator too"
+  },
+  {
+    "id": "audio-design.s1",
+    "prompt": "how should i structure audio buses for a game? master / music / sfx / ui / voice, plus ducking the music when dialogue plays. engine agnostic answer pls, we havent picked an engine yet",
+    "expected": [
+      "audio-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger audio-design. bus architecture + ducking"
+  },
+  {
+    "id": "audio-design.s2",
+    "prompt": "stealth game, want adaptive music: stems that fade in as the alert level goes up (calm -> suspicious -> combat). how do i keep the stems in sync and only switch on the bar line",
+    "expected": [
+      "audio-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger audio-design. adaptive layered music"
+  },
+  {
+    "id": "audio-design.s3",
+    "prompt": "footstep sfx sound super repetitive, same wav every single step. whats the standard trick for variation, pitch/volume randomization, round robin? how many variants do i actually need",
+    "expected": [
+      "audio-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger audio-design. SFX variation"
+  },
+  {
+    "id": "audio-design.nm",
+    "prompt": "AudioStreamPlayer2D in my godot 4.7 scene doesnt play when i call play() in _ready(), bus is set to \"SFX\", no errors in output",
+    "expected": [
+      "godot-audio"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for audio-design. near-miss: engine API bug, not audio practice. AMBIGUOUS: router pairs audio-design with godot-audio, judge may load both"
+  },
+  {
+    "id": "camera-systems.s1",
+    "prompt": "camera in my 2d game is jittery when following the player, im just lerping position in update. want a deadzone + some look-ahead in the direction the player moves. not engine specific, ill port it to my own framework",
+    "expected": [
+      "camera-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger camera-systems. 2D follow, deadzone, look-ahead. AMBIGUOUS: 'jittery' may also pull physics-tuning"
+  },
+  {
+    "id": "camera-systems.s2",
+    "prompt": "third person orbit camera clips through walls constantly. need spring-arm style collision but im in a custom C++ engine on top of raylib so no built in spring arm",
+    "expected": [
+      "camera-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger camera-systems. 3D orbit with collision, custom engine"
+  },
+  {
+    "id": "camera-systems.s3",
+    "prompt": "unity 6 + cinemachine 3, local coop. want the camera to frame both players and zoom out as they separate. CinemachineTargetGroup? or roll my own",
+    "expected": [
+      "camera-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger camera-systems. multi-target framing; no Unity camera skill exists"
+  },
+  {
+    "id": "camera-systems.nm",
+    "prompt": "godot 4.7 3d scene, the Camera3D view looks washed out and grey, i think its the sky / fog / tonemap settings on the environment",
+    "expected": [
+      "godot-3d-essentials"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for camera-systems. near-miss: says Camera3D but the fix is WorldEnvironment"
+  },
+  {
+    "id": "create-game-assets.s1",
+    "prompt": "need a consistent pixel art style for my game: 32x32 player, 3 enemies and a forest tileset. can you make a little style guide first (palette, outline rules, lighting direction) and then generate them so they actually match",
+    "expected": [
+      "create-game-assets"
+    ],
+    "kind": "should",
+    "notes": "should-trigger create-game-assets. art direction + sprite set"
+  },
+  {
+    "id": "create-game-assets.s2",
+    "prompt": "my item icons are from like 5 different asset packs and look like garbage together. help me normalize them: same outline, palette, 64x64, transparent bg",
+    "expected": [
+      "create-game-assets"
+    ],
+    "kind": "should",
+    "notes": "should-trigger create-game-assets. normalizing mixed assets"
+  },
+  {
+    "id": "create-game-assets.s3",
+    "prompt": "write an art brief for a low poly 3d prop set (barrels, crates, lanterns, fishing rods) for a cozy fishing game. poly budget, texel density, palette, so i can hand it to a contractor",
+    "expected": [
+      "create-game-assets"
+    ],
+    "kind": "should",
+    "notes": "should-trigger create-game-assets. 3D asset brief"
+  },
+  {
+    "id": "create-game-assets.nm",
+    "prompt": "imported my character sprite sheet into godot 4.7 and AnimatedSprite2D shows the whole sheet at once instead of one frame, how do i slice it into frames for the run anim",
+    "expected": [
+      "godot-animation"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for create-game-assets. near-miss: shares 'sprite sheet' but is Godot animation setup. AMBIGUOUS: godot-animation desc says 'sprite-sheet animation', create-game-assets says 'sprites'"
+  },
+  {
+    "id": "dialogue-systems.s1",
+    "prompt": "building npc dialogue for my game, need branching choices with conditions (if player has key, if quest done) and variables. should i use ink, yarn spinner or roll my own json? unity project but i want the dialogue logic portable",
+    "expected": [
+      "dialogue-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger dialogue-systems. tool choice + branching with conditions"
+  },
+  {
+    "id": "dialogue-systems.s2",
+    "prompt": "got a pile of .ink files from our writer. how do i run them in-game, read choices, and hook up tags like #speaker:mira #portrait:angry",
+    "expected": [
+      "dialogue-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger dialogue-systems. Ink runtime + tags"
+  },
+  {
+    "id": "dialogue-systems.s3",
+    "prompt": "our conversation tree system needs localization. right now strings are hardcoded in the nodes. how do i structure the data so translators just get a csv with line keys",
+    "expected": [
+      "dialogue-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger dialogue-systems. localization hooks"
+  },
+  {
+    "id": "dialogue-systems.nm",
+    "prompt": "write me the actual dialogue for the blacksmith npc, gruff dwarf, 3 short lines about the broken sword quest",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for dialogue-systems. near-miss: content writing, not a dialogue system"
+  },
+  {
+    "id": "game-ai.s1",
+    "prompt": "enemy ai for my top down shooter: patrol between points, chase when it sees you, search last known position, give up after 5s. should this be an FSM or a behavior tree? pseudocode is fine, i havent decided on engine yet (prob godot or unity)",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ai. FSM vs BT choice, patrol/chase"
+  },
+  {
+    "id": "game-ai.s2",
+    "prompt": "implement A* on my grid (100x100, diagonals allowed, swamp tiles cost 3x). plain js, no engine",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ai. A* pathfinding"
+  },
+  {
+    "id": "game-ai.s3",
+    "prompt": "want a flock of birds (boids) that avoid obstacles. seek, separation, alignment, cohesion. how do i weight them so it doesnt look jittery",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ai. steering/flocking"
+  },
+  {
+    "id": "game-ai.nm",
+    "prompt": "the NavMeshAgent in unity 6 slides past the waypoint and spins around it forever, stoppingDistance is 0",
+    "expected": [
+      "unity-navmesh"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for game-ai. near-miss: pathfinding words, but Unity NavMesh API"
+  },
+  {
+    "id": "game-feel.s1",
+    "prompt": "combat in my beat em up feels weak. hits connect but nothing happens. what are the standard juice tricks and timings, like how many ms of hitstop, how much shake, flash frames, knockback",
+    "expected": [
+      "game-feel"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-feel. classic juice request. AMBIGUOUS: camera-systems also lists shake hook"
+  },
+  {
+    "id": "game-feel.s2",
+    "prompt": "jump feels floaty and landing has zero weight. squash and stretch on takeoff and land, a dust puff, maybe a tiny camera dip?",
+    "expected": [
+      "game-feel"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-feel. AMBIGUOUS: platformer owns 'jump feel' too"
+  },
+  {
+    "id": "game-feel.s3",
+    "prompt": "coin pickup is boring in my phaser 4 game. make it satisfying: little pop, ease out, sound pitch going up for streaks",
+    "expected": [
+      "game-feel",
+      "phaser-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-feel. juice bound to Phaser tweens"
+  },
+  {
+    "id": "game-feel.nm",
+    "prompt": "whats the formula for easeOutBack? need it in plain lua for a ui tweening lib im writing for a desktop app (not a game)",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for game-feel. near-miss: 'easing' keyword, not a game"
+  },
+  {
+    "id": "game-ui-ux.s1",
+    "prompt": "my HUD breaks on ultrawide and on steam deck, health bar ends up half off screen. how should i anchor things and handle aspect ratios / safe area? unity ugui",
+    "expected": [
+      "game-ui-ux"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ui-ux. anchoring/aspect/safe area; no Unity UI skill"
+  },
+  {
+    "id": "game-ui-ux.s2",
+    "prompt": "pause menu + settings + main menu all need to work with a controller. focus keeps getting lost when i open a submenu and back out. how do i do a menu stack properly",
+    "expected": [
+      "game-ui-ux"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ui-ux. menu stack + focus nav, engine-neutral"
+  },
+  {
+    "id": "game-ui-ux.s3",
+    "prompt": "right now my game loop polls player.hp every frame and rewrites the health bar text. someone told me to use events instead. whats the clean pattern for wiring the hud to game state",
+    "expected": [
+      "game-ui-ux"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-ui-ux. event-driven HUD"
+  },
+  {
+    "id": "game-ui-ux.nm",
+    "prompt": "settings page on my company's react admin dashboard doesnt work with keyboard tab navigation, focus jumps around",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for game-ui-ux. near-miss: settings/focus nav, not a game"
+  },
+  {
+    "id": "input-systems.s1",
+    "prompt": "add key rebinding to my game's options: detect conflicts (two actions on one key) and save to a file. custom engine on SDL2",
+    "expected": [
+      "input-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger input-systems. rebinding + conflicts + persistence"
+  },
+  {
+    "id": "input-systems.s2",
+    "prompt": "gamepad stick drift makes my character slowly walk by itself. radial or axial deadzone? and how do i rescale so small tilts still register",
+    "expected": [
+      "input-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger input-systems. analog deadzones"
+  },
+  {
+    "id": "input-systems.s3",
+    "prompt": "my fighting game drops inputs when you press attack a few frames before recovery ends. how do i build an input buffer thats separate from the game logic",
+    "expected": [
+      "input-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger input-systems. input buffering, no genre skill for fighters"
+  },
+  {
+    "id": "input-systems.nm",
+    "prompt": "unity 6 new input system: how do i read the Move vector from my .inputactions asset through the PlayerInput component",
+    "expected": [
+      "unity-input-system"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for input-systems. near-miss: input words, but Unity package API"
+  },
+  {
+    "id": "level-design.s1",
+    "prompt": "blocking out the first mission of my 3d stealth game. how do i plan sightlines, cover, multiple routes, crouch heights etc? i want a process from whitebox to playable",
+    "expected": [
+      "level-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger level-design. blockout workflow + metrics"
+  },
+  {
+    "id": "level-design.s2",
+    "prompt": "playtesters get bored in level 3, its just corridor fight corridor fight corridor. how do i pace tension and rest and place encounters better",
+    "expected": [
+      "level-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger level-design. pacing + encounters"
+  },
+  {
+    "id": "level-design.s3",
+    "prompt": "how do i gate progression so players dont skip the critical path but still feel free to explore? open zone in my action game",
+    "expected": [
+      "level-design"
+    ],
+    "kind": "should",
+    "notes": "should-trigger level-design. gating/critical path"
+  },
+  {
+    "id": "level-design.nm",
+    "prompt": "unity 6 tile palette: painting ground tiles, my rule tile picks the wrong corner sprite on inner corners",
+    "expected": [
+      "unity-tilemap-2d"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for level-design. near-miss: tile layout words, but Unity tilemap API"
+  },
+  {
+    "id": "performance-optimization.s1",
+    "prompt": "ok so ive been working on this bullet hell in monogame for like 8 months and its finally fun, but the moment boss phase 3 starts and theres ~2000 bullets the game goes from 144 to 40 fps. im doing new Bullet() every shot and bullets.Remove(b) when they leave the screen. my friend says 'just use a pool' but i dont even know if thats the problem. how do i find whats actually slow before i rewrite stuff",
+    "expected": [
+      "performance-optimization"
+    ],
+    "kind": "should",
+    "notes": "should-trigger performance-optimization. profiling + pooling"
+  },
+  {
+    "id": "performance-optimization.s2",
+    "prompt": "getting a hitch every few seconds, unity 6 profiler shows GC.Collect spikes. lots of string concat in Update and some LINQ. help",
+    "expected": [
+      "performance-optimization",
+      "unity-csharp-scripting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger performance-optimization. GC spikes, fix lives in MonoBehaviour code"
+  },
+  {
+    "id": "performance-optimization.s3",
+    "prompt": "draw calls are ~3000 in my mobile game, lots of small sprites each with their own texture. how do i batch this",
+    "expected": [
+      "performance-optimization"
+    ],
+    "kind": "should",
+    "notes": "should-trigger performance-optimization. draw-call batching. AMBIGUOUS: create-game-assets could claim atlasing"
+  },
+  {
+    "id": "performance-optimization.nm",
+    "prompt": "my unity webgl build is 480mb and the jam page caps uploads at 200mb, how do i optimize the build size",
+    "expected": [
+      "unity-build-size"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for performance-optimization. near-miss: 'optimize' but it is build size. AMBIGUOUS: unity-build-pipeline also says 'shrinking build size'"
+  },
+  {
+    "id": "physics-tuning.s1",
+    "prompt": "fast projectiles go through thin walls sometimes. is this tunneling? do i need CCD? physics runs at a fixed 60hz step in my own engine",
+    "expected": [
+      "physics-tuning"
+    ],
+    "kind": "should",
+    "notes": "should-trigger physics-tuning. tunneling/CCD"
+  },
+  {
+    "id": "physics-tuning.s2",
+    "prompt": "stack of boxes jitters, never sleeps, and slowly explodes. box2d. what should i check, iterations, sleep threshold, mass ratios?",
+    "expected": [
+      "physics-tuning"
+    ],
+    "kind": "should",
+    "notes": "should-trigger physics-tuning. stacking jitter"
+  },
+  {
+    "id": "physics-tuning.s3",
+    "prompt": "physics at 50hz, render at 144, the character looks stuttery. read about render interpolation, how do i actually implement it",
+    "expected": [
+      "physics-tuning"
+    ],
+    "kind": "should",
+    "notes": "should-trigger physics-tuning. fixed step + interpolation. AMBIGUOUS: 'stuttery' is also a performance-optimization trigger"
+  },
+  {
+    "id": "physics-tuning.nm",
+    "prompt": "Area2D body_entered never fires in godot 4.7 when the player walks in. both on collision layer 1 mask 1",
+    "expected": [
+      "godot-physics"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for physics-tuning. near-miss: collision layers, but Godot API"
+  },
+  {
+    "id": "procedural-gen.s1",
+    "prompt": "generate a terrain heightmap with perlin/simplex noise, octaves, lacunarity etc. has to be deterministic from a seed so all multiplayer clients get the same map",
+    "expected": [
+      "procedural-gen"
+    ],
+    "kind": "should",
+    "notes": "should-trigger procedural-gen. seeded noise terrain"
+  },
+  {
+    "id": "procedural-gen.s2",
+    "prompt": "need a dungeon generator: rooms + corridors (BSP maybe), every room must be reachable, output a 2d int grid i can feed to my renderer",
+    "expected": [
+      "procedural-gen"
+    ],
+    "kind": "should",
+    "notes": "should-trigger procedural-gen. AMBIGUOUS: roguelike also lists 'procedural dungeons'"
+  },
+  {
+    "id": "procedural-gen.s3",
+    "prompt": "weighted loot table with rarity tiers and a pity timer so a legendary drops at least every 50 kills. python, its for my game's server",
+    "expected": [
+      "procedural-gen"
+    ],
+    "kind": "should",
+    "notes": "should-trigger procedural-gen. AMBIGUOUS: roguelike desc also says loot tables"
+  },
+  {
+    "id": "procedural-gen.nm",
+    "prompt": "random.seed() in my python notebook gives the same sample every run, how do i get fresh randomness for my data science bootstrap",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for procedural-gen. near-miss: 'random seed', not a game"
+  },
+  {
+    "id": "save-systems.s1",
+    "prompt": "how should i structure save files for my game? json vs binary, what to save (player, world state, quest flags), 3 save slots, and versioning so updates dont nuke old saves. engine is godot but i want the design first",
+    "expected": [
+      "save-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger save-systems. format + slots + versioning"
+  },
+  {
+    "id": "save-systems.s2",
+    "prompt": "we shipped our farming game in early access 2 weeks ago and the reviews are getting hit by 'lost my 30 hour save' complaints. looks like if the game crashes or the power goes out while saving, save.dat ends up half written. is write-to-temp-then-rename enough? need it to be safe on windows and later on switch too",
+    "expected": [
+      "save-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger save-systems. atomic writes"
+  },
+  {
+    "id": "save-systems.s3",
+    "prompt": "added a new field to PlayerData in v1.3 and now v1.2 saves crash on load. how do i migrate old saves cleanly",
+    "expected": [
+      "save-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger save-systems. migration"
+  },
+  {
+    "id": "save-systems.nm",
+    "prompt": "roblox DataStore SetAsync keeps throwing 'request was throttled' when lots of players leave at once",
+    "expected": [
+      "roblox-datastores"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for save-systems. near-miss: saving, but Roblox DataStore API"
+  },
+  {
+    "id": "shader-programming.s1",
+    "prompt": "explain how a dissolve shader works with a noise texture and a glowing edge, give me glsl and hlsl versions",
+    "expected": [
+      "shader-programming"
+    ],
+    "kind": "should",
+    "notes": "should-trigger shader-programming. dissolve, GLSL+HLSL"
+  },
+  {
+    "id": "shader-programming.s2",
+    "prompt": "need an outline around selected units in my webgl2 game (raw webgl, no engine). inverted hull or post-process edge detect?",
+    "expected": [
+      "shader-programming"
+    ],
+    "kind": "should",
+    "notes": "should-trigger shader-programming. outline technique"
+  },
+  {
+    "id": "shader-programming.s3",
+    "prompt": "fresnel rim light fragment shader, my normals are in object space and the rim looks wrong once the mesh rotates",
+    "expected": [
+      "shader-programming"
+    ],
+    "kind": "should",
+    "notes": "should-trigger shader-programming. coordinate spaces"
+  },
+  {
+    "id": "shader-programming.nm",
+    "prompt": "convert this shader from godot 3 to 4, it uses SCREEN_TEXTURE and hint_color",
+    "expected": [
+      "godot-shaders"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for shader-programming. near-miss: shader words, Godot 4 port"
+  },
+  {
+    "id": "ebitengine-game.s1",
+    "prompt": "make a small snake game in go with ebitengine v2: keyboard + gamepad, score text, restart on death",
+    "expected": [
+      "ebitengine-game"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ebitengine-game. new game"
+  },
+  {
+    "id": "ebitengine-game.s2",
+    "prompt": "my ebiten game's Draw() is getting called but the screen is just black. Layout returns outsideWidth, outsideHeight. images loaded with ebitenutil.NewImageFromFile",
+    "expected": [
+      "ebitengine-game"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ebitengine-game. rendering bug"
+  },
+  {
+    "id": "ebitengine-game.s3",
+    "prompt": "how do i build my ebitengine game for the browser (wasm) and embed it in a page",
+    "expected": [
+      "ebitengine-game"
+    ],
+    "kind": "should",
+    "notes": "should-trigger ebitengine-game. browser build"
+  },
+  {
+    "id": "ebitengine-game.nm",
+    "prompt": "help me write a REST leaderboard service in Go (gin + postgres) that my game posts scores to",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for ebitengine-game. near-miss: Go + game, but backend service. Desc excludes unrelated Go software"
+  },
+  {
+    "id": "card-game.s1",
+    "prompt": "making a slay the spire style deckbuilder. need draw pile, hand, discard, reshuffle when draw is empty, energy costs, and card effects that can trigger other effects. how do i structure effect resolution so it doesnt turn into spaghetti",
+    "expected": [
+      "card-game"
+    ],
+    "kind": "should",
+    "notes": "should-trigger card-game. deck zones + effect resolution"
+  },
+  {
+    "id": "card-game.s2",
+    "prompt": "tcg with ~300 cards, keywords like taunt, 'on play: deal 2', 'when this dies draw a card'. data driven, how do i model effects without a giant switch statement",
+    "expected": [
+      "card-game"
+    ],
+    "kind": "should",
+    "notes": "should-trigger card-game. card data + effects"
+  },
+  {
+    "id": "card-game.s3",
+    "prompt": "godot 4.7 card game, cards are custom Resources with cost and effects, and i need the hand to fan out along an arc in a Control container",
+    "expected": [
+      "card-game",
+      "godot-resources",
+      "godot-ui-control"
+    ],
+    "kind": "should",
+    "notes": "should-trigger card-game. genre + Godot data + UI"
+  },
+  {
+    "id": "card-game.nm",
+    "prompt": "whats the probability of drawing two aces in a 5 card poker hand from a standard 52 deck",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for card-game. near-miss: cards/decks, just maths"
+  },
+  {
+    "id": "fps-shooter.s1",
+    "prompt": "tuning ttk and recoil in my fps. AR does 25 dmg at 600rpm and players say its a laser. how do people design recoil patterns vs random spread",
+    "expected": [
+      "fps-shooter"
+    ],
+    "kind": "should",
+    "notes": "should-trigger fps-shooter. aim feel/TTK"
+  },
+  {
+    "id": "fps-shooter.s2",
+    "prompt": "ue 5.8 c++ fps: i want a weapon component on my ACharacter that fires a hitscan line trace, has ammo and reload. how should i structure it",
+    "expected": [
+      "fps-shooter",
+      "unreal-cpp-gameplay"
+    ],
+    "kind": "should",
+    "notes": "should-trigger fps-shooter. genre + Unreal C++"
+  },
+  {
+    "id": "fps-shooter.s3",
+    "prompt": "make a tiny doom-like fps in three.js, pointer lock mouse look, wasd, shoot some enemies",
+    "expected": [
+      "fps-shooter",
+      "threejs-scene-setup"
+    ],
+    "kind": "should",
+    "notes": "should-trigger fps-shooter. genre + three.js"
+  },
+  {
+    "id": "fps-shooter.nm",
+    "prompt": "add first-person head bob and an fov kick when sprinting",
+    "expected": [
+      "camera-systems"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for fps-shooter. near-miss: 'first-person' but camera work. AMBIGUOUS: game-feel may also fit fov kick"
+  },
+  {
+    "id": "platformer.s1",
+    "prompt": "jump feels bad in my platformer. want coyote time, a jump buffer, variable jump height (let go early = short hop), faster fall. celeste-ish",
+    "expected": [
+      "platformer"
+    ],
+    "kind": "should",
+    "notes": "should-trigger platformer. AMBIGUOUS: input-systems also lists coyote time and buffering; game-feel lists jump feel"
+  },
+  {
+    "id": "platformer.s2",
+    "prompt": "add wall slide and wall jump to my godot 4.7 CharacterBody2D player",
+    "expected": [
+      "platformer",
+      "godot-2d-movement"
+    ],
+    "kind": "should",
+    "notes": "should-trigger platformer. router worked example pattern"
+  },
+  {
+    "id": "platformer.s3",
+    "prompt": "simple mario-like level in phaser 4: arcade physics, a Tiled map, spikes that kill you",
+    "expected": [
+      "platformer",
+      "phaser-arcade-physics",
+      "phaser-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger platformer. Phaser platformer"
+  },
+  {
+    "id": "platformer.nm",
+    "prompt": "top-down 8 direction movement for my godot 4.7 zelda-like, diagonal is faster than straight",
+    "expected": [
+      "godot-2d-movement"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for platformer. near-miss: 2D movement but not a platformer"
+  },
+  {
+    "id": "puzzle.s1",
+    "prompt": "match3 in plain js (canvas, no engine): find matches, clear, drop gems with gravity, refill, cascade until stable, and dont start with a board that already has matches. my cascade loop currently runs forever sometimes",
+    "expected": [
+      "puzzle"
+    ],
+    "kind": "should",
+    "notes": "should-trigger puzzle. match-3 core"
+  },
+  {
+    "id": "puzzle.s2",
+    "prompt": "sokoban clone in love2d, need an undo stack that handles box pushes and level restart",
+    "expected": [
+      "puzzle",
+      "love2d-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger puzzle. sokoban + LÖVE"
+  },
+  {
+    "id": "puzzle.s3",
+    "prompt": "grid puzzle like a mini baba is you: rule words on tiles change behaviour. how do i structure board state and rule resolution",
+    "expected": [
+      "puzzle"
+    ],
+    "kind": "should",
+    "notes": "should-trigger puzzle. rule-based grid logic"
+  },
+  {
+    "id": "puzzle.nm",
+    "prompt": "write a sudoku solver with backtracking for my algorithms class",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for puzzle. near-miss: puzzle, not a game build"
+  },
+  {
+    "id": "roguelike.s1",
+    "prompt": "turn based roguelike in python with tcod: grid movement, enemies act after the player, field of view with shadowcasting",
+    "expected": [
+      "roguelike"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roguelike. turn order + FOV"
+  },
+  {
+    "id": "roguelike.s2",
+    "prompt": "roguelite run structure: permadeath for the run, but meta progression unlocks persist between runs. how do i keep run state and persistent state apart",
+    "expected": [
+      "roguelike",
+      "save-systems"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roguelike. run vs meta state"
+  },
+  {
+    "id": "roguelike.s3",
+    "prompt": "procedural dungeon roguelike in godot 4.7 using TileMapLayer",
+    "expected": [
+      "roguelike",
+      "procedural-gen",
+      "godot-tilemap"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roguelike. router worked example"
+  },
+  {
+    "id": "roguelike.nm",
+    "prompt": "roguelike deckbuilder like slay the spire, card rewards after each fight and a branching map",
+    "expected": [
+      "card-game"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roguelike. near-miss: says roguelike. AMBIGUOUS: card-game desc says 'roguelike deckbuilder', roguelike may also load"
+  },
+  {
+    "id": "rpg.s1",
+    "prompt": "designing stats for my jrpg: str/def/agi/luck, level curve to 50. right now i use atk*atk/def and by lvl 30 everything one shots everything lol. want a damage formula that doesnt explode at high levels",
+    "expected": [
+      "rpg"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpg. stats/leveling"
+  },
+  {
+    "id": "rpg.s2",
+    "prompt": "inventory + equipment slots for my unity 6 action rpg. items are ScriptableObjects, equipping changes stats",
+    "expected": [
+      "rpg",
+      "unity-scriptableobjects"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpg. router worked example pattern"
+  },
+  {
+    "id": "rpg.s3",
+    "prompt": "quest system: accept, objectives (kill 5 wolves, talk to the miller), turn in, quest log. how do i make quests data instead of code",
+    "expected": [
+      "rpg"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpg. quest system"
+  },
+  {
+    "id": "rpg.nm",
+    "prompt": "inventory for my survival game: stack sizes, and crafting recipes that eat wood + stone",
+    "expected": [
+      "survival-crafting"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for rpg. near-miss: inventory. AMBIGUOUS: rpg and survival-crafting both claim inventory"
+  },
+  {
+    "id": "survival-crafting.s1",
+    "prompt": "survival game: hunger, thirst and temperature drain over time and hurt you at 0. how do i balance the drain rates",
+    "expected": [
+      "survival-crafting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger survival-crafting. needs system"
+  },
+  {
+    "id": "survival-crafting.s2",
+    "prompt": "crafting system with recipes and a tech tree that unlocks stations (workbench -> forge -> anvil). recipes in json",
+    "expected": [
+      "survival-crafting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger survival-crafting. crafting + tech tree"
+  },
+  {
+    "id": "survival-crafting.s3",
+    "prompt": "base building with snapping like valheim: foundations, walls, roofs, and structural support so floating builds collapse",
+    "expected": [
+      "survival-crafting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger survival-crafting. base building"
+  },
+  {
+    "id": "survival-crafting.nm",
+    "prompt": "spigot plugin (java) for my minecraft server that adds a custom crafting recipe",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for survival-crafting. near-miss: crafting recipe, but a Minecraft server plugin; no skill"
+  },
+  {
+    "id": "tower-defense.s1",
+    "prompt": "tower defense: enemies follow a path, towers can target first/last/strongest, waves come from a json list",
+    "expected": [
+      "tower-defense"
+    ],
+    "kind": "should",
+    "notes": "should-trigger tower-defense. core TD"
+  },
+  {
+    "id": "tower-defense.s2",
+    "prompt": "balancing my td economy. by wave 10 players either have way too much gold or are broke. how do i tune wave hp scaling vs income",
+    "expected": [
+      "tower-defense"
+    ],
+    "kind": "should",
+    "notes": "should-trigger tower-defense. economy/waves"
+  },
+  {
+    "id": "tower-defense.s3",
+    "prompt": "td in godot 4.7: enemies walk a Path2D with PathFollow2D, towers detect range with an Area2D",
+    "expected": [
+      "tower-defense",
+      "godot-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger tower-defense. TD + Godot area detection"
+  },
+  {
+    "id": "tower-defense.nm",
+    "prompt": "my enemies all bunch up into one blob while walking down the lane, i want them to keep some space between each other",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for tower-defense. near-miss: TD context words, steering separation. AMBIGUOUS: tower-defense may load as well"
+  },
+  {
+    "id": "visual-novel.s1",
+    "prompt": "making a visual novel: character sprites with expressions, backgrounds, a text box with typewriter effect, choices, backlog, skip/auto",
+    "expected": [
+      "visual-novel"
+    ],
+    "kind": "should",
+    "notes": "should-trigger visual-novel. VN core"
+  },
+  {
+    "id": "visual-novel.s2",
+    "prompt": "dating sim with affection points per character and routes that branch after chapter 3, save/load anywhere. havent picked an engine",
+    "expected": [
+      "visual-novel"
+    ],
+    "kind": "should",
+    "notes": "should-trigger visual-novel. dating sim"
+  },
+  {
+    "id": "visual-novel.s3",
+    "prompt": "porting my ren'py vn to unity, how do i replicate rollback and the backlog, and map the .rpy script structure",
+    "expected": [
+      "visual-novel"
+    ],
+    "kind": "should",
+    "notes": "should-trigger visual-novel. Ren'Py port"
+  },
+  {
+    "id": "visual-novel.nm",
+    "prompt": "barks and branching npc dialogue for my stealth game using yarn spinner",
+    "expected": [
+      "dialogue-systems"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for visual-novel. near-miss: branching dialogue, not a VN"
+  },
+  {
+    "id": "godot-2d-movement.s1",
+    "prompt": "is_on_floor() flickers true/false on slopes with my CharacterBody2D so jumping randomly fails, godot 4.7. floor_snap_length is default, i tried floor_max_angle too, didnt help",
+    "expected": [
+      "godot-2d-movement"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-2d-movement. floor detection"
+  },
+  {
+    "id": "godot-2d-movement.s2",
+    "prompt": "top down 8 direction movement with acceleration and friction in godot 4, gdscript",
+    "expected": [
+      "godot-2d-movement"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-2d-movement. top-down"
+  },
+  {
+    "id": "godot-2d-movement.s3",
+    "prompt": "enemy CharacterBody2D should walk back and forth and turn around at ledges and walls",
+    "expected": [
+      "godot-2d-movement"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-2d-movement. enemy controller"
+  },
+  {
+    "id": "godot-2d-movement.nm",
+    "prompt": "the RigidBody2D ball in my godot pinball game passes straight through the flippers at high speed",
+    "expected": [
+      "godot-physics",
+      "physics-tuning"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-2d-movement. near-miss: 2D body but rigid physics + tunneling"
+  },
+  {
+    "id": "godot-3d-essentials.s1",
+    "prompt": "godot 4.7 3d scene looks flat and grey. want a sky, directional light shadows, agx tonemap, some glow",
+    "expected": [
+      "godot-3d-essentials"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-3d-essentials. environment/lighting"
+  },
+  {
+    "id": "godot-3d-essentials.s2",
+    "prompt": "build a 3d dungeon with GridMap and a MeshLibrary from my blender kit pieces",
+    "expected": [
+      "godot-3d-essentials"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-3d-essentials. GridMap"
+  },
+  {
+    "id": "godot-3d-essentials.s3",
+    "prompt": "rotating with rotation.y vs basis in godot, my turret spins around the wrong axis once its parent rotates",
+    "expected": [
+      "godot-3d-essentials"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-3d-essentials. Node3D transforms"
+  },
+  {
+    "id": "godot-3d-essentials.nm",
+    "prompt": "i need a 3d sword model for my godot game, write the brief for the artist: poly budget, texture size, material notes",
+    "expected": [
+      "create-game-assets"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-3d-essentials. near-miss: 3D + Godot but asset brief"
+  },
+  {
+    "id": "godot-animation.s1",
+    "prompt": "AnimationTree state machine in godot 4.7: idle/run/jump, travel() doesnt transition and the blend position isnt updating",
+    "expected": [
+      "godot-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-animation. AnimationTree"
+  },
+  {
+    "id": "godot-animation.s2",
+    "prompt": "how do i use create_tween() to slide a ui panel in with a bounce, then chain a fade",
+    "expected": [
+      "godot-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-animation. Tween"
+  },
+  {
+    "id": "godot-animation.s3",
+    "prompt": "AnimationPlayer call method track to spawn the hitbox on frame 4 of the attack anim",
+    "expected": [
+      "godot-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-animation. call method track"
+  },
+  {
+    "id": "godot-animation.nm",
+    "prompt": "unity animator blend tree for 8 direction movement, SetFloat doesnt seem to change anything",
+    "expected": [
+      "unity-animation"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-animation. near-miss: blend tree, Unity"
+  },
+  {
+    "id": "godot-audio.s1",
+    "prompt": "godot 4.7: music volume from a settings HSlider (0-100), i set AudioServer.set_bus_volume_db(idx, value) and it goes silent way too early. db vs linear?",
+    "expected": [
+      "godot-audio"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-audio. bus volume"
+  },
+  {
+    "id": "godot-audio.s2",
+    "prompt": "rhythm game in godot, notes drift out of sync with the song over time. get_playback_position seems jittery",
+    "expected": [
+      "godot-audio"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-audio. AMBIGUOUS: audio-design also lists beat sync"
+  },
+  {
+    "id": "godot-audio.s3",
+    "prompt": "AudioStreamPlayer3D gunshot is too quiet far away and has no falloff, which attenuation settings",
+    "expected": [
+      "godot-audio"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-audio. 3D attenuation"
+  },
+  {
+    "id": "godot-audio.nm",
+    "prompt": "plan the soundtrack layering for my boss fight phases, which instruments come in at which phase",
+    "expected": [
+      "audio-design"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-audio. near-miss: music, no engine"
+  },
+  {
+    "id": "godot-csharp.s1",
+    "prompt": "godot 4.7 C#: my [Signal] delegate EventHandler doesnt show up in the editor and i get a 'partial class' error",
+    "expected": [
+      "godot-csharp"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-csharp. C# signals"
+  },
+  {
+    "id": "godot-csharp.s2",
+    "prompt": "converting my gdscript player to c# in godot. how do @onready and @export translate",
+    "expected": [
+      "godot-csharp"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-csharp. AMBIGUOUS: godot-gdscript may load as the source side"
+  },
+  {
+    "id": "godot-csharp.s3",
+    "prompt": "call a gdscript function from c# in godot 4 and get the return value back",
+    "expected": [
+      "godot-csharp"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-csharp. cross-language"
+  },
+  {
+    "id": "godot-csharp.nm",
+    "prompt": "unity c# GetComponent returns null in Start, script is on the same object",
+    "expected": [
+      "unity-csharp-scripting"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-csharp. near-miss: C#, Unity"
+  },
+  {
+    "id": "godot-export.s1",
+    "prompt": "exported my godot 4.7 game to web and host it on my own nginx box, browser says SharedArrayBuffer / cross-origin isolation error",
+    "expected": [
+      "godot-export"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-export. COOP/COEP"
+  },
+  {
+    "id": "godot-export.s2",
+    "prompt": "github actions job to export windows + linux builds of my godot project headless, 'no export template found' error",
+    "expected": [
+      "godot-export"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-export. AMBIGUOUS: godot-gdscript-headless-testing also says headless + CI"
+  },
+  {
+    "id": "godot-export.s3",
+    "prompt": "android export from godot 4.7 fails: debug keystore not configured",
+    "expected": [
+      "godot-export"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-export. Android"
+  },
+  {
+    "id": "godot-export.nm",
+    "prompt": "godot --headless runs my test script but the exit code is always 0 even when asserts fail",
+    "expected": [
+      "godot-gdscript-headless-testing"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-export. near-miss: headless CLI, testing"
+  },
+  {
+    "id": "godot-gdscript.s1",
+    "prompt": "port this godot 3 gdscript to 4.7: yield(get_tree().create_timer(1), 'timeout'), export var speed = 200, onready var sprite = $Sprite",
+    "expected": [
+      "godot-gdscript"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript. 3.x -> 4.x port"
+  },
+  {
+    "id": "godot-gdscript.s2",
+    "prompt": "how strict should static typing be in gdscript? warnings as errors, typed arrays like Array[Enemy], is it worth it",
+    "expected": [
+      "godot-gdscript"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript. typing"
+  },
+  {
+    "id": "godot-gdscript.s3",
+    "prompt": "@tool script so my spawner shows its radius in the editor viewport, godot 4.7",
+    "expected": [
+      "godot-gdscript"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript. @tool"
+  },
+  {
+    "id": "godot-gdscript.nm",
+    "prompt": "gdscript syntax highlighting isnt working in neovim with treesitter",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-gdscript. near-miss: GDScript word, editor config"
+  },
+  {
+    "id": "godot-gdscript-headless-testing.s1",
+    "prompt": "want unit tests for my inventory.gd without installing GUT, just run them from the cli in CI and fail the build",
+    "expected": [
+      "godot-gdscript-headless-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript-headless-testing. CLI tests"
+  },
+  {
+    "id": "godot-gdscript-headless-testing.s2",
+    "prompt": "godot --headless --script res://tests/run.gd hangs forever in github actions",
+    "expected": [
+      "godot-gdscript-headless-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript-headless-testing. hang"
+  },
+  {
+    "id": "godot-gdscript-headless-testing.s3",
+    "prompt": "my test runner extends SceneTree, how do i make it quit with exit code 1 when a test fails",
+    "expected": [
+      "godot-gdscript-headless-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-gdscript-headless-testing. exit code"
+  },
+  {
+    "id": "godot-gdscript-headless-testing.nm",
+    "prompt": "set up a headless dedicated server build for my godot multiplayer game",
+    "expected": [
+      "godot-export"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-gdscript-headless-testing. near-miss: headless, but export. AMBIGUOUS: godot-multiplayer may also load"
+  },
+  {
+    "id": "godot-multiplayer.s1",
+    "prompt": "add 2 player online coop to my godot 4.7 game, ENet host/join and spawn a player for each peer",
+    "expected": [
+      "godot-multiplayer"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-multiplayer. ENet + spawning"
+  },
+  {
+    "id": "godot-multiplayer.s2",
+    "prompt": "@rpc(\"any_peer\") function runs on the server but clients never see the change, im confused about set_multiplayer_authority",
+    "expected": [
+      "godot-multiplayer"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-multiplayer. RPC/authority"
+  },
+  {
+    "id": "godot-multiplayer.s3",
+    "prompt": "MultiplayerSynchronizer isnt syncing position for players who join late",
+    "expected": [
+      "godot-multiplayer"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-multiplayer. late join"
+  },
+  {
+    "id": "godot-multiplayer.nm",
+    "prompt": "my roblox multiplayer game: how do i sync the round timer to all clients without spamming remotes",
+    "expected": [
+      "roblox-networking"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-multiplayer. near-miss: multiplayer sync, Roblox"
+  },
+  {
+    "id": "godot-nodes-scenes.s1",
+    "prompt": "how should i split my godot project into scenes? player, weapons, enemies, level. when do i instance vs use inherited scenes",
+    "expected": [
+      "godot-nodes-scenes"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-nodes-scenes. scene composition"
+  },
+  {
+    "id": "godot-nodes-scenes.s2",
+    "prompt": "get_node(\"Player\") returns null after i reparented a bunch of stuff, 'node not found' error, godot 4.7",
+    "expected": [
+      "godot-nodes-scenes"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-nodes-scenes. AMBIGUOUS: godot-gdscript may also claim node lookup"
+  },
+  {
+    "id": "godot-nodes-scenes.s3",
+    "prompt": "autoload singleton for game state vs passing references around, and spawning bullets with preload().instantiate()",
+    "expected": [
+      "godot-nodes-scenes"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-nodes-scenes. autoload + instancing"
+  },
+  {
+    "id": "godot-nodes-scenes.nm",
+    "prompt": "three.js: added a child mesh to a Group and its world position is all wrong",
+    "expected": [
+      "threejs-scene-setup"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-nodes-scenes. near-miss: scene graph, three.js"
+  },
+  {
+    "id": "godot-physics.s1",
+    "prompt": "collision layers vs masks in godot 4.7, i still dont get it after reading teh docs twice. enemies should hit the player but not eachother",
+    "expected": [
+      "godot-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-physics. AMBIGUOUS: physics-tuning also lists collision layers"
+  },
+  {
+    "id": "godot-physics.s2",
+    "prompt": "PhysicsDirectSpaceState3D intersect_ray to check line of sight from enemy to player, excluding the enemy itself",
+    "expected": [
+      "godot-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-physics. raycast query"
+  },
+  {
+    "id": "godot-physics.s3",
+    "prompt": "RigidBody3D with jolt in 4.7: apply_central_impulse for an explosion pushing nearby crates",
+    "expected": [
+      "godot-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-physics. impulses"
+  },
+  {
+    "id": "godot-physics.nm",
+    "prompt": "physics objects jitter at high refresh rates in my monogame engine, fixed timestep + interpolation question",
+    "expected": [
+      "physics-tuning"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-physics. near-miss: physics, no Godot"
+  },
+  {
+    "id": "godot-resources.s1",
+    "prompt": "make items data driven in godot 4.7: an Item resource with class_name and @export icon/name/stats, one .tres per item",
+    "expected": [
+      "godot-resources"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-resources. custom Resource"
+  },
+  {
+    "id": "godot-resources.s2",
+    "prompt": "changing a value on one enemy's .tres changes it on ALL enemies?? do i need duplicate()",
+    "expected": [
+      "godot-resources"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-resources. shared resource gotcha"
+  },
+  {
+    "id": "godot-resources.s3",
+    "prompt": "ResourceLoader.load_threaded_request for a loading screen with a progress bar",
+    "expected": [
+      "godot-resources"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-resources. threaded loading"
+  },
+  {
+    "id": "godot-resources.nm",
+    "prompt": "unity ScriptableObject event channels for decoupling systems",
+    "expected": [
+      "unity-scriptableobjects"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-resources. near-miss: data assets, Unity"
+  },
+  {
+    "id": "godot-shaders.s1",
+    "prompt": "write a .gdshader canvas_item shader for water distortion using hint_screen_texture, godot 4.7",
+    "expected": [
+      "godot-shaders"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-shaders. screen-reading"
+  },
+  {
+    "id": "godot-shaders.s2",
+    "prompt": "spatial shader for a dissolve on enemy death in godot 4.7, with a hint_range uniform for progress",
+    "expected": [
+      "godot-shaders"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-shaders. AMBIGUOUS: shader-programming also owns dissolve"
+  },
+  {
+    "id": "godot-shaders.s3",
+    "prompt": "godot 4.7 sprite outline shader, the outline gets cut off at the sprite's edges",
+    "expected": [
+      "godot-shaders"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-shaders. outline clipping"
+  },
+  {
+    "id": "godot-shaders.nm",
+    "prompt": "im learning opengl for my game engine, explain conceptually what the vertex shader vs fragment shader does",
+    "expected": [
+      "shader-programming"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-shaders. near-miss: shader fundamentals, no Godot"
+  },
+  {
+    "id": "godot-signals-groups.s1",
+    "prompt": "replace get_parent().get_parent().score += 1 with signals in godot 4.7. how do i connect from code with a Callable",
+    "expected": [
+      "godot-signals-groups"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-signals-groups. signals"
+  },
+  {
+    "id": "godot-signals-groups.s2",
+    "prompt": "call_group(\"enemies\", \"freeze\") vs signals, when should i use groups",
+    "expected": [
+      "godot-signals-groups"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-signals-groups. groups"
+  },
+  {
+    "id": "godot-signals-groups.s3",
+    "prompt": "port connect(\"hit\", self, \"_on_hit\", [damage]) from godot 3 to 4 with bind",
+    "expected": [
+      "godot-signals-groups"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-signals-groups. AMBIGUOUS: godot-gdscript desc also covers 3.x->4.x ports and signals"
+  },
+  {
+    "id": "godot-signals-groups.nm",
+    "prompt": "unity: UnityEvent vs ScriptableObject event channels for decoupling ui from the player",
+    "expected": [
+      "unity-scriptableobjects"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-signals-groups. near-miss: decoupling events, Unity"
+  },
+  {
+    "id": "godot-tilemap.s1",
+    "prompt": "godot 4.7 says TileMap is deprecated, how do i migrate to TileMapLayer with my 3 layers",
+    "expected": [
+      "godot-tilemap"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-tilemap. migration"
+  },
+  {
+    "id": "godot-tilemap.s2",
+    "prompt": "terrain autotile in my tileset doesnt pick the right corners, 3x3 minimal setup",
+    "expected": [
+      "godot-tilemap"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-tilemap. terrain sets"
+  },
+  {
+    "id": "godot-tilemap.s3",
+    "prompt": "read custom data 'damage' from the tile the player is standing on, local_to_map + get_cell_tile_data",
+    "expected": [
+      "godot-tilemap"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-tilemap. custom data"
+  },
+  {
+    "id": "godot-tilemap.nm",
+    "prompt": "design a 16x16 tileset art style with grass/dirt/water transitions for my godot game",
+    "expected": [
+      "create-game-assets"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-tilemap. near-miss: tileset art. AMBIGUOUS: godot-tilemap may load for import/terrain"
+  },
+  {
+    "id": "godot-ui-control.s1",
+    "prompt": "godot 4.7 hud: VBoxContainer children ignore my custom size and the full rect anchor preset messes everything up",
+    "expected": [
+      "godot-ui-control"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-ui-control. containers/anchors"
+  },
+  {
+    "id": "godot-ui-control.s2",
+    "prompt": "make a Theme resource so all buttons and labels share font and style in godot",
+    "expected": [
+      "godot-ui-control"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-ui-control. themes"
+  },
+  {
+    "id": "godot-ui-control.s3",
+    "prompt": "focus neighbors for gamepad nav in my godot main menu, grab_focus() isnt working",
+    "expected": [
+      "godot-ui-control"
+    ],
+    "kind": "should",
+    "notes": "should-trigger godot-ui-control. AMBIGUOUS: router pairs godot-ui-control with game-ui-ux for menus"
+  },
+  {
+    "id": "godot-ui-control.nm",
+    "prompt": "roblox ScreenGui inventory resets every time the player respawns",
+    "expected": [
+      "roblox-ui"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for godot-ui-control. near-miss: UI, Roblox"
+  },
+  {
+    "id": "bevy-ecs.s1",
+    "prompt": "bevy 0.17: system doesnt seem to run. added with add_systems(Update, move_player) but Query<&mut Transform, With<Player>> finds nothing",
+    "expected": [
+      "bevy-ecs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-ecs. query mismatch"
+  },
+  {
+    "id": "bevy-ecs.s2",
+    "prompt": "spawn enemies with Commands and despawn them when they leave the screen in bevy, movement frame-rate independent with Time",
+    "expected": [
+      "bevy-ecs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-ecs. commands + time"
+  },
+  {
+    "id": "bevy-ecs.s3",
+    "prompt": "structuring my bevy game into plugins and states (menu, playing, paused)",
+    "expected": [
+      "bevy-ecs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-ecs. plugins/states"
+  },
+  {
+    "id": "bevy-ecs.nm",
+    "prompt": "writing an ECS from scratch in C for my own engine, archetype storage vs sparse sets",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for bevy-ecs. near-miss: ECS but not Bevy; custom engine architecture, no skill"
+  },
+  {
+    "id": "defold-core.s1",
+    "prompt": "defold: msg.post to another game object's script never arrives, url is \"enemy#script\" and on_message is never called",
+    "expected": [
+      "defold-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger defold-core. message passing"
+  },
+  {
+    "id": "defold-core.s2",
+    "prompt": "factory.create bullets in defold and set a go.property speed on each one when spawning",
+    "expected": [
+      "defold-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger defold-core. factories"
+  },
+  {
+    "id": "defold-core.s3",
+    "prompt": "bob.jar build fails in CI with 'resource not found' for my defold project",
+    "expected": [
+      "defold-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger defold-core. Bob build"
+  },
+  {
+    "id": "defold-core.nm",
+    "prompt": "pico-8 game: how do i read input with btn() and spawn bullets into a table",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for defold-core. near-miss: Lua spawn/input, unsupported engine"
+  },
+  {
+    "id": "love2d-core.s1",
+    "prompt": "love2d game, movement speed is different on 60hz vs 144hz monitors. am i supposed to multiply by dt in love.update?",
+    "expected": [
+      "love2d-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger love2d-core. dt"
+  },
+  {
+    "id": "love2d-core.s2",
+    "prompt": "how do i structure menu/play/gameover states in love2d 11.5 without pulling in hump or a library, my main.lua is 900 lines of if state == ...",
+    "expected": [
+      "love2d-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger love2d-core. states"
+  },
+  {
+    "id": "love2d-core.s3",
+    "prompt": "package my love2d game as a .love file and a windows exe",
+    "expected": [
+      "love2d-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger love2d-core. packaging"
+  },
+  {
+    "id": "love2d-core.nm",
+    "prompt": "roblox luau script to move a part up and down smoothly",
+    "expected": [
+      "roblox-luau"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for love2d-core. near-miss: Lua dialect, Roblox"
+  },
+  {
+    "id": "pygame-core.s1",
+    "prompt": "pygame-ce 2.5: sprites flicker, i think im calling display.flip() twice? also clock.tick(60) vs using dt for movement, whats the right way",
+    "expected": [
+      "pygame-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pygame-core. loop/flip"
+  },
+  {
+    "id": "pygame-core.s2",
+    "prompt": "pygame sprite group collision with spritecollide, want pixel perfect with masks",
+    "expected": [
+      "pygame-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pygame-core. collision"
+  },
+  {
+    "id": "pygame-core.s3",
+    "prompt": "my first pygame game, breakout. set up the loop, paddle input, ball bouncing off bricks",
+    "expected": [
+      "pygame-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pygame-core. beginner"
+  },
+  {
+    "id": "pygame-core.nm",
+    "prompt": "matplotlib FuncAnimation is slow redrawing every frame, someone said use blit=True",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for pygame-core. near-miss: 'blit' + frame loop, not a game"
+  },
+  {
+    "id": "roblox-characters.s1",
+    "prompt": "roblox: my sprint script breaks after the player dies and respawns, it still holds the old Humanoid",
+    "expected": [
+      "roblox-characters"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-characters. stale reference"
+  },
+  {
+    "id": "roblox-characters.s2",
+    "prompt": "load and play a custom run animation on R15 with Animator:LoadAnimation, plus animation event markers for footsteps",
+    "expected": [
+      "roblox-characters"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-characters. animations"
+  },
+  {
+    "id": "roblox-characters.s3",
+    "prompt": "i want the player's character to be a ball instead of the default avatar in roblox",
+    "expected": [
+      "roblox-characters"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-characters. custom rig"
+  },
+  {
+    "id": "roblox-characters.nm",
+    "prompt": "my roblox shop gui disappears every time the character respawns",
+    "expected": [
+      "roblox-ui"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-characters. near-miss: respawn, but UI"
+  },
+  {
+    "id": "roblox-datastores.s1",
+    "prompt": "roblox: save player coins and level on leave, load on join, with pcall and BindToClose",
+    "expected": [
+      "roblox-datastores"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-datastores. basic persistence"
+  },
+  {
+    "id": "roblox-datastores.s2",
+    "prompt": "OrderedDataStore global leaderboard for top 100 kills, refreshing every minute",
+    "expected": [
+      "roblox-datastores"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-datastores. leaderboards"
+  },
+  {
+    "id": "roblox-datastores.s3",
+    "prompt": "UpdateAsync vs SetAsync? players lose data when they hop between servers quickly",
+    "expected": [
+      "roblox-datastores"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-datastores. race conditions"
+  },
+  {
+    "id": "roblox-datastores.nm",
+    "prompt": "persistence for my godot game: save player progress to user:// as json",
+    "expected": [
+      "save-systems"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-datastores. near-miss: save player data, Godot"
+  },
+  {
+    "id": "roblox-luau.s1",
+    "prompt": "roblox beginner here: make a part that gives 10 coins when touched, server script, leaderstats",
+    "expected": [
+      "roblox-luau"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-luau. basics"
+  },
+  {
+    "id": "roblox-luau.s2",
+    "prompt": "LocalScript can't see a value i set on the server, client vs server confusion in roblox",
+    "expected": [
+      "roblox-luau"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-luau. AMBIGUOUS: roblox-networking covers replication too"
+  },
+  {
+    "id": "roblox-luau.s3",
+    "prompt": "luau --!strict in my ModuleScript, how do i type a table of functions",
+    "expected": [
+      "roblox-luau"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-luau. types"
+  },
+  {
+    "id": "roblox-luau.nm",
+    "prompt": "exploiters are firing my roblox remotes 1000 times a second",
+    "expected": [
+      "roblox-networking"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-luau. near-miss: RemoteEvent, security"
+  },
+  {
+    "id": "roblox-networking.s1",
+    "prompt": "exploiters keep fireing my DamageEvent RemoteEvent with giant numbers (like 9e9 dmg) and one shotting bosses. client sends (target, damage). how do i validate this on the server properly",
+    "expected": [
+      "roblox-networking"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-networking. validation"
+  },
+  {
+    "id": "roblox-networking.s2",
+    "prompt": "UnreliableRemoteEvent for sending cursor positions 20x/sec to other players, is that the right tool",
+    "expected": [
+      "roblox-networking"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-networking. unreliable remotes"
+  },
+  {
+    "id": "roblox-networking.s3",
+    "prompt": "projectiles look delayed on the client in my roblox game. should i predict on the client and reconcile with the server",
+    "expected": [
+      "roblox-networking"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-networking. AMBIGUOUS: roblox-physics also lists projectiles"
+  },
+  {
+    "id": "roblox-networking.nm",
+    "prompt": "my roblox game lags hard on mobile with ~500 moving parts",
+    "expected": [
+      "performance-optimization",
+      "roblox-physics"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-networking. near-miss: 'lag' is fps, not network. AMBIGUOUS: lag is a networking word too"
+  },
+  {
+    "id": "roblox-physics.s1",
+    "prompt": "raycast for my roblox gun with RaycastParams so it ignores the shooter's character and accessories",
+    "expected": [
+      "roblox-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-physics. RaycastParams"
+  },
+  {
+    "id": "roblox-physics.s2",
+    "prompt": "replace deprecated BodyVelocity in my roblox car with LinearVelocity / AlignOrientation",
+    "expected": [
+      "roblox-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-physics. BodyMovers"
+  },
+  {
+    "id": "roblox-physics.s3",
+    "prompt": "parts with CanCollide off still block my raycasts. CanQuery? collision groups in PhysicsService?",
+    "expected": [
+      "roblox-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-physics. queries"
+  },
+  {
+    "id": "roblox-physics.nm",
+    "prompt": "my roblox walkspeed boost doesnt apply after the character respawns",
+    "expected": [
+      "roblox-characters"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-physics. near-miss: movement, character lifecycle"
+  },
+  {
+    "id": "roblox-simulator-economy.s1",
+    "prompt": "roblox clicker sim: upgrade cost is baseCost * 1.15^n. how do i compute buy max without looping",
+    "expected": [
+      "roblox-simulator-economy"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-simulator-economy. cost curve"
+  },
+  {
+    "id": "roblox-simulator-economy.s2",
+    "prompt": "so my roblox mining sim has been doing ok (~800 ccu on weekends) but retention dies around rebirth 5. rebirth 4 takes like 40 min and rebirth 5 takes 6+ hours?? requirement is 1e6 * 10^rebirths and the multiplier is 1 + rebirths*0.5. i think the curve is wrong somewhere but i cant tell where",
+    "expected": [
+      "roblox-simulator-economy"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-simulator-economy. pacing"
+  },
+  {
+    "id": "roblox-simulator-economy.s3",
+    "prompt": "my roblox tycoon number formatter shows 1000K instead of 1M and breaks after 1e15 (Qa)",
+    "expected": [
+      "roblox-simulator-economy"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-simulator-economy. big numbers"
+  },
+  {
+    "id": "roblox-simulator-economy.nm",
+    "prompt": "balancing gold income across waves in my godot tower defense",
+    "expected": [
+      "tower-defense"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-simulator-economy. near-miss: economy, not Roblox"
+  },
+  {
+    "id": "roblox-studio-workflow.s1",
+    "prompt": "in roblox studio, where should this script go? ServerScriptService, StarterPlayerScripts, or a ModuleScript in ReplicatedStorage",
+    "expected": [
+      "roblox-studio-workflow"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-studio-workflow. placement"
+  },
+  {
+    "id": "roblox-studio-workflow.s2",
+    "prompt": "test my roblox game with 2 players locally (Server & Clients) and check Output for both",
+    "expected": [
+      "roblox-studio-workflow"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-studio-workflow. multi-client test"
+  },
+  {
+    "id": "roblox-studio-workflow.s3",
+    "prompt": "tag all the lava parts with CollectionService and give them a Damage attribute, instead of a script in every part",
+    "expected": [
+      "roblox-studio-workflow"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-studio-workflow. tags/attributes"
+  },
+  {
+    "id": "roblox-studio-workflow.nm",
+    "prompt": "unity: where do editor scripts go vs runtime scripts, the Editor folder thing",
+    "expected": [
+      "unity-csharp-scripting"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-studio-workflow. near-miss: script placement, Unity"
+  },
+  {
+    "id": "roblox-ui.s1",
+    "prompt": "roblox inventory ScrollingFrame with UIGridLayout, AutomaticSize canvas wont grow with items",
+    "expected": [
+      "roblox-ui"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-ui. scrolling"
+  },
+  {
+    "id": "roblox-ui.s2",
+    "prompt": "roblox hud looks fine on pc but buttons sit under the notch on iphone, safe insets",
+    "expected": [
+      "roblox-ui"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-ui. AMBIGUOUS: router pairs roblox-ui with game-ui-ux"
+  },
+  {
+    "id": "roblox-ui.s3",
+    "prompt": "gamepad selection in my roblox shop menu, GuiService.SelectedObject",
+    "expected": [
+      "roblox-ui"
+    ],
+    "kind": "should",
+    "notes": "should-trigger roblox-ui. gamepad"
+  },
+  {
+    "id": "roblox-ui.nm",
+    "prompt": "hud for my unity mobile game, handle notch safe area on iphone",
+    "expected": [
+      "game-ui-ux"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for roblox-ui. near-miss: safe area, Unity"
+  },
+  {
+    "id": "unity-animation.s1",
+    "prompt": "unity 6 animator: transition from Attack back to Idle has a delay, is it has exit time?",
+    "expected": [
+      "unity-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-animation. transitions"
+  },
+  {
+    "id": "unity-animation.s2",
+    "prompt": "2d freeform directional blend tree for strafing, SetFloat MoveX / MoveY from input",
+    "expected": [
+      "unity-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-animation. blend tree"
+  },
+  {
+    "id": "unity-animation.s3",
+    "prompt": "humanoid foot IK with OnAnimatorIK so feet sit on stairs",
+    "expected": [
+      "unity-animation"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-animation. IK"
+  },
+  {
+    "id": "unity-animation.nm",
+    "prompt": "animate my aseprite sprite frames in pixijs with AnimatedSprite",
+    "expected": [
+      "pixijs-rendering"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-animation. near-miss: animation, PixiJS"
+  },
+  {
+    "id": "unity-build-pipeline.s1",
+    "prompt": "script a unity 6 build with BuildPipeline.BuildPlayer for windows + mac from the command line in CI (-batchmode -executeMethod)",
+    "expected": [
+      "unity-build-pipeline"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-pipeline. scripted builds"
+  },
+  {
+    "id": "unity-build-pipeline.s2",
+    "prompt": "IL2CPP vs Mono for my android release, and managed stripping level High breaks my reflection-based json",
+    "expected": [
+      "unity-build-pipeline"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-pipeline. backend/stripping"
+  },
+  {
+    "id": "unity-build-pipeline.s3",
+    "prompt": "setting up Addressables for DLC levels, and which scenes go in build settings",
+    "expected": [
+      "unity-build-pipeline"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-pipeline. Addressables"
+  },
+  {
+    "id": "unity-build-pipeline.nm",
+    "prompt": "unity build is 1.2gb and sharedassets0.resS alone is 900mb, why",
+    "expected": [
+      "unity-build-size"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-build-pipeline. near-miss: build, but size. AMBIGUOUS: unity-build-pipeline desc also says shrinking build size"
+  },
+  {
+    "id": "unity-build-size.s1",
+    "prompt": "unity 6000.3 webgl build for the jam has to be under 200mb and mine is 480mb zipped. i only have like 6 small levels?? how do i find whats eating the space",
+    "expected": [
+      "unity-build-size"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-size. AMBIGUOUS: game-jam may load for the jam context"
+  },
+  {
+    "id": "unity-build-size.s2",
+    "prompt": "imported a bunch of .glb models with glTFast and the build jumped 300mb, are the textures shipping uncompressed?",
+    "expected": [
+      "unity-build-size"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-size. glTFast bloat"
+  },
+  {
+    "id": "unity-build-size.s3",
+    "prompt": "where's the build report in Editor.log and how do i read it to see the biggest assets",
+    "expected": [
+      "unity-build-size"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-build-size. build report"
+  },
+  {
+    "id": "unity-build-size.nm",
+    "prompt": "unity build takes 40 minutes every time, how do i speed up build times",
+    "expected": [
+      "unity-build-pipeline"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-build-size. near-miss: build, but speed"
+  },
+  {
+    "id": "unity-csharp-scripting.s1",
+    "prompt": "unity 6: GetComponent<Health>() returns null in Awake, the component is on a child object",
+    "expected": [
+      "unity-csharp-scripting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-csharp-scripting. component access"
+  },
+  {
+    "id": "unity-csharp-scripting.s2",
+    "prompt": "coroutine stops when i disable the gameobject, how do i keep a timer running",
+    "expected": [
+      "unity-csharp-scripting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-csharp-scripting. coroutines"
+  },
+  {
+    "id": "unity-csharp-scripting.s3",
+    "prompt": "[SerializeField] private List<MyClass> doesnt show up in the inspector",
+    "expected": [
+      "unity-csharp-scripting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-csharp-scripting. serialization"
+  },
+  {
+    "id": "unity-csharp-scripting.nm",
+    "prompt": "c# async/await in my asp.net core api deadlocks on .Result",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-csharp-scripting. near-miss: C#, not Unity"
+  },
+  {
+    "id": "unity-input-system.s1",
+    "prompt": "unity 6 new input system, PlayerInput set to Send Messages, OnMove never gets called",
+    "expected": [
+      "unity-input-system"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-input-system. PlayerInput"
+  },
+  {
+    "id": "unity-input-system.s2",
+    "prompt": "runtime rebinding with PerformInteractiveRebinding and saving the overrides to json",
+    "expected": [
+      "unity-input-system"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-input-system. AMBIGUOUS: input-systems also owns rebinding"
+  },
+  {
+    "id": "unity-input-system.s3",
+    "prompt": "two control schemes (keyboard + gamepad), local coop with PlayerInputManager",
+    "expected": [
+      "unity-input-system"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-input-system. control schemes"
+  },
+  {
+    "id": "unity-input-system.nm",
+    "prompt": "ue5 jump input action never fires even though i added the mapping context",
+    "expected": [
+      "unreal-enhanced-input"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-input-system. near-miss: input actions, Unreal"
+  },
+  {
+    "id": "unity-navmesh.s1",
+    "prompt": "unity 6: bake the navmesh at runtime for procedurally placed rooms with NavMeshSurface",
+    "expected": [
+      "unity-navmesh"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-navmesh. runtime bake"
+  },
+  {
+    "id": "unity-navmesh.s2",
+    "prompt": "enemy NavMeshAgent should chase the player, is calling SetDestination every frame expensive?",
+    "expected": [
+      "unity-navmesh"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-navmesh. chase"
+  },
+  {
+    "id": "unity-navmesh.s3",
+    "prompt": "doors are NavMeshObstacle with carve on but agents still walk through closed doors",
+    "expected": [
+      "unity-navmesh"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-navmesh. obstacles"
+  },
+  {
+    "id": "unity-navmesh.nm",
+    "prompt": "A* on a hex grid for my turn-based strategy game, its in unity but i want my own pathfinding not navmesh",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-navmesh. near-miss: Unity pathfinding, explicitly not NavMesh"
+  },
+  {
+    "id": "unity-physics.s1",
+    "prompt": "OnTriggerEnter isnt firing between my player and the coin, both have colliders",
+    "expected": [
+      "unity-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-physics. triggers"
+  },
+  {
+    "id": "unity-physics.s2",
+    "prompt": "rigidbody.velocity is obsolete in unity 6, use linearVelocity? and AddForce with ForceMode.Impulse for a jump",
+    "expected": [
+      "unity-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-physics. API change"
+  },
+  {
+    "id": "unity-physics.s3",
+    "prompt": "Physics.Raycast with a layer mask that ignores the player layer",
+    "expected": [
+      "unity-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-physics. raycasts"
+  },
+  {
+    "id": "unity-physics.nm",
+    "prompt": "my 2d unity character with a Rigidbody2D falls through the TilemapCollider2D",
+    "expected": [
+      "unity-tilemap-2d"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-physics. near-miss: physics words, 2D tilemap collider. AMBIGUOUS: unity-physics is 3D-only; Rigidbody2D has no clear owner"
+  },
+  {
+    "id": "unity-scriptableobjects.s1",
+    "prompt": "my unity 6 project has a GameManager singleton that like 40 scripts reference and its a nightmare. want to replace it with ScriptableObject event channels and runtime sets, where do i start without breaking everything",
+    "expected": [
+      "unity-scriptableobjects"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-scriptableobjects. SO architecture"
+  },
+  {
+    "id": "unity-scriptableobjects.s2",
+    "prompt": "CreateAssetMenu for weapon data, why do values i change in play mode stay changed after i exit",
+    "expected": [
+      "unity-scriptableobjects"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-scriptableobjects. play mode persistence"
+  },
+  {
+    "id": "unity-scriptableobjects.s3",
+    "prompt": "shared FloatVariable SO for player hp that the hud reads",
+    "expected": [
+      "unity-scriptableobjects"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-scriptableobjects. shared variables"
+  },
+  {
+    "id": "unity-scriptableobjects.nm",
+    "prompt": "godot custom resources for weapon data",
+    "expected": [
+      "godot-resources"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-scriptableobjects. near-miss: data assets, Godot"
+  },
+  {
+    "id": "unity-tilemap-2d.s1",
+    "prompt": "rule tile setup in unity 6 for walls with inner and outer corners",
+    "expected": [
+      "unity-tilemap-2d"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-tilemap-2d. rule tiles"
+  },
+  {
+    "id": "unity-tilemap-2d.s2",
+    "prompt": "generate a level at runtime with Tilemap.SetTile from a 2d int array",
+    "expected": [
+      "unity-tilemap-2d"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-tilemap-2d. SetTile"
+  },
+  {
+    "id": "unity-tilemap-2d.s3",
+    "prompt": "TilemapCollider2D + CompositeCollider2D, player catches on the seams between tiles",
+    "expected": [
+      "unity-tilemap-2d"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unity-tilemap-2d. colliders"
+  },
+  {
+    "id": "unity-tilemap-2d.nm",
+    "prompt": "design a fun layout for level 1 of my 2d unity platformer, where to teach jump vs dash",
+    "expected": [
+      "level-design",
+      "platformer"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unity-tilemap-2d. near-miss: Unity 2D level, but design. AMBIGUOUS: unity-tilemap-2d may load"
+  },
+  {
+    "id": "unreal-behavior-trees.s1",
+    "prompt": "ue5.8 enemy behaviour tree: patrol, then chase when it sees the player. blackboard key should get set from AIPerception sight sense but it never changes",
+    "expected": [
+      "unreal-behavior-trees"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-behavior-trees. BT + perception"
+  },
+  {
+    "id": "unreal-behavior-trees.s2",
+    "prompt": "custom BTTask in c++, ExecuteTask returns InProgress, how do i finish a latent task properly",
+    "expected": [
+      "unreal-behavior-trees"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-behavior-trees. AMBIGUOUS: unreal-cpp-gameplay may also load for C++"
+  },
+  {
+    "id": "unreal-behavior-trees.s3",
+    "prompt": "BTService to update distance to target every 0.5s, and a decorator that aborts lower priority",
+    "expected": [
+      "unreal-behavior-trees"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-behavior-trees. services/decorators"
+  },
+  {
+    "id": "unreal-behavior-trees.nm",
+    "prompt": "whats better for my enemies, an FSM or a behavior tree? small 2d game",
+    "expected": [
+      "game-ai"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-behavior-trees. near-miss: behavior tree, model choice"
+  },
+  {
+    "id": "unreal-blueprints.s1",
+    "prompt": "ue5 blueprint: door opens when the player overlaps a trigger box, how do i wire the event graph",
+    "expected": [
+      "unreal-blueprints"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-blueprints. event graph"
+  },
+  {
+    "id": "unreal-blueprints.s2",
+    "prompt": "cast to BP_Player keeps failing, should i be using a blueprint interface or an event dispatcher",
+    "expected": [
+      "unreal-blueprints"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-blueprints. communication"
+  },
+  {
+    "id": "unreal-blueprints.s3",
+    "prompt": "construction script to place fence posts along a spline in the editor",
+    "expected": [
+      "unreal-blueprints"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-blueprints. construction script"
+  },
+  {
+    "id": "unreal-blueprints.nm",
+    "prompt": "UFUNCTION(BlueprintCallable) in my c++ class doesnt show up in blueprints",
+    "expected": [
+      "unreal-cpp-gameplay"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-blueprints. near-miss: Blueprints word, C++ reflection"
+  },
+  {
+    "id": "unreal-cpp-gameplay.s1",
+    "prompt": "ue 5.8 c++: GENERATED_BODY error and my UPROPERTY(EditAnywhere) doesnt show in details",
+    "expected": [
+      "unreal-cpp-gameplay"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-cpp-gameplay. reflection"
+  },
+  {
+    "id": "unreal-cpp-gameplay.s2",
+    "prompt": "custom GameMode with default pawn class set in c++ but the blueprint pawn spawns instead",
+    "expected": [
+      "unreal-cpp-gameplay"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-cpp-gameplay. gameplay framework"
+  },
+  {
+    "id": "unreal-cpp-gameplay.s3",
+    "prompt": "added UMG and EnhancedInput to Build.cs dependencies and still get linker errors",
+    "expected": [
+      "unreal-cpp-gameplay"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-cpp-gameplay. Build.cs"
+  },
+  {
+    "id": "unreal-cpp-gameplay.nm",
+    "prompt": "compiling unreal engine itself from the github source fails in visual studio 2022",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-cpp-gameplay. near-miss: Unreal C++, engine build. AMBIGUOUS: unreal-packaging could be picked"
+  },
+  {
+    "id": "unreal-enhanced-input.s1",
+    "prompt": "ue5 enhanced input: IA_Move axis2d with swizzle for WASD, IMC added in BeginPlay but nothing moves",
+    "expected": [
+      "unreal-enhanced-input"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-enhanced-input. IA/IMC"
+  },
+  {
+    "id": "unreal-enhanced-input.s2",
+    "prompt": "hold to charge an attack: ETriggerEvent::Triggered vs Ongoing vs Completed",
+    "expected": [
+      "unreal-enhanced-input"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-enhanced-input. triggers"
+  },
+  {
+    "id": "unreal-enhanced-input.s3",
+    "prompt": "bind IA_Jump in c++ SetupPlayerInputComponent, cast to UEnhancedInputComponent",
+    "expected": [
+      "unreal-enhanced-input"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-enhanced-input. AMBIGUOUS: unreal-cpp-gameplay may also load"
+  },
+  {
+    "id": "unreal-enhanced-input.nm",
+    "prompt": "design accessible control remapping that works on every platform, conflicts and ui, engine agnostic",
+    "expected": [
+      "input-systems"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-enhanced-input. near-miss: input mapping, no engine"
+  },
+  {
+    "id": "unreal-niagara.s1",
+    "prompt": "niagara explosion system with sparks and smoke, spawn it at the hit location from blueprint",
+    "expected": [
+      "unreal-niagara"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-niagara. spawning"
+  },
+  {
+    "id": "unreal-niagara.s2",
+    "prompt": "set a User parameter color on NS_Muzzle from c++",
+    "expected": [
+      "unreal-niagara"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-niagara. user params"
+  },
+  {
+    "id": "unreal-niagara.s3",
+    "prompt": "niagara particles disappear when the camera looks away, bounds issue?",
+    "expected": [
+      "unreal-niagara"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-niagara. bounds"
+  },
+  {
+    "id": "unreal-niagara.nm",
+    "prompt": "particle effect for snow in my unity game with VFX Graph",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-niagara. near-miss: particles/VFX, Unity. AMBIGUOUS: no Unity VFX skill; judge may pick unity-csharp-scripting or unreal-niagara"
+  },
+  {
+    "id": "unreal-packaging.s1",
+    "prompt": "package my ue5 game as a shipping build for windows. works perfect in PIE but the packaged exe loads into a black screen and log says it cant find /Game/Maps/Level_02",
+    "expected": [
+      "unreal-packaging"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-packaging. missing maps"
+  },
+  {
+    "id": "unreal-packaging.s2",
+    "prompt": "RunUAT BuildCookRun command line for CI",
+    "expected": [
+      "unreal-packaging"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-packaging. BuildCookRun"
+  },
+  {
+    "id": "unreal-packaging.s3",
+    "prompt": "cook content fails on one asset, how do i find which one and why",
+    "expected": [
+      "unreal-packaging"
+    ],
+    "kind": "should",
+    "notes": "should-trigger unreal-packaging. cooking"
+  },
+  {
+    "id": "unreal-packaging.nm",
+    "prompt": "upload my unreal build to steam with steamcmd and set it live on a beta branch",
+    "expected": [
+      "steam-publish"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for unreal-packaging. near-miss: shipping, Steam upload"
+  },
+  {
+    "id": "phaser-arcade-physics.s1",
+    "prompt": "phaser 4 player falls through the platforms, i added a collider and setCollideWorldBounds",
+    "expected": [
+      "phaser-arcade-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-arcade-physics. colliders"
+  },
+  {
+    "id": "phaser-arcade-physics.s2",
+    "prompt": "overlap between my bullets group and enemies group, destroy both on hit",
+    "expected": [
+      "phaser-arcade-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-arcade-physics. overlap"
+  },
+  {
+    "id": "phaser-arcade-physics.s3",
+    "prompt": "top down movement with acceleration and drag in phaser arcade",
+    "expected": [
+      "phaser-arcade-physics"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-arcade-physics. top-down"
+  },
+  {
+    "id": "phaser-arcade-physics.nm",
+    "prompt": "phaser scene transition from menu to game, passing the selected level as data",
+    "expected": [
+      "phaser-core"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for phaser-arcade-physics. near-miss: Phaser, scenes"
+  },
+  {
+    "id": "phaser-core.s1",
+    "prompt": "phaser 4: this.load.image in preload but the texture shows as a green box",
+    "expected": [
+      "phaser-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-core. loader"
+  },
+  {
+    "id": "phaser-core.s2",
+    "prompt": "Phaser.Game config with scale mode FIT and pixel art turned on",
+    "expected": [
+      "phaser-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-core. config"
+  },
+  {
+    "id": "phaser-core.s3",
+    "prompt": "launch a UI scene in parallel with the game scene and send events between them",
+    "expected": [
+      "phaser-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger phaser-core. cross-scene"
+  },
+  {
+    "id": "phaser-core.nm",
+    "prompt": "pixi v8: added a sprite to app.stage but nothing shows",
+    "expected": [
+      "pixijs-rendering"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for phaser-core. near-miss: sprite/stage, Pixi"
+  },
+  {
+    "id": "pixijs-rendering.s1",
+    "prompt": "pixijs v8 migration: new Application() then await app.init(), my v7 code breaks everywhere",
+    "expected": [
+      "pixijs-rendering"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pixijs-rendering. v8 init"
+  },
+  {
+    "id": "pixijs-rendering.s2",
+    "prompt": "Assets.load a spritesheet json and make an AnimatedSprite in pixi 8",
+    "expected": [
+      "pixijs-rendering"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pixijs-rendering. assets"
+  },
+  {
+    "id": "pixijs-rendering.s3",
+    "prompt": "pointer events on my sprites dont fire, do i need eventMode = 'static'?",
+    "expected": [
+      "pixijs-rendering"
+    ],
+    "kind": "should",
+    "notes": "should-trigger pixijs-rendering. events"
+  },
+  {
+    "id": "pixijs-rendering.nm",
+    "prompt": "rendering 10k points on canvas for my analytics dashboard is slow, someone suggested pixi",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for pixijs-rendering. near-miss: Pixi named, not a game. AMBIGUOUS: pixijs-rendering desc is not game-specific"
+  },
+  {
+    "id": "threejs-gltf-loading.s1",
+    "prompt": "load a .glb character in three.js and play its 'Run' clip with AnimationMixer",
+    "expected": [
+      "threejs-gltf-loading"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-gltf-loading. mixer"
+  },
+  {
+    "id": "threejs-gltf-loading.s2",
+    "prompt": "GLTFLoader with DRACOLoader, decoder path gives a 404",
+    "expected": [
+      "threejs-gltf-loading"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-gltf-loading. draco"
+  },
+  {
+    "id": "threejs-gltf-loading.s3",
+    "prompt": "KTX2 textures inside my glb fail to load, need KTX2Loader setup",
+    "expected": [
+      "threejs-gltf-loading"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-gltf-loading. ktx2"
+  },
+  {
+    "id": "threejs-gltf-loading.nm",
+    "prompt": "my model loads fine but looks completely black in three.js",
+    "expected": [
+      "threejs-materials-lighting"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for threejs-gltf-loading. near-miss: model loading words, lighting fix"
+  },
+  {
+    "id": "threejs-materials-lighting.s1",
+    "prompt": "shadows not showing in three.js, i set castShadow on the light and the mesh",
+    "expected": [
+      "threejs-materials-lighting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-materials-lighting. shadows"
+  },
+  {
+    "id": "threejs-materials-lighting.s2",
+    "prompt": "add an HDRI environment map so metal reflects properly, PMREMGenerator",
+    "expected": [
+      "threejs-materials-lighting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-materials-lighting. IBL"
+  },
+  {
+    "id": "threejs-materials-lighting.s3",
+    "prompt": "MeshStandardMaterial vs MeshBasicMaterial for a low poly stylized look",
+    "expected": [
+      "threejs-materials-lighting"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-materials-lighting. material choice"
+  },
+  {
+    "id": "threejs-materials-lighting.nm",
+    "prompt": "custom glsl ShaderMaterial for a hologram effect in three.js",
+    "expected": [
+      "shader-programming"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for threejs-materials-lighting. near-miss: material, but custom shader. AMBIGUOUS: threejs-materials-lighting may load"
+  },
+  {
+    "id": "threejs-scene-setup.s1",
+    "prompt": "threejs canvas is stretched after i resize the window, everything looks squished. how do i update the camera aspect and renderer size",
+    "expected": [
+      "threejs-scene-setup"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-scene-setup. resize"
+  },
+  {
+    "id": "threejs-scene-setup.s2",
+    "prompt": "import map for three and three/addons OrbitControls, getting 'failed to resolve module specifier'",
+    "expected": [
+      "threejs-scene-setup"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-scene-setup. import map"
+  },
+  {
+    "id": "threejs-scene-setup.s3",
+    "prompt": "switch my three.js game to WebGPURenderer with setAnimationLoop",
+    "expected": [
+      "threejs-scene-setup"
+    ],
+    "kind": "should",
+    "notes": "should-trigger threejs-scene-setup. WebGPU"
+  },
+  {
+    "id": "threejs-scene-setup.nm",
+    "prompt": "babylon.js scene setup with an ArcRotateCamera",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for threejs-scene-setup. near-miss: web 3D scene, unsupported engine"
+  },
+  {
+    "id": "game-jam.s1",
+    "prompt": "gmtk jam starts in 2 hours, theme drops then. solo, godot 4.7, last jam i overscoped and submitted a broken build 3 minutes before deadline lol. help me plan the 48h and how big i should scope this time",
+    "expected": [
+      "game-jam"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-jam. planning"
+  },
+  {
+    "id": "game-jam.s2",
+    "prompt": "ludum dare compo, 20 hours left and nothing works. what do i cut",
+    "expected": [
+      "game-jam"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-jam. cutting scope"
+  },
+  {
+    "id": "game-jam.s3",
+    "prompt": "global game jam, team of 4, how do we split work and when do we stop adding features",
+    "expected": [
+      "game-jam"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-jam. team jam"
+  },
+  {
+    "id": "game-jam.nm",
+    "prompt": "planning a 6 month dev schedule for my indie game with milestones and a demo for steam next fest",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for game-jam. near-miss: schedule/scope, not a jam. AMBIGUOUS: steam-publish or game-docs might be picked"
+  },
+  {
+    "id": "itch-publish.s1",
+    "prompt": "butler push my windows and html5 builds to itch, what should the channel names be",
+    "expected": [
+      "itch-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger itch-publish. butler"
+  },
+  {
+    "id": "itch-publish.s2",
+    "prompt": "set up the itch.io page for my game, html5 embed size and fullscreen button",
+    "expected": [
+      "itch-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger itch-publish. page"
+  },
+  {
+    "id": "itch-publish.s3",
+    "prompt": "versioning uploads with butler --userversion from github actions",
+    "expected": [
+      "itch-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger itch-publish. CI"
+  },
+  {
+    "id": "itch-publish.nm",
+    "prompt": "publish my game on google play, aab signing and the store listing",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for itch-publish. near-miss: publishing, unsupported store"
+  },
+  {
+    "id": "prototype-fast.s1",
+    "prompt": "i have an idea: grappling hook + slow-mo. want to find out if its fun in like an hour with greybox before i commit to it. unity",
+    "expected": [
+      "prototype-fast"
+    ],
+    "kind": "should",
+    "notes": "should-trigger prototype-fast. timeboxed prototype"
+  },
+  {
+    "id": "prototype-fast.s2",
+    "prompt": "how do i decide whether to keep or kill a prototype? what should i actually measure",
+    "expected": [
+      "prototype-fast"
+    ],
+    "kind": "should",
+    "notes": "should-trigger prototype-fast. keep/kill"
+  },
+  {
+    "id": "prototype-fast.s3",
+    "prompt": "vertical slice for a publisher pitch, what should go in it and what can stay fake",
+    "expected": [
+      "prototype-fast"
+    ],
+    "kind": "should",
+    "notes": "should-trigger prototype-fast. vertical slice"
+  },
+  {
+    "id": "prototype-fast.nm",
+    "prompt": "prototype pattern in javascript, Object.create vs class",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for prototype-fast. near-miss: 'prototype' keyword"
+  },
+  {
+    "id": "steam-publish.s1",
+    "prompt": "first time on steam, just paid the $100 fee and got my app id. need app_build.vdf and depot vdf for a windows build and the steamcmd upload command, the docs are confusing af",
+    "expected": [
+      "steam-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger steam-publish. SteamPipe"
+  },
+  {
+    "id": "steam-publish.s2",
+    "prompt": "set a build live on a beta branch with a password for testers",
+    "expected": [
+      "steam-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger steam-publish. branches"
+  },
+  {
+    "id": "steam-publish.s3",
+    "prompt": "steam release checklist: store page review, coming soon page, how far ahead",
+    "expected": [
+      "steam-publish"
+    ],
+    "kind": "should",
+    "notes": "should-trigger steam-publish. release checklist"
+  },
+  {
+    "id": "steam-publish.nm",
+    "prompt": "add steam achievements via Steamworks.NET in my unity game",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "near-miss for steam-publish. near-miss: Steamworks, but SDK integration not publishing. AMBIGUOUS: steam-publish says Steamworks; unity-csharp-scripting may be picked"
+  },
+  {
+    "id": "game-docs.s1",
+    "prompt": "write a GDD for my roguelite deckbuilder that links to an ARCHITECTURE.md and per-feature folders",
+    "expected": [
+      "game-docs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-docs. new GDD"
+  },
+  {
+    "id": "game-docs.s2",
+    "prompt": "our GDD is one 80 page google doc. split it into features with design / implementation / testing docs",
+    "expected": [
+      "game-docs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-docs. split GDD"
+  },
+  {
+    "id": "game-docs.s3",
+    "prompt": "we just cut the crafting system, update the docs and record the decision",
+    "expected": [
+      "game-docs"
+    ],
+    "kind": "should",
+    "notes": "should-trigger game-docs. record decision"
+  },
+  {
+    "id": "game-docs.nm",
+    "prompt": "implement the dash feature in my godot 4.7 platformer, CharacterBody2D",
+    "expected": [
+      "godot-2d-movement",
+      "platformer"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for game-docs. near-miss: 'feature' but build request; desc says do not write docs"
+  },
+  {
+    "id": "combo.01",
+    "prompt": "rebirths in my roblox simulator take forever AND exploiters keep firing the rebirth remote to skip the cost",
+    "expected": [
+      "roblox-simulator-economy",
+      "roblox-networking"
+    ],
+    "kind": "combo",
+    "notes": "economy + remote security"
+  },
+  {
+    "id": "combo.02",
+    "prompt": "godot 4.7 procedural cave generator with noise, painted into a TileMapLayer using terrain autotiling",
+    "expected": [
+      "procedural-gen",
+      "godot-tilemap"
+    ],
+    "kind": "combo",
+    "notes": "algorithm + engine tilemap"
+  },
+  {
+    "id": "combo.03",
+    "prompt": "unity 6 enemy that patrols and chases with a NavMeshAgent, and a proper state machine (idle, patrol, chase, attack)",
+    "expected": [
+      "game-ai",
+      "unity-navmesh"
+    ],
+    "kind": "combo",
+    "notes": "FSM + nav API"
+  },
+  {
+    "id": "combo.04",
+    "prompt": "pause menu in my godot 4.7 game that works with a gamepad, focus gets lost when i open settings and come back",
+    "expected": [
+      "godot-ui-control",
+      "game-ui-ux"
+    ],
+    "kind": "combo",
+    "notes": "AMBIGUOUS: router wants both; either alone is defensible"
+  },
+  {
+    "id": "combo.05",
+    "prompt": "roblox shop ui where you buy swords through a remote and the server checks you have enough gold",
+    "expected": [
+      "roblox-ui",
+      "roblox-networking"
+    ],
+    "kind": "combo",
+    "notes": "UI + server validation"
+  },
+  {
+    "id": "combo.06",
+    "prompt": "save slots for my unity rpg: inventory, quests, equipped gear, and versioning for patches",
+    "expected": [
+      "save-systems",
+      "rpg"
+    ],
+    "kind": "combo",
+    "notes": "save + genre data"
+  },
+  {
+    "id": "combo.07",
+    "prompt": "48 hour jam, solo. help me plan, and at the end upload the html5 build to itch with butler",
+    "expected": [
+      "game-jam",
+      "itch-publish"
+    ],
+    "kind": "combo",
+    "notes": "jam + ship"
+  },
+  {
+    "id": "combo.08",
+    "prompt": "visual novel in godot 4.7 driven by ink scripts, text box Control with choice buttons",
+    "expected": [
+      "visual-novel",
+      "dialogue-systems",
+      "godot-ui-control"
+    ],
+    "kind": "combo",
+    "notes": "VN + runtime + UI"
+  },
+  {
+    "id": "combo.09",
+    "prompt": "three.js: loaded my glb level and its dark and flat, need lights and an env map",
+    "expected": [
+      "threejs-gltf-loading",
+      "threejs-materials-lighting"
+    ],
+    "kind": "combo",
+    "notes": "load + light"
+  },
+  {
+    "id": "combo.10",
+    "prompt": "phaser 4 platformer: coyote time and jump buffering on an arcade physics body",
+    "expected": [
+      "platformer",
+      "phaser-arcade-physics"
+    ],
+    "kind": "combo",
+    "notes": "genre feel + physics API"
+  },
+  {
+    "id": "combo.11",
+    "prompt": "add player movement with gamepad support to my defold game",
+    "expected": [
+      "defold-core",
+      "input-systems"
+    ],
+    "kind": "combo",
+    "notes": "router worked example"
+  },
+  {
+    "id": "combo.12",
+    "prompt": "unity input system rebinding menu that saves bindings and warns about conflicts",
+    "expected": [
+      "unity-input-system",
+      "input-systems"
+    ],
+    "kind": "combo",
+    "notes": "engine API + portable concept"
+  },
+  {
+    "id": "combo.13",
+    "prompt": "godot 4.7: screen shake on Camera2D and a short hitstop when the sword lands",
+    "expected": [
+      "game-feel",
+      "camera-systems"
+    ],
+    "kind": "combo",
+    "notes": "router: game-feel + camera-systems. godot-animation also plausible"
+  },
+  {
+    "id": "combo.14",
+    "prompt": "make a shipping build of my ue5 game and upload it to steam with steamcmd",
+    "expected": [
+      "unreal-packaging",
+      "steam-publish"
+    ],
+    "kind": "combo",
+    "notes": "package + publish"
+  },
+  {
+    "id": "combo.15",
+    "prompt": "build a 2D puzzle game in Go with Ebitengine, sokoban style with undo",
+    "expected": [
+      "ebitengine-game",
+      "puzzle"
+    ],
+    "kind": "combo",
+    "notes": "router worked example"
+  },
+  {
+    "id": "combo.16",
+    "prompt": "bevy game drops to 20 fps with 10k entities, i think my queries are bad",
+    "expected": [
+      "bevy-ecs",
+      "performance-optimization"
+    ],
+    "kind": "combo",
+    "notes": "engine + perf method"
+  },
+  {
+    "id": "combo.17",
+    "prompt": "roblox idle tycoon: offline earnings when players come back, saved in a DataStore",
+    "expected": [
+      "roblox-simulator-economy",
+      "roblox-datastores"
+    ],
+    "kind": "combo",
+    "notes": "economy + persistence"
+  },
+  {
+    "id": "combo.18",
+    "prompt": "godot 4.7 multiplayer in C#, how do i declare RPCs with the [Rpc] attribute",
+    "expected": [
+      "godot-multiplayer",
+      "godot-csharp"
+    ],
+    "kind": "combo",
+    "notes": "net + language"
+  },
+  {
+    "id": "combo.19",
+    "prompt": "dissolve shader on enemy death in godot 4.7, driven by a tween on the uniform",
+    "expected": [
+      "godot-shaders",
+      "godot-animation"
+    ],
+    "kind": "combo",
+    "notes": "shader + tween"
+  },
+  {
+    "id": "combo.20",
+    "prompt": "unity webgl build is way too big, and also should i switch IL2CPP stripping to high to shrink it",
+    "expected": [
+      "unity-build-size",
+      "unity-build-pipeline"
+    ],
+    "kind": "combo",
+    "notes": "AMBIGUOUS: tests the size vs pipeline split"
+  },
+  {
+    "id": "combo.21",
+    "prompt": "roguelike in pygame-ce: bsp dungeon, fov, turn based enemies",
+    "expected": [
+      "roguelike",
+      "pygame-core",
+      "procedural-gen"
+    ],
+    "kind": "combo",
+    "notes": "genre + engine + algorithm"
+  },
+  {
+    "id": "combo.22",
+    "prompt": "tower defense in unity 6: enemies walk with NavMeshAgent, tower upgrade panel ui",
+    "expected": [
+      "tower-defense",
+      "unity-navmesh",
+      "game-ui-ux"
+    ],
+    "kind": "combo",
+    "notes": "genre + nav + UI"
+  },
+  {
+    "id": "combo.23",
+    "prompt": "survival crafting in unity 6 with ScriptableObject recipes and items",
+    "expected": [
+      "survival-crafting",
+      "unity-scriptableobjects"
+    ],
+    "kind": "combo",
+    "notes": "genre + data"
+  },
+  {
+    "id": "combo.24",
+    "prompt": "before the jam starts write a short GDD for our idea, then plan the 48 hours",
+    "expected": [
+      "game-docs",
+      "game-jam"
+    ],
+    "kind": "combo",
+    "notes": "explicit doc request + jam"
+  },
+  {
+    "id": "combo.25",
+    "prompt": "roblox: knockback when hit should fling the character, and it has to survive respawns",
+    "expected": [
+      "roblox-characters",
+      "roblox-physics"
+    ],
+    "kind": "combo",
+    "notes": "character + impulse"
+  },
+  {
+    "id": "combo.26",
+    "prompt": "github actions for my godot project: run headless gdscript tests, then export windows/linux builds if they pass",
+    "expected": [
+      "godot-gdscript-headless-testing",
+      "godot-export"
+    ],
+    "kind": "combo",
+    "notes": "test + export CI"
+  },
+  {
+    "id": "combo.27",
+    "prompt": "ue 5.8 c++ character with enhanced input for move/look/jump",
+    "expected": [
+      "unreal-cpp-gameplay",
+      "unreal-enhanced-input"
+    ],
+    "kind": "combo",
+    "notes": "C++ + input"
+  },
+  {
+    "id": "combo.28",
+    "prompt": "pick a pixel art style and palette for my phaser game and set it up so sprites stay crisp (no smoothing)",
+    "expected": [
+      "create-game-assets",
+      "phaser-core"
+    ],
+    "kind": "combo",
+    "notes": "art direction + engine config"
+  },
+  {
+    "id": "combo.29",
+    "prompt": "utility AI scoring for my unreal npc, used inside a behavior tree task",
+    "expected": [
+      "ai-behavior-trees-utility-ai",
+      "unreal-behavior-trees"
+    ],
+    "kind": "combo",
+    "notes": "router pairing"
+  },
+  {
+    "id": "combo.30",
+    "prompt": "adaptive music in godot 4.7: layers fade in by combat intensity using audio buses",
+    "expected": [
+      "audio-design",
+      "godot-audio"
+    ],
+    "kind": "combo",
+    "notes": "concept + engine"
+  },
+  {
+    "id": "none.01",
+    "prompt": "fix the flaky jest test in my react checkout form, it fails 1 in 5 runs",
+    "expected": [],
+    "kind": "none",
+    "notes": "plain web"
+  },
+  {
+    "id": "none.02",
+    "prompt": "write a sql query for monthly active users from an events table",
+    "expected": [],
+    "kind": "none",
+    "notes": "data"
+  },
+  {
+    "id": "none.03",
+    "prompt": "kubernetes pod keeps restarting with OOMKilled, how do i find the leak",
+    "expected": [],
+    "kind": "none",
+    "notes": "infra"
+  },
+  {
+    "id": "none.04",
+    "prompt": "implementing the unit of work pattern with EF Core in my .NET api",
+    "expected": [],
+    "kind": "none",
+    "notes": "'unit' + C# trap"
+  },
+  {
+    "id": "none.05",
+    "prompt": "explain nash equilibrium with a prisoner's dilemma example for my game theory homework",
+    "expected": [],
+    "kind": "none",
+    "notes": "'game' trap"
+  },
+  {
+    "id": "none.06",
+    "prompt": "build a REST api in go with the chi router and middleware for auth",
+    "expected": [],
+    "kind": "none",
+    "notes": "Go, not Ebitengine"
+  },
+  {
+    "id": "none.07",
+    "prompt": "show my steam friends list on my personal website using the steam web api",
+    "expected": [],
+    "kind": "none",
+    "notes": "'steam' trap"
+  },
+  {
+    "id": "none.08",
+    "prompt": "write a bash script that rotates logs older than 7 days",
+    "expected": [],
+    "kind": "none",
+    "notes": "shell"
+  },
+  {
+    "id": "none.09",
+    "prompt": "docker build cache gets invalidated every time i change one file",
+    "expected": [],
+    "kind": "none",
+    "notes": "infra"
+  },
+  {
+    "id": "none.10",
+    "prompt": "explain the observer pattern with a c# example for my wpf app",
+    "expected": [],
+    "kind": "none",
+    "notes": "C# events trap"
+  },
+  {
+    "id": "none.11",
+    "prompt": "git rebase left me with conflicts in 12 files, how do i abort or continue safely",
+    "expected": [],
+    "kind": "none",
+    "notes": "git"
+  },
+  {
+    "id": "none.12",
+    "prompt": "my blender cycles render takes forever for a product shot, how do i speed it up",
+    "expected": [],
+    "kind": "none",
+    "notes": "3D, not a game"
+  },
+  {
+    "id": "none.13",
+    "prompt": "set up eslint + prettier in a pnpm monorepo",
+    "expected": [],
+    "kind": "none",
+    "notes": "tooling"
+  },
+  {
+    "id": "none.14",
+    "prompt": "my rust cli panics with index out of bounds, heres the backtrace",
+    "expected": [],
+    "kind": "none",
+    "notes": "Rust, not Bevy"
+  },
+  {
+    "id": "none.15",
+    "prompt": "optimize this postgres query, explain shows a seq scan on 40m rows",
+    "expected": [],
+    "kind": "none",
+    "notes": "'optimize' trap"
+  },
+  {
+    "id": "none.16",
+    "prompt": "css easing for a modal fade in, it feels janky",
+    "expected": [],
+    "kind": "none",
+    "notes": "'easing'/'feel' trap"
+  },
+  {
+    "id": "none.17",
+    "prompt": "save form state to localStorage so users dont lose input on refresh",
+    "expected": [],
+    "kind": "none",
+    "notes": "'save' trap"
+  },
+  {
+    "id": "none.18",
+    "prompt": "matchmaking algorithm for our dating app based on preference scores",
+    "expected": [],
+    "kind": "none",
+    "notes": "'matchmaking' trap"
+  },
+  {
+    "id": "none.19",
+    "prompt": "write unit tests for my openresty lua module",
+    "expected": [],
+    "kind": "none",
+    "notes": "Lua, not LÖVE/Defold"
+  },
+  {
+    "id": "none.20",
+    "prompt": "help me level up my resume for a junior gameplay programmer job at a game studio",
+    "expected": [],
+    "kind": "none",
+    "notes": "'level up'/'game studio' trap"
+  }
+]

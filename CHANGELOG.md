@@ -5,9 +5,34 @@ and releases use [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### v2 quality release
+
+- **Every skill rewritten to Anthropic's skill-authoring guidance:** a description that says what
+  the skill is for and which neighbour handles the rest, one `## Gotchas` section, a final check the
+  agent runs itself, editor clicks with a file, code or CLI alternative, contents lists on long
+  references, and dated `## Version notes`.
+- **Clear ownership for requests two skills both claimed** (behavior trees, coyote time, Unity 2D
+  physics, procedural generation vs roguelike vs card games, RPG vs survival inventory, Roblox
+  replication), followed by the router and every description.
+- **Shorter descriptions:** the full pack lists 29,866 characters, so it fits agents' skill
+  listing budgets.
+- **Router:** reads the project's pinned engine version first, warns when the project is newer
+  than our baseline, and hands live-editor work to official vendor tools (Unity, Roblox, Epic,
+  OpenAI game-studio) when they are already installed.
+- **Engine baselines refreshed and verified 2026-11-11:** Godot 4.7.2, Unity 6.3 LTS, UE 5.8,
+  Phaser 4.2.1, PixiJS 8.22.0, three.js r187, Bevy 0.20.1, Defold 1.14.1, Ebitengine 2.10.6,
+  LÖVE 11.5, pygame-ce 2.5.8.
+- **New check tools:** five headless GDScript check runners in the Godot skills, a jump tuner for
+  `platformer`, a wave-curve checker for `tower-defense`.
+- **Measured:** trigger evals and outcome A/B tests, with results in `evals/RESULTS.md`.
+- New skills: `unity-build-size` ([#41](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/pull/41))
+  and `game-docs` ([#35](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/pull/35)),
+  both upgraded and A/B tested before merging. 79 skills in total.
+- Validator fix for link-like code inside fences ([#48](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/pull/48)).
+
 ### Added
 
-- Trigger evals: `evals/README.md` describes the prompt file, and `scripts/run-trigger-evals.py`
+- Trigger evals: `evals/triggers.json` (366 prompts), `evals/README.md` and `evals/RESULTS.md`; `scripts/run-trigger-evals.py`
   checks it offline and scores skill descriptions with any judge command (`claude -p`,
   `codex exec -`). CI runs the offline check.
 - Validator warnings for the new writing rules: no `Not for` clause in the description, no
