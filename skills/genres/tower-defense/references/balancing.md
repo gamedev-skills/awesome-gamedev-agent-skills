@@ -3,6 +3,15 @@
 Math and structures behind `SKILL.md`. Engine-neutral pseudocode. The numbers are starting
 points; tune against playtests. For pathfinding internals defer to `game-ai`.
 
+Contents:
+1. Representing the path (waypoints, maze placement check)
+2. Tower targeting modes
+3. DPS and "can this lane hold?"
+4. Enemy scaling across waves
+5. Economy
+6. Leak and lives model
+7. Wave pacing
+
 ## 1. Representing the path
 
 Three common approaches:

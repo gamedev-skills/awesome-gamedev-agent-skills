@@ -2,6 +2,15 @@
 
 Detail behind `SKILL.md`. Engine-neutral pseudocode. Numbers are starting points to tune.
 
+Contents:
+1. Needs model
+2. Crafting tech tree
+3. Recipe data and multi-step chains
+4. Gathering and respawn
+5. Base building
+6. Threat escalation
+7. Saving a large world
+
 ## 1. Needs model
 
 Each need is a value in `[0, max]` that decays over time and triggers consequences at
@@ -60,8 +69,8 @@ recipes = {
 
 ## 4. Gathering and respawn
 
-- Nodes have an HP/tool-tier requirement and a **drop table** (weighted; see the roguelike loot
-  pattern). Wrong/weak tool = no yield or slow yield.
+- Nodes have an HP/tool-tier requirement and a **drop table** (weighted; table mechanics in
+  `procedural-gen`). Wrong/weak tool = no yield or slow yield.
 - Respawn so the world isn't permanently stripped: timer-based regrowth, or zone-based
   repopulation when the player is away. Scarcity near the base pushes exploration outward.
 - Tool tiers gate node types (fists → wood; stone pick → stone/ore; metal pick → hard ore),

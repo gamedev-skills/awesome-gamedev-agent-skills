@@ -3,6 +3,14 @@
 Formulas and data shapes behind `SKILL.md`. Engine-neutral pseudocode. Treat every number
 as a starting point to tune against playtests, not a law.
 
+Contents:
+1. Stat block: base, derived and modifiers
+2. Damage formulas
+3. Levelling curves
+4. Turn-based versus action combat timelines
+5. Inventory and equipment data
+6. Quest state model
+
 ## 1. Stat block: base, derived, and modifiers
 
 Separate **base** attributes from **derived** combat stats so a single attribute change
@@ -81,7 +89,7 @@ and/or skill points on level-up; telegraph the next unlock to pull players forwa
 | Time | Discrete; pause to choose | Real-time; reflexes matter |
 | Initiative | Speed stat / ATB gauge orders turns | Cooldowns / attack timing |
 | Strength | Deep tactics, accessible | Visceral, skill-expressive |
-| Build with | A turn scheduler (see `roguelike` Pattern 2) | The engine movement/physics skill |
+| Build with | A turn scheduler (the energy scheduler in `roguelike`) | The engine movement/physics skill |
 
 ATB ("active time battle") is a hybrid: a gauge fills by `speed`; when full, the actor may act.
 

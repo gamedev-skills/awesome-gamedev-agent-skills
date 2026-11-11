@@ -3,6 +3,16 @@
 Detail behind `SKILL.md`. Engine-neutral pseudocode. Board coordinates are `(y, x)` with
 `(0,0)` top-left and `y` growing downward (matches most tilemaps).
 
+Contents:
+1. Match-3 full resolution
+2. Deadlock detection and reshuffle
+3. Cascade scoring
+4. Sokoban and push puzzles
+5. Rule-based and logic puzzles
+6. Undo strategies
+7. Solvable generation and sliding-tile parity
+8. Input locking and presentation
+
 ## 1. Match-3 full resolution
 
 The resolution loop is: detect matches → score → clear → gravity → refill → repeat until stable.

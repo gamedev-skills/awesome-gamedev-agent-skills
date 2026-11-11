@@ -3,6 +3,15 @@
 Detail behind `SKILL.md`. Engine-neutral pseudocode. For the camera/character body and the
 raycast/physics APIs, defer to your engine 3D + physics skill; this file is the shooter glue.
 
+Contents:
+1. Hitscan versus projectile
+2. Hitscan shot and per-engine ray query rules
+3. Damage falloff
+4. Spread and recoil
+5. Time-to-kill
+6. Hit registration and lag compensation
+7. Enemy AI states (single-player)
+
 ## 1. Hitscan vs. projectile
 
 | | Hitscan | Projectile |
@@ -114,5 +123,8 @@ any --(took damage from unseen)--> ALERT (turn toward source)
 ```
 
 Use cover queries, burst-fire with reload pauses, and a reaction delay so enemies feel fair.
+Make the first one or two shots of an engagement miss on purpose (offset the aim point by a
+shrinking amount), and telegraph heavy attacks with a wind-up sound or flash, so the player
+learns where damage comes from instead of dying to a sudden perfect burst.
 Implement the tree/FSM with `game-ai` and the engine's navigation (`unity-navmesh`,
 `unreal-behavior-trees`, Godot navigation).
