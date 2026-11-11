@@ -250,7 +250,7 @@ primitives.
 | [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | Greybox a playable vertical slice quickly; cut scope; validate the fun |
 | [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | Steamworks onboarding: app/depots, store page, builds, release checklist |
 | [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | Publish/update on itch.io: project page, channels, `butler` uploads |
-| [`game-docs`](skills/workflows/game-docs/SKILL.md) | GDD + `ARCHITECTURE.md` + per-feature design/implementation/testing docs, kept in sync with the code |
+| [`game-docs`](skills/workflows/game-docs/SKILL.md) | One-page GDD with a feature index and short per-feature notes, kept in sync with the code |
 
 ## Agent compatibility
 

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -40,8 +42,8 @@ Cap is 8 cells/s.
 ARCH = "# Snake — Architecture\n\n**Status:** current · [GDD](GDD.md)\n"
 
 
-def design(status: str) -> str:
-    return f"# Feature: design\n\n**Status:** {status} · {HEADER}\n\n## Rules\n1. Step every 120 ms.\n"
+def design(status: str, header: str = HEADER) -> str:
+    return f"# Feature: design\n\n**Status:** {status} · {header}\n\n## Rules\n1. Step every 120 ms.\n"
 
 
 def implementation() -> str:
@@ -53,15 +55,15 @@ def testing(criteria: str = "- [x] Steps every 120 ms. *(tests/move.test.ts › 
 
 
 def clean_docs() -> dict[str, str | bytes]:
+    """An implemented feature with all three docs, and a designed one with only its note."""
     return {
         "GDD.md": GDD,
         "ARCHITECTURE.md": ARCH,
         "features/movement/design.md": design("implemented"),
         "features/movement/implementation.md": implementation(),
         "features/movement/testing.md": testing(),
-        "features/growth/design.md": design("designed") + "\n## Open questions\n- [ASSUMPTION] tail +1.\n",
-        "features/growth/implementation.md": implementation(),
-        "features/growth/testing.md": testing("- [ ] Tail grows by 1. *(not proven: no code yet)*\n"),
+        "features/growth/design.md": design("designed", "**Updated:** 2026-11-09 · [GDD](../../GDD.md)")
+        + "\n## Open questions\n- [ASSUMPTION] tail +1.\n",
     }
 
 
@@ -93,8 +95,8 @@ class CheckDocsTest(unittest.TestCase):
             capture_output=True, text=True, encoding="utf-8", timeout=60,
         )
 
-    def report(self, *args: str) -> tuple[int, dict]:
-        proc = self.run_checker("--json", "--max-issues", "0", *args)
+    def report(self, *args: str, target: Path | None = None) -> tuple[int, dict]:
+        proc = self.run_checker("--json", "--max-issues", "0", *args, target=target)
         self.assertIn(proc.returncode, (0, 1), proc.stderr)
         return proc.returncode, json.loads(proc.stdout)
 
@@ -109,19 +111,29 @@ class CheckDocsTest(unittest.TestCase):
         self.assertEqual(code, 0, data)
         self.assertEqual(data["errors"], [])
         self.assertEqual(data["warnings"], [])
-        self.assertEqual(data["files_checked"], 8)
+        self.assertEqual(data["files_checked"], 6)
         summaries = {n["message"] for n in data["notes"] if n["code"] == "feature-summary"}
         self.assertIn("movement: implemented · 1/2 criteria proven", summaries)
-        self.assertIn("growth: designed · 0/1 criteria proven · 1 [ASSUMPTION]", summaries)
+        self.assertIn("growth: designed · 1 [ASSUMPTION]", summaries)
+
+    def test_gdd_alone_is_clean(self) -> None:
+        # Mode A's default output: one GDD page, no ARCHITECTURE.md, no feature folders yet.
+        gdd = GDD.replace("[Architecture](ARCHITECTURE.md) · ", "").replace("| implemented |", "| idea |")
+        gdd = re.sub(r"\[design\]\(features/\w+/design\.md\)", "—", gdd).replace("; see [movement](features/movement/design.md)", "")
+        gdd = gdd.replace("| Growth | designed", "| Growth | idea")
+        self.write({"GDD.md": gdd})
+        code, data = self.report("--strict")
+        self.assertEqual((code, data["errors"], data["warnings"]), (0, [], []))
 
     def test_filled_templates_are_clean(self) -> None:
-        gdd = template_block("gdd-template.md")
-        feature = lambda i: template_block("feature-templates.md", i).replace("<slug>", "combo")  # noqa: E731
+        gdd = template_block("gdd-template.md").replace("| Combo | designed", "| Combo | implemented")
+        gdd = gdd.replace("[Change log](#change-log)", "[Change log](#change-log) · [Architecture](ARCHITECTURE.md)")
         files: dict[str, str | bytes] = {"GDD.md": gdd, "ARCHITECTURE.md": template_block("architecture-template.md")}
-        for slug, status in (("lane-movement", "implemented"), ("combo", "designed")):
-            files[f"features/{slug}/design.md"] = feature(0).replace("**Status:** designed", f"**Status:** {status}")
-            files[f"features/{slug}/implementation.md"] = feature(1)
-            files[f"features/{slug}/testing.md"] = feature(2)
+        for slug in ("lane-movement", "combo"):
+            files[f"features/{slug}/design.md"] = template_block("feature-templates.md", 0).replace(
+                "**Status:** designed", "**Status:** implemented")
+            files[f"features/{slug}/implementation.md"] = template_block("feature-templates.md", 1)
+            files[f"features/{slug}/testing.md"] = template_block("feature-templates.md", 2).replace("<slug>", "combo")
         self.write(files)
         code, data = self.report("--strict")
         self.assertEqual(data["errors"], [])
@@ -137,14 +149,16 @@ class CheckDocsTest(unittest.TestCase):
         lines = proc.stdout.splitlines()
         self.assertEqual(lines[0], "ERROR GDD.md:3: broken link -> ARCH.md")
         self.assertTrue(lines[1].startswith("  fix: "))
-        self.assertRegex(lines[-2], r"^Summary: 1 errors, 0 warnings in 8 files checked$")
+        self.assertRegex(lines[-2], r"^Summary: 1 errors, 0 warnings in 6 files checked$")
         self.assertTrue(lines[-1].startswith("Notes: "))
 
-    def test_help(self) -> None:
-        proc = subprocess.run([sys.executable, str(CHECKER), "--help"], capture_output=True, text=True, timeout=60)
+    def test_help_lists_options_and_codes(self) -> None:
+        proc = subprocess.run([sys.executable, str(CHECKER), "--help"], capture_output=True, text=True,
+                              encoding="utf-8", timeout=60)
         self.assertEqual(proc.returncode, 0)
-        for flag in ("--json", "--strict", "--max-issues", "--old", "--gdd", "exit codes"):
-            self.assertIn(flag, proc.stdout)
+        for text in ("--json", "--strict", "--max-issues", "--old", "--gdd", "Exit codes",
+                     "broken-link", "feature-doc-missing", "gdd-no-index"):
+            self.assertIn(text, proc.stdout)
 
     # -- errors --------------------------------------------------------------
 
@@ -152,51 +166,74 @@ class CheckDocsTest(unittest.TestCase):
         files = clean_docs()
         files["GDD.md"] = (GDD.replace("[design](features/growth/design.md)", "[design](features/grow/design.md)")
                            .replace("| Movement | implemented", "| Movement | in progress"))
-        del files["features/growth/testing.md"]
-        files["features/growth/design.md"] = "# Growth\n\n[gone](nowhere.md)\n"
+        files["features/growth/design.md"] = "# Growth\n\n[gone](nowhere.md) ![art](img/missing.png)\n"
+        files["features/orphan/implementation.md"] = "# Orphan\n"
         self.write(files)
         code, data = self.report()
         self.assertEqual(code, 1)
         self.assertEqual(sorted(set(self.codes(data, "errors"))), sorted([
-            "broken-link", "design-no-status", "feature-doc-missing", "index-folder-missing", "status-mismatch",
+            "broken-link", "design-missing", "design-no-status", "index-folder-missing", "status-mismatch",
         ]))
         broken = sorted((e["file"], e["message"]) for e in data["errors"] if e["code"] == "broken-link")
         self.assertEqual(broken, [
             ("GDD.md", "broken link -> features/grow/design.md"),
+            ("features/growth/design.md", "broken link -> img/missing.png"),
             ("features/growth/design.md", "broken link -> nowhere.md"),
-            ("features/growth/implementation.md", "broken link -> testing.md"),  # the deleted sibling
         ])
         self.assertIn("folder-not-indexed", self.codes(data, "warnings"))
 
-    def test_gdd_without_index(self) -> None:
-        self.write({"GDD.md": "# GDD\n\nNo table.\n", "ARCHITECTURE.md": ARCH})
-        code, data = self.report()
-        self.assertEqual(code, 1)
-        self.assertEqual(self.codes(data, "errors"), ["gdd-no-index"])
+    # -- a GDD that is not in this layout ------------------------------------
+
+    def test_plain_gdd_is_a_note_not_an_error(self) -> None:
+        self.write({"GDD.md": "# My game\n\n## Dash\nDash lasts 0.2 s. See [combat](#combat).\n\n## Combat\nHits.\n"})
+        code, data = self.report("--strict")
+        self.assertEqual((code, data["errors"], data["warnings"]), (0, [], []))
+        self.assertEqual(self.codes(data, "notes"), ["gdd-no-index"])
+
+    def test_plain_gdd_in_repo_root_skips_vendored_folders(self) -> None:
+        repo = self.base / "repo"
+        self.write({
+            "GDD.md": "# My game\n\nSee [the readme](README.md).\n",
+            "README.md": "# Game\n",
+            "node_modules/pkg/README.md": "[x](missing.md)\n",
+            "addons/plugin/README.md": "[x](missing.md)\n",
+            ".git/notes.md": "[x](missing.md)\n",
+        }, repo)
+        code, data = self.report(target=repo)
+        self.assertEqual((code, data["errors"], data["files_checked"]), (0, [], 2))
+
+    def test_spec_tool_links_count_as_feature_docs(self) -> None:
+        gdd = GDD.replace("[design](features/growth/design.md)", "[spec](../specs/002-growth/spec.md)")
+        self.write({"GDD.md": gdd, "ARCHITECTURE.md": ARCH, **{k: v for k, v in clean_docs().items()
+                                                                if not k.startswith(("GDD", "features/growth"))}})
+        self.write({"specs/002-growth/spec.md": "# Growth spec\n"}, self.base)
+        code, data = self.report("--strict")
+        self.assertEqual((code, data["errors"], data["warnings"]), (0, [], []))
 
     # -- warnings ------------------------------------------------------------
 
     def test_warning_codes(self) -> None:
         files = clean_docs()
         files["GDD.md"] = (GDD.replace("| Leaderboard | idea", "| Leaderboard | designed")
-                           .replace("[Architecture](ARCHITECTURE.md) · ", "")
                            .replace("[Tuning](#max_speed)", "[Tuning](#nope) · [Abs](/docs/GDD.md)")
                            .replace("| Leaderboard |", "| Sound | someday | later | Music | — |\n| Leaderboard |"))
-        files["features/movement/testing.md"] = testing("- [x] Steps every 120 ms.\n")
-        files["features/Bad_Slug/design.md"] = design("idea")
-        files["features/Bad_Slug/testing.md"] = testing("")
-        del files["ARCHITECTURE.md"]
-        impl = implementation().replace(" · [Architecture](../../ARCHITECTURE.md)", "")
-        for slug in ("movement", "growth", "Bad_Slug"):
-            files[f"features/{slug}/implementation.md"] = impl
+        files["features/movement/testing.md"] = testing("- [x] Steps every 120 ms.\n1. [x] Wraps at the edge.\n").replace(
+            " · [Implementation](implementation.md)", "")
+        del files["features/movement/implementation.md"]
+        files["features/movement/design.md"] = design("implemented").replace(" · [Implementation](implementation.md)", "")
+        files["features/Bad_Slug/design.md"] = design("idea", "[GDD](../../GDD.md)")
         self.write(files)
         code, data = self.report()
         self.assertEqual(data["errors"], [], data["errors"])
         self.assertEqual(code, 0)
         self.assertEqual(sorted(set(self.codes(data, "warnings"))), sorted([
-            "absolute-link", "anchor-not-found", "architecture-missing", "folder-not-indexed",
+            "absolute-link", "anchor-not-found", "feature-doc-missing", "folder-not-indexed",
             "row-no-folder", "slug-not-kebab", "ticked-no-proof", "unknown-status",
         ]))
+        missing = [w["message"] for w in data["warnings"] if w["code"] == "feature-doc-missing"]
+        self.assertEqual(missing, ["features/movement/ is 'implemented' but has no implementation.md"])
+        unproven = [w["line"] for w in data["warnings"] if w["code"] == "ticked-no-proof"]
+        self.assertEqual(unproven, [6, 7])  # numbered criteria count too
         self.assertEqual(self.run_checker("--strict").returncode, 1)
 
     def test_features_without_gdd_warns(self) -> None:
@@ -222,6 +259,26 @@ class CheckDocsTest(unittest.TestCase):
         anchor_warnings = [w["message"] for w in data["warnings"] if w["code"] == "anchor-not-found"]
         self.assertEqual(anchor_warnings, ["anchor not found -> #not-a-heading"])
         self.assertEqual(data["errors"], [])
+
+    def test_anchors_match_github_slugger(self) -> None:
+        # Expected slugs computed with github-slugger 2.0.0 from the text GitHub renders.
+        headings = {
+            "`_ready()` callback": "_ready-callback",
+            "`__init__` method": "__init__-method",
+            "_private_field": "_private_field",
+            "MAX_SPEED tuning": "max_speed-tuning",
+            "गेम डिज़ाइन": "गेम-डिज़ाइन",
+            unicodedata.normalize("NFD", "café rules"): unicodedata.normalize("NFD", "café-rules"),
+            "Price ½ off": "price--off",
+        }
+        body = "".join(f"## {h}\n" for h in headings) + "## Rules\n## Rules\n## Rules\n## Rules 1\n"
+        links = list(headings.values()) + ["rules", "rules-1", "rules-2", "rules-1-1", "%C3%BCber-uns"]
+        body += "## Über uns\n" + " ".join(f"[x](#{a})" for a in links) + "\n"
+        files = clean_docs()
+        files["notes.md"] = body
+        self.write(files)
+        _, data = self.report()
+        self.assertEqual([w["message"] for w in data["warnings"]], [])
 
     def test_bom_and_crlf(self) -> None:
         files = clean_docs()
@@ -252,6 +309,16 @@ class CheckDocsTest(unittest.TestCase):
         self.assertEqual([w["message"] for w in data["warnings"]], ["anchor not found -> empty.md#x"])
         self.assertEqual(code, 0)
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "needs named pipes")
+    def test_fifo_and_dangling_symlink_do_not_hang(self) -> None:
+        self.write(clean_docs())
+        os.mkfifo(self.docs / "pipe.md")
+        os.symlink(self.docs / "gone.md", self.docs / "dangling.md")
+        code, data = self.report()  # run_checker's timeout fails the test on a hang
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(w["file"] for w in data["warnings"] if w["code"] == "unreadable"),
+                         ["dangling.md", "pipe.md"])
+
     # -- --old ---------------------------------------------------------------
 
     def test_old_reports_lost_lines_and_numbers(self) -> None:
@@ -267,13 +334,25 @@ class CheckDocsTest(unittest.TestCase):
         self.assertIn("24", warnings["old-number-missing"]["message"])
         self.assertNotIn("120", warnings["old-number-missing"]["message"])
 
-    def test_old_all_found(self) -> None:
+    def test_old_ignores_the_archive_copy(self) -> None:
+        old_text = "# Old GDD\n\nThe snake wraps around the edges of a 24 by 24 board.\n"
+        files = clean_docs()
+        files["archive/old-GDD.md"] = old_text
+        self.write(files)
+        old = self.base / "old-GDD.md"
+        old.write_text(old_text, encoding="utf-8")
+        _, data = self.report("--old", str(old))
+        self.assertIn("old-line-missing", self.codes(data, "warnings"))
+        self.assertIn("old-number-missing", self.codes(data, "warnings"))
+
+    def test_old_all_found_and_repeatable(self) -> None:
         self.write(clean_docs())
-        old = self.base / "old.md"
-        old.write_text("# Old\n\nGrid steps every 120 ms\n", encoding="utf-8")
-        code, data = self.report("--old", str(old))
+        first, second = self.base / "old.md", self.base / "side.md"
+        first.write_text("# Old\n\nGrid steps every 120 ms\n", encoding="utf-8")
+        second.write_text("# Side\n\nCap is 8 cells/s.\n", encoding="utf-8")
+        code, data = self.report("--old", str(first), "--old", str(second))
         self.assertEqual(code, 0)
-        self.assertIn("old-all-found", self.codes(data, "notes"))
+        self.assertEqual(self.codes(data, "notes").count("old-all-found"), 2)
 
     def test_old_file_inside_docs_is_excluded(self) -> None:
         files = clean_docs()
@@ -310,6 +389,7 @@ class CheckDocsTest(unittest.TestCase):
         self.write({"GDD.md": GDD})
         self.assertEqual(self.run_checker(target=self.docs / "GDD.md").returncode, 2)
         self.assertEqual(self.run_checker("--old", str(self.base / "missing.md")).returncode, 2)
+        self.assertEqual(self.run_checker("--old", str(self.base)).returncode, 2)
         self.assertEqual(self.run_checker("--max-issues", "-1").returncode, 2)
         plain = self.base / "src"
         self.write({"README.md": "# Not docs\n"}, plain)

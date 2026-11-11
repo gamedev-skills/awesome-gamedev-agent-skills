@@ -1,118 +1,96 @@
 ---
 name: game-docs
 description: >
-  Write and maintain a game's design docs: a GDD that links to an ARCHITECTURE.md
-  and to per-feature folders with design.md, implementation.md and testing.md,
-  kept in sync with the code. Use only when the user asks for game docs ("write a
-  GDD", "game design doc", "spec out the combo system", "document this feature",
-  "update the docs", "record this decision", "split our GDD into features"), or
-  when the project already has a GDD and a feature is designed, changed, built or
-  cut. A request to build a game or feature is not a request for docs: build it
-  with the engine and genre skills, and at most offer to write docs afterwards,
-  writing them only if the user agrees.
+  Writes and maintains a game's design docs: a one-page GDD with a feature index,
+  short per-feature design notes, and implementation and testing notes once a
+  feature has code, kept true to the code and checked by a read-only link and
+  status checker. Use when the user asks for a GDD or game design doc ("draft a
+  GDD", "write up the combo system", "spec out this mechanic"), wants the GDD or
+  design docs updated after a playtest, a tuning change or new code, wants a game
+  design decision recorded, or asks to split an old GDD into feature docs. Also
+  use after changing gameplay code in a project that already has a GDD, to keep
+  it true. Not for building, prototyping or jamming a game when no docs were asked
+  for (build it, then offer docs in one line), and not for READMEs, API
+  references, code comments or level layouts.
 ---
 
 # Game docs
 
-Give every fact about the game one home (the GDD, ARCHITECTURE or a feature folder) and keep those docs true to the code for the life of the project. Keep the project's existing docs folder, file names, language and conventions; the layout below is only the default for a project that has none.
+Keep a game's design written down in as few words as will stay true. The GDD is one page that says what the game is and maps its features; each feature's detail lives in its own short note; and every number in the docs matches the code. Docs nobody keeps current are worse than none, so write less, edit in place, and sync after every change.
 
 ## When to use
 
-This skill runs only when one of these holds:
-
-1. **The user asked for docs**: a GDD, a design doc, a feature spec or write-up, a docs sync, a decision record, or a migration of existing notes.
-2. **The project already has a GDD** (in `docs/`, `design/`, `documentation/`, a wiki folder or the repo root), and a feature is being designed, changed, built or cut. Then keep the docs in step with that work.
-
-**When not to use:** building a game or feature in a project with no GDD, unless the user asked for docs. A request to build something goes to the engine and genre skills through `$router` and is built first. You may offer, in one line, to set up docs for it, but write none unless the user says yes. Also not for level layouts (`$level-design`), jam scoping (`$game-jam`), or READMEs, API references and code comments.
+Run only when the user asked for game design docs, or when the project already has a GDD and a feature is being designed, changed, built or cut. A request to build a game or a feature is not a request for docs: let the engine and genre skills build it (through `$router`) and offer docs in one line at the end. Level layouts go to `$level-design`; READMEs, API docs and code comments are not this skill's job.
 
 ## Workflow
 
-1. **Inspect.** Look before writing anything:
-   - **Gate:** confirm that one of the two conditions above holds. If neither does, stop and hand back to `$router`.
-   - **Find the docs:** search for a GDD and design notes (`GDD.md`, `*design*`, `*spec*`, `docs/`, `design/`, `documentation/`, `README.md`). Note the folder, the file names, the doc language and the conventions, and keep them all.
-   - **No docs folder yet?** Propose a location (by default `docs/` with `GDD.md`, `ARCHITECTURE.md` and `features/`) and let the user confirm or choose another before creating files.
-   - **Read the repo:** engine, language, project files, folder layout, test setup. Never ask the user what the repo already answers.
-   - **Read the conversation:** an earlier planning session or brainstorm is your main source. Pull every decision, number and name out of it.
-   - **Existing docs:** if a doc the user wrote would be overwritten or restructured, stop and ask.
-2. **Choose the mode** (several can apply; do them in this order):
+1. **Look before writing.**
+   - Find the existing docs: `GDD.md`, `*design*`, `*spec*`, `docs/`, `design/`, a wiki folder, `specs/` (GitHub spec-kit) or `.kiro/specs/` (Kiro). Keep their folder, file names, language and format.
+   - Read the conversation (a planning chat is your main source) and, when code exists, the repo and `git diff`/`git log`. Never ask what the repo or the chat already answers.
+   - Sort the project into one of three cases. This decides everything below:
+     - **No GDD.** Only a request for a GDD starts one.
+     - **A GDD in this layout** (a feature index plus `features/<slug>/design.md`). Use the modes as written.
+     - **A GDD in any other form** (one long file, a wiki page, spec-tool folders). **Edit it in place, in its own format.** Don't add an index, folders or headers to it. Mention once, in one line, that it could be split into feature notes (mode E); never do it unasked.
+2. **Pick the mode** and read its section in [references/workflow-modes.md](references/workflow-modes.md):
 
-   | Situation | Mode |
+   | The user wants | Mode |
    |---|---|
-   | The user asked for docs and there is no GDD yet | **A. Start the docs** |
-   | A GDD in this structure exists; a new feature is proposed or designed | **B. New feature** |
-   | An existing feature changes (playtest, tuning, rework, cut) | **C. Change a feature** |
-   | Code was written or changed; the docs must match | **D. Sync after coding** |
-   | A GDD or notes exist but not in this structure, and the user agreed to restructure | **E. Migrate** |
-   | A decision was just made | **F. Record a decision** (also inside every other mode) |
+   | a GDD, and there is none | **A. Draft the GDD** |
+   | a new feature written up | **B. New feature** |
+   | a feature changed after a playtest, tuning, rework or cut | **C. Change a feature** |
+   | the docs to match code that was just written or changed | **D. Sync after coding** |
+   | an existing GDD split into this layout (asked for explicitly) | **E. Migrate** |
+   | a design decision recorded | **F. Record a decision** (also inside every other mode) |
 
-3. **Implement.** Read [references/workflow-modes.md](references/workflow-modes.md) for the steps of the chosen mode, and [references/doc-rules.md](references/doc-rules.md) for where each fact lives, decision rows, proof annotations and writing rules. Use the templates listed under [Resources](#resources).
-4. **Verify.** Run the checker on the docs folder. Script paths are relative to this skill's folder:
+3. **Write.** Use the template for the doc you are creating and [references/doc-rules.md](references/doc-rules.md) for where each fact lives, decision rows and proof annotations. Change existing docs with small edits to the affected section; don't regenerate a whole doc, because the user's own wording is part of the design.
+4. **Verify.** Run the checker on the docs folder (paths are relative to this skill's folder; use `python` where `python3` doesn't exist):
    ```bash
    python3 scripts/check_docs.py <project>/docs
-   python3 scripts/check_docs.py <project>/design --gdd game-design.md      # GDD under another name
-   python3 scripts/check_docs.py <project>/docs --old <old-GDD-copy.md>      # migration only
+   python3 scripts/check_docs.py <project>/design --gdd game-design.md   # GDD under another name
    ```
-   Use `python` where `python3` doesn't exist (common on Windows). Exit 0 means no errors. Exit 1 means fix each `ERROR` (and each `WARNING` when it is real, or tell the user why it doesn't apply). Exit 2 means the path or `--gdd` name is wrong, or the folder holds no GDD and no `features/`. Add `--json` for machine-readable output.
-5. **Handoff.** Reply briefly with:
-   - the docs created or changed, as links;
-   - a 2 to 4 line summary of the substance (for mode A: pitch, pillars, MVP features);
-   - the `[ASSUMPTION]`s and open questions the user should answer;
-   - decisions logged and statuses changed;
-   - the suggested next step.
+   Exit 0: no errors. Exit 1: fix each `ERROR`, and each `WARNING` that is real; say why the others don't apply. Exit 2: wrong folder or `--gdd` name. A `NOTE gdd-no-index` means the GDD is not in this layout; that is fine, so leave its structure alone. Then reread every number you touched against its source (the code, the diff or the user's message).
+5. **Hand off** in a few lines: the docs created or changed (as links), the substance in 2 to 4 lines, the `[ASSUMPTION]`s and open questions, decisions logged and statuses changed, and one suggested next step. Don't commit unless asked.
 
-   Don't commit unless the user asks.
+## What to write, and when
 
-## Patterns
+| Moment | Write |
+|---|---|
+| The user asks for a GDD | `GDD.md` from the template, about one page. A feature note (`design.md`) only for MVP features the user has already described with rules or numbers; the rest are index rows with status `idea` |
+| A feature is designed | its `features/<slug>/design.md` |
+| A feature first gets code (status `in progress`) | its `implementation.md` and `testing.md`, short, written against the real code |
+| Code that several features share appears (save format, event bus, scene flow) | `ARCHITECTURE.md`. Until then, one line in the GDD summary names the engine |
 
-### Doc layout
+Write more only when the user asks for it. A plan for code that doesn't exist yet goes stale before the engine is chosen, so it is not written by default.
 
-```
-<docs folder>/              docs/ unless the project already uses another folder
-  GDD.md                    the game as a whole: vision, pillars, core loop, global
-                            direction, FEATURE INDEX, scope, decisions, change log
-  ARCHITECTURE.md           game-wide tech: engine, module map, conventions, file
-                            layout, performance budget, test tooling, build
-  features/<slug>/
-    design.md               what the feature is and why: rules, numbers, edge cases
-    implementation.md       how it is built: modules, files, data, events, deviations
-    testing.md              how we know it works: acceptance criteria and their proof
-```
+**Statuses**, the same words everywhere: `idea` → `designed` → `in progress` (code has started) → `implemented`, plus `changed — code pending` and `cut`. A feature's status lives in two places, the GDD index and `design.md`'s `**Status:**` header, and they must agree.
 
-Keep existing file names (`game-design.md`, `Design.md`) and pass them to the checker with `--gdd`.
+**Questions.** Ask at most one short round before the first draft, and none when the user said "just draft it" or already gave the answers. Ask only what you must not guess: the core fantasy (what the player does and feels), the audience and the platform, plus anything that blocks the draft. Number the questions, give each 2 to 4 options with your recommendation first, and say shorthand answers are fine ("1b, 2: PC only"). Fill every other gap with a sensible default marked `[ASSUMPTION]` and list the open questions in the handoff, where answering them costs the user nothing.
 
-### Statuses and headers
+## Gotchas
 
-- Every doc starts with a header line: its last-updated date and links to the GDD and its siblings.
-- A feature's status appears in two places only, `design.md`'s header (`**Status:** designed`) and the GDD index, and the two must agree.
-- **Statuses:** `idea` → `designed` → `in progress` → `implemented`, plus `changed — code pending` and `cut`. Use the same words everywhere.
-- Use relative links only. Mark guesses `[ASSUMPTION]` and list them in that doc's Open questions.
-
-### Asking the user
-
-Ask the user only for what is missing *and* matters: a few questions at a time, each with 2 to 4 concrete options and your recommendation first. Never invent the core fantasy, the audience or the platform. Fill other gaps with sensible defaults marked `[ASSUMPTION]`.
-
-## Pitfalls
-
-- **Docs written for a request that only asked for code** → the gate was skipped. With no GDD and no request for docs, build the game first; offer docs at most, and write them only on a yes.
-- **Docs created in `docs/` beside an existing `design/` folder** → the inspect step was skipped. Use the existing folder and names.
-- **A ticked criterion the test doesn't fully prove** → the test's name was trusted instead of its assertions. Read the test body and tick only the proven part (details in [doc-rules.md](references/doc-rules.md#proof-annotations)).
-- **Two docs disagree on a number** → a fact was copied. Keep it in its home and link to it.
-- **A GDD section grows past a screen of detail** → feature detail leaked into the GDD. Move it to that feature's docs and leave a one-line summary and link.
-- **Links break after a rename** → slugs never change once created. Rename the feature's title, not its folder.
-- **Content vanishes in a migration** → it was rewritten or skipped. Map every old section first, move it close to verbatim, and review every `--old` line the checker reports.
+- **"Draft a GDD" produced 20+ files.** Writing a design note, an implementation plan and a test plan for every MVP feature, plus an ARCHITECTURE.md, before any code exists. Follow the table above: one GDD page, notes only for features with real substance.
+- **A plain GDD got restructured.** The user asked to "update the dash in our GDD" and the agent added a feature index or folders, often to clear checker messages. Edit the GDD where it is; the checker's `gdd-no-index` is only a note.
+- **"Record this decision" started a doc set.** With no GDD, add the decision where the project keeps notes; mode F says where.
+- **Asking for numbers that are already in the code.** Playtest tuning often lands in code before the docs. In modes C and D, read the diff first, and set `changed — code pending` only when the code really lacks the change.
+- **The agent stalls on questions.** Three rounds of interview, or a "where should the docs go?" stop. Use `docs/` (or the existing folder), name it in the handoff, and ask one round at most.
+- **A ticked criterion the test doesn't prove.** The test's name was trusted, not its assertions. Read the test body and tick only the proven part ([proof annotations](references/doc-rules.md#proof-annotations)).
+- **Two docs disagree on a number.** It was copied. Each fact has one home; everything else links to it.
+- **Feature docs beside a spec tool.** If the project uses spec-kit (`specs/NNN-name/spec.md`) or Kiro specs (`.kiro/specs/<name>/`), those are the feature docs. Link them from the GDD index instead of writing `features/` copies.
+- **Links break after a rename.** Slugs never change once created; rename the feature's title, not its folder.
+- **Content vanishes in a migration.** Mode E moves text close to verbatim and checks with `--old <copy> --max-issues 0`, so no reported line is hidden.
 
 ## Resources
 
-- [references/workflow-modes.md](references/workflow-modes.md): step-by-step for modes A to F. Read it once a mode is chosen.
-- [references/doc-rules.md](references/doc-rules.md): one fact, one home; what counts as a feature; decision rows; proof annotations; writing rules; testing pitfalls. Read it before writing or syncing any doc.
-- [references/gdd-template.md](references/gdd-template.md): read it when writing or migrating a GDD.
-- [references/architecture-template.md](references/architecture-template.md): read it when writing or migrating ARCHITECTURE.md.
-- [references/feature-templates.md](references/feature-templates.md): read it when creating a feature folder.
-- `scripts/check_docs.py`: read-only checker (workflow step 4). Run it with `--help` for its options and issue codes.
+- [references/workflow-modes.md](references/workflow-modes.md): the steps for modes A to F. Read only the section for the chosen mode.
+- [references/doc-rules.md](references/doc-rules.md): one fact, one home; what counts as a feature; decision rows; proof annotations; testing pitfalls; writing rules. Read before writing or syncing any doc.
+- [references/gdd-template.md](references/gdd-template.md): read when drafting a GDD (mode A) or migrating one (mode E).
+- [references/feature-templates.md](references/feature-templates.md): read when creating a feature's `design.md`, `implementation.md` or `testing.md`.
+- [references/architecture-template.md](references/architecture-template.md): read when shared code first needs an ARCHITECTURE.md.
+- `scripts/check_docs.py`: read-only checker (workflow step 4). `--help` lists its options and every issue code.
 
 ## Related skills
 
 - `$router`: picks the engine and genre skills that build what the docs describe.
+- `$prototype-fast`: finding out whether a mechanic is fun; write its feature note once it is kept.
+- `$game-jam`: scoping under a deadline. Jam docs are the GDD page and nothing else.
 - `$level-design`: layouts, pacing and encounters for individual levels.
-- `$prototype-fast`: answering "is it fun?" before a feature earns full docs.
-- `$game-jam`: scoping under a deadline. Keep jam docs to the GDD and MVP features.

@@ -1,13 +1,13 @@
 # ARCHITECTURE template
 
-Copy into `ARCHITECTURE.md` next to the GDD (by default `docs/ARCHITECTURE.md`). If the GDD has another file name, change the `[GDD](GDD.md)` link to match. This is the game-wide technical picture: things more than one feature depends on. A feature's own modules, data and events go in its `implementation.md`, which links back here for the shared parts.
+Copy into `ARCHITECTURE.md` next to the GDD once the code has structure that more than one feature depends on (a save format, an event bus, a scene flow), or when the user asks. Until then, the engine is one line in the GDD summary. If the GDD has another file name, change the `[GDD](GDD.md)` link to match. A feature's own modules, data and events go in its `implementation.md`, which links back here for the shared parts.
 
-Before code exists, write the intended architecture and mark it `planned`. Once code exists, **describe the code as it is**. Read the repo, and use real paths and names. Text in *italics* is guidance; don't copy it.
+**Describe the code as it is**: read the repo and use real paths and names. Leave out a section with nothing in it yet. Text in *italics* is guidance; don't copy it.
 
 ~~~markdown
 # <Title> — Architecture
 
-**Status:** planned | current · **Updated:** <YYYY-MM-DD> · [GDD](GDD.md)
+**Updated:** <YYYY-MM-DD> · [GDD](GDD.md)
 
 ## 1. Stack
 | | |

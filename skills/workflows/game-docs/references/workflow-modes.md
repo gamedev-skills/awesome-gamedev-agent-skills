@@ -1,67 +1,66 @@
 # Workflow modes
 
-The step-by-step for each mode in SKILL.md's workflow. "The docs folder" means the folder the project already uses, or the one the user confirmed (by default `docs/`). Where to put each fact, proof rules and writing rules are in [doc-rules.md](doc-rules.md).
+Steps for each mode in SKILL.md's workflow. Read only the section you need. "The docs folder" is the folder the project already uses, or `docs/` when there is none. Where each fact lives, decision rows and proof rules are in [doc-rules.md](doc-rules.md). The question rules and the "what to write, and when" table are in SKILL.md.
 
-## Mode A: Start the docs
+**A GDD not in this layout** (one long file, a wiki page): run modes B, C, D and F against the GDD's own sections, in its own format. Add or edit the section that covers the feature; add a line to its change log if it has one. Create no index, folders or headers.
 
-Only when the user asked for docs. A request to build a game is not a request for docs.
+- [Mode A: Draft the GDD](#mode-a-draft-the-gdd)
+- [Mode B: New feature](#mode-b-new-feature)
+- [Mode C: Change a feature](#mode-c-change-a-feature)
+- [Mode D: Sync after coding](#mode-d-sync-after-coding)
+- [Mode E: Migrate existing docs](#mode-e-migrate-existing-docs)
+- [Mode F: Record a decision](#mode-f-record-a-decision)
 
-**1. Pick the location.** If the project has no docs folder, propose `docs/` (with `GDD.md`, `ARCHITECTURE.md` and `features/`) and let the user confirm or choose another folder or file names. If a folder already exists, use it.
+## Mode A: Draft the GDD
 
-**2. Extract, then interview.** Take every answer you can from the pitch, the planning session and the repo. Then ask the user for what is missing *and* matters: a few questions at a time, each with 2 to 4 concrete options and your recommendation first. Ask in rounds, most fundamental first, and stop once the essentials are covered:
-
-- *Round 1, essentials:* core fantasy (what the player does and feels), genre and camera, target audience, platforms and input (and orientation).
-- *Round 2, shape of play:* session length and structure, win/lose and how harsh failure is, progression within and across sessions, main sources of challenge.
-- *Round 3, presentation and scope, if not obvious:* art style and mood (reference games are fine), audio, narrative amount, text language(s), scope (jam / prototype / small release, deadline), and engine/tech if the repo doesn't decide it.
-
-Never invent the core fantasy, the audience or the platform; those come from the user. Fill other gaps with sensible defaults marked `[ASSUMPTION]`.
-
-**3. Cut the game into features.** List the MVP features (usually 4 to 10) and the likely post-MVP ones. If the cut isn't obvious from the planning session, show the list to the user, one line per feature, before writing them up. Feature boundaries are hard to change later because slugs and links depend on them.
-
-**4. Write the docs:**
-- The GDD from [gdd-template.md](gdd-template.md).
-- ARCHITECTURE.md from [architecture-template.md](architecture-template.md). If the tech isn't decided yet, write what is known, put the choices in §Open questions, and keep it short.
-- For each **MVP** feature, a folder with all three docs from [feature-templates.md](feature-templates.md). Before code exists, `implementation.md` is a *plan*: its Approach starts with "**Plan, no code yet.**" and gives the intended approach, modules and risks. `testing.md` holds the acceptance criteria, all unticked.
-- Post-MVP features get a row in the GDD index with status `idea` and no folder yet. A folder appears when someone starts designing the feature (mode B).
-
-**5. Verify and hand off** (workflow steps 4 and 5). Suggest the next step, usually milestone 1, a greybox of the core loop. Don't start implementing the game in the same turn unless the user asked for it; `$router` picks the engine and genre skills.
+1. **Gather.** Take every answer you can from the pitch, the planning chat and the repo. Then ask the one round of questions SKILL.md allows, or none.
+2. **Cut the game into features.** List the MVP features (usually 4 to 10) and the likely later ones as rows in the GDD index. Name each with a short noun slug (`combo`, `day-night`); slugs never change once a folder exists.
+3. **Write `GDD.md`** from [gdd-template.md](gdd-template.md) in the docs folder. Aim for one page, around 100 lines: if a section grows past a screen, that detail belongs in a feature note.
+4. **Write feature notes** (`features/<slug>/design.md` from [feature-templates.md](feature-templates.md)) only for MVP features the user has already described with rules or numbers. Set those rows to `designed`. Every other row stays `idea`, with a one-line summary and no folder.
+   - **The game already has code:** features that are built get status `implemented` and a note whose numbers are read from the code. Don't write their `implementation.md` or `testing.md` in this pass; offer them as the next step. The checker's `feature-doc-missing` warnings for those features are expected then, and say so in the handoff.
+5. **Verify and hand off.** Offer to write notes for the remaining features, and suggest the next step: usually prototyping the core loop (`$prototype-fast`) or building milestone 1 with the engine skills. Don't start coding in the same turn unless the user asked.
 
 ## Mode B: New feature
 
-1. Read the GDD (pillars, core loop, feature index), ARCHITECTURE and the design docs of the features this one touches. A new feature must fit the pillars. If it fights one, say so, and log the decision either way.
-2. If the idea is rough, ask the user briefly about what's missing: the player-facing goal, how it interacts with existing systems, numbers, failure and edge cases. Offer 2 or 3 concrete options with a recommendation instead of open questions.
-3. Create `features/<slug>/` with all three docs. Fill `design.md` fully. Write `implementation.md` against the real code: the actual modules and files it will touch, the existing events and config it reuses, and what is new. Write `testing.md` with acceptance criteria and the planned tests (named files where the repo's test layout makes that obvious).
-4. Add the feature to the GDD index (status `designed`), bump the GDD minor version, and add a change-log line. If it changes game-wide tech (a new event type, a save-format change), update ARCHITECTURE too.
+1. Read the GDD (pillars, core loop, feature index) and the notes of features this one touches. If the feature fights a pillar, say so plainly; log the decision either way.
+2. If the idea is rough, ask one short round about what's missing: the player-facing goal, interactions with existing systems, numbers, failure and edge cases. Offer options with a recommendation instead of open questions.
+3. Write `features/<slug>/design.md`. Add the index row (status `designed`) and a change-log line.
+4. If code for it already exists, or the user asks, also write `implementation.md` and `testing.md` against the real code (mode D, steps 2 and 3).
 
 ## Mode C: Change a feature
 
-1. Edit `design.md` in place so it always describes **the current design**, not the history of how it got there. Add a dated line to its History section ("2026-11-02: multiplier cap ×5 → ×6 after playtest, D-014").
-2. Follow the change through. Does `implementation.md` still match? If the code isn't updated yet, set the status to `changed — code pending` in `design.md`'s header and in the GDD index. Does `testing.md` still test the right numbers? Do other features' docs that link here still hold?
-3. Log the decision (mode F) if it reverses or changes a previous one, or if someone will later ask "why is it like this?".
-4. Cutting a feature: set the status to `cut`, keep the folder, and add a short note at the top of `design.md` explaining why. Cut ideas come back, and the reasoning is the valuable part.
+1. **Find the new values first.** Check `git diff`, `git log -p` on config or tuning files, and the conversation. Playtest tuning often lands in code before the docs, and a number in the diff is not a question for the user.
+2. **Edit `design.md` in place** so it describes the current design, not its history. Add a dated History line with the old and new value and the reason ("2026-11-02: multiplier cap ×5 → ×6 after playtest, D-014"). Playtest notes earn their place here: what was seen, what changed, what to watch next.
+3. **Follow it through.** If the code already has the change, update the numbers in `implementation.md` and `testing.md` (when they exist). If the code doesn't have the change yet, set `changed — code pending` in `design.md` and the GDD index. Check the notes of other features that link here.
+4. **Log a decision** (mode F) if the change reverses an earlier choice or picks between real alternatives.
+5. **Cutting:** set the status to `cut`, keep the folder, and add a short note at the top of `design.md` saying why. Cut ideas come back, and the reasoning is the valuable part.
 
 ## Mode D: Sync after coding
 
-The goal: someone reading the docs tomorrow can trust that they describe the code as it is.
+Goal: someone reading the docs tomorrow can trust them to describe the code as it is.
 
-1. Find what changed: `git log` / `git diff` since the docs were last touched (`git log -1 --format=%cs -- <docs>/features/<slug>`), or the work done in this conversation. Without git, compare file modification dates against the docs' "Updated" dates, or ask the user what changed.
-2. **Read the code.** Don't trust memory or the plan. Update `implementation.md` to match it: real file paths, module and function names, config constant names, events, the save-data shape. Put anything built differently from `design.md` in `implementation.md` §Deviations. Then either change `design.md` to match (if the change is now the design, and log it) or flag it as a bug to fix.
-3. Update `testing.md`. Tick an acceptance criterion **only when a named test or a dated manual check proves it**, and write the proof next to it ([proof annotations](doc-rules.md#proof-annotations)). Unticked means "not proven yet", which is useful information, not a failure, so give the reason next to it. Add new tests to the test list. Run the tests if you can and report the real result.
-4. Set the status (`in progress` → `implemented`) in `design.md`'s header and the GDD index, and add a History line to `implementation.md` naming the commit if there is one. Update ARCHITECTURE if cross-cutting structure changed (a new module, a new event, a folder move, a save version bump).
-5. If code in a feature's area is never mentioned in its docs, that part of the docs is missing. Write it.
+1. **Find what changed:** `git diff`, or `git log` since the docs were last touched (`git log -1 --format=%cs -- <docs>/features/<slug>`), or the work done in this conversation.
+2. **Read the code**, not the plan or your memory. When a feature first gets code, set it to `in progress` and create its `implementation.md` from the template, short: real file paths, config constant names, events, save data. Anything built differently from `design.md` goes under Deviations; then either update `design.md` (and log it) or report it as a bug.
+3. **Update `testing.md`** (create it with `implementation.md`). Tick a criterion only when a named test or a dated manual check proves it, with the proof next to it ([proof annotations](doc-rules.md#proof-annotations)). Run the tests if you can and report the real result.
+4. **Set the status** (`in progress` → `implemented` when the feature works end to end) in `design.md` and the GDD index, and add a History line naming the commit if there is one.
+5. **Shared structure:** when code several features depend on appears or changes (a save version, an event, a scene flow, a folder move), write or update `ARCHITECTURE.md` from [architecture-template.md](architecture-template.md).
 
 ## Mode E: Migrate existing docs
 
-Only with the user's yes. Moving content must never lose any of it: plan first, then move, then check.
+Only when the user asked for it. Moving content must not lose any of it: plan, move, then check.
 
 1. Read the old docs completely: the GDD and any side files (proposals, design notes, reviews).
-2. Keep a copy of the old GDD outside the docs folder for the checker, e.g. `git show HEAD:docs/GDD.md > <scratch>/old-GDD.md`, or a plain file copy made before you start if there is no git.
-3. Build a **mapping table**: every old section (or side file) → its new home (GDD / ARCHITECTURE / `features/<slug>/design|implementation|testing`). Split mixed sections: rules go to `design.md`, "tech notes" to `implementation.md`, acceptance criteria to `testing.md`. Show the feature list and the mapping to the user and get a yes before moving anything. This is the step where mistakes are cheap.
-4. Move the text **close to verbatim**. Migration is not the time to rewrite. Fix only what the new location forces: headings, links, and "see §6.10" references, which become links to the new docs. Keep numbers, tables and tick marks exactly as they were.
-5. Keep the history. The old change log stays in the GDD. Dated side docs (`DESIGN-combo-2026-10.md`) are merged into their feature folder, and the original moves to `archive/` inside the docs folder, linked from the feature's History section. Proposals and reviews that aren't about one feature also go to `archive/`, linked from the GDD.
-6. Run the checker with `--old` and go through every line and number it reports as missing. Either the content landed somewhere in reworded form (fine) or it was lost (put it back).
-7. Bump the GDD version and add a change-log line: "Docs split into GDD + ARCHITECTURE + features/".
+2. Save a copy of the old GDD **outside** the docs folder for the checker, e.g. `git show HEAD:docs/GDD.md > <scratch>/old-GDD.md`, or a plain copy made before you start.
+3. Build a **mapping table**: every old section or side file → its new home (GDD or `features/<slug>/design|implementation|testing`). Split mixed sections: rules to `design.md`, tech notes to `implementation.md`, acceptance criteria to `testing.md`. A feature gets `implementation.md` or `testing.md` only if the old docs had that content or the code exists. Show the mapping and get one yes before moving anything; this is where mistakes are cheap.
+4. Move text **close to verbatim**. Fix only what the new location forces: headings, links, and "see §6.10" references, which become links. Keep numbers, tables and tick marks exactly as they were.
+5. Keep the history: the old change log stays in the GDD. Merge dated side docs into their feature, move the originals to `archive/` in the docs folder and link them from the feature's History. The checker ignores `archive/` when comparing.
+6. Run `python3 scripts/check_docs.py <docs> --old <scratch>/old-GDD.md --max-issues 0` (repeat `--old` for each side file). For every line and number it reports, either the content landed in reworded form (fine) or it was lost (put it back).
+7. Add a change-log line: "Docs split into GDD + features/".
 
 ## Mode F: Record a decision
 
-Log a decision when it will matter later: it picks between real alternatives, reverses an earlier choice, or will make someone ask "why?". Don't log trivia. Add a row to GDD §Decisions ([decision row](doc-rules.md#decision-row)). Feature docs mention the IDs in their History lines; they don't copy the reasoning.
+Log a decision when it will matter later: it picks between real alternatives, reverses an earlier choice, or someone will ask "why is it like this?". Skip trivia.
+
+- **GDD in this layout:** add a row to GDD §Decisions ([decision row](doc-rules.md#decision-row)). Feature notes mention the ID in their History line; they don't copy the reasoning.
+- **GDD in another form:** add it to the GDD's own decisions or change-log section; if it has neither, append a short "Decisions" table at the end and say so in the handoff.
+- **No GDD:** add it where the project keeps decisions or notes (`docs/adr/`, `decisions.md`, `NOTES.md`). If there is no such place, create `docs/decisions.md` holding only the decision table and this row. Don't start a GDD; offer one in a line. The checker needs a GDD, so skip it here and reread the row instead.

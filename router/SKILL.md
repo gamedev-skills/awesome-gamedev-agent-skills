@@ -181,7 +181,7 @@ pointers, and state the gap.
 
 `game-jam` (jam, 48-hour, Ludum Dare/GMTK) · `prototype-fast` (vertical slice, MVP, greybox) ·
 `steam-publish` (Steam, Steamworks, depot; `steam_appid.txt`) · `itch-publish` (itch.io, butler;
-`.itch.toml`) · `game-docs` (GDD, feature design doc, sync docs; only when asked or an existing GDD).
+`.itch.toml`) · `game-docs` (GDD, feature design note, sync the GDD; only when asked or an existing GDD).
 
 For the exhaustive per-skill trigger list and every engine binding, read
 `references/routing-table.md`.

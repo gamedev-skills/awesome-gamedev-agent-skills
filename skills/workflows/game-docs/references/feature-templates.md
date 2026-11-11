@@ -1,145 +1,93 @@
-# Feature doc templates
+# Feature templates
 
-One folder per feature: `features/<slug>/` inside the docs folder, with `design.md`, `implementation.md`, `testing.md`. Each doc opens with a header line for navigation. The feature's **status lives in `design.md`'s header** (and in the GDD index; `scripts/check_docs.py` checks the two agree). Keep `**Status:** <status>` exactly in this form there. The other two docs carry only the updated date and links.
+One folder per feature, `features/<slug>/` in the docs folder. `design.md` comes first and is often all a feature has. `implementation.md` and `testing.md` are added when the feature first gets code (or when the user asks). Text in *italics* is guidance; don't copy it. Leave out any section that doesn't apply.
 
-Scale to the feature: a small feature's docs can be a few lines per section, and "n/a" is a fine answer. Text in *italics* is guidance; don't copy it.
+- [design.md](#designmd-the-feature-note)
+- [implementation.md](#implementationmd-once-code-exists)
+- [testing.md](#testingmd-once-code-exists)
 
----
+## design.md: the feature note
 
-## design.md: what and why
-
-*Always describes the **current** design. Edit it in place, and keep the history in the History section. Owns the feature's numbers. Other docs refer to them, not copy them.*
+*Describes the **current** design; edit it in place and keep the past in History. It owns the feature's numbers; other docs name or test them, never copy them. Keep `**Status:** <status>` in the header exactly in this form: the checker reads it and compares it with the GDD index. A small feature's note is 15 to 30 lines.*
 
 ~~~markdown
-# <Feature name>: design
+# <Feature name>
 
-**Status:** designed · **Updated:** <YYYY-MM-DD> · [GDD](../../GDD.md) · Design · [Implementation](implementation.md) · [Testing](testing.md)
+**Status:** designed · **Updated:** <YYYY-MM-DD> · [GDD](../../GDD.md)
 
-## In one paragraph
-<What the player experiences, and how the feature changes play.>
-
-**Player-facing pitch:** *"<one line you could put in a store listing or tutorial>"*
-
-## Why
-| Goal | How this feature achieves it |
-|---|---|
-| | |
-
-**Pillars served:** <pillar name: how>. *(If it strains a pillar, say which and why that's accepted; link the decision.)*
-**Non-goals:** <what this deliberately doesn't do>
+<One paragraph: what the player does and feels, and how it changes play. Name the pillar it serves.>
 
 ## Rules
-*Numbered, precise, testable. What triggers what, in what order, and what can't happen.*
+*Numbered, precise, testable: what triggers what, in what order, and what can't happen.*
 1. …
 
 ## Numbers
-*Every tunable, with units. First guesses are fine; mark them.*
-| Name | Value | Unit | Notes / what to watch in playtests |
+| Name | Value | Unit | What to watch in playtests |
 |---|---|---|---|
 
-## Player experience
-- **UI / HUD:** *(what appears, where, when; touch target sizes)*
-- **Feedback and feel:** *(sound, particles, shake, tween, hit-stop per event)*
-- **Onboarding:** *(how a new player learns it)*
-- **Art / audio specifics:** *(only what's specific to this feature; global direction is in the GDD)*
-
-## Interactions
-| Other feature | Interaction |
-|---|---|
-| [<name>](../<slug>/design.md) | |
-
 ## Edge cases
-- *(pause, death mid-effect, stacking, max values, save/quit mid-feature, input spam, …)*
+- *(pause, death mid-effect, stacking, max values, quitting mid-feature, input spam)*
 
 ## Open questions
 - [ASSUMPTION] …
 
 ## History
-- <YYYY-MM-DD>: designed (GDD <version>). *(Later: "2026-11-02: cap ×5 → ×6 after playtest, D-014.")*
+- <YYYY-MM-DD>: designed.
 ~~~
 
----
+Add these sections only when the feature needs them: **Interactions** (a table of the other features it touches, linked), **Feel and UI** (feedback per event, HUD, onboarding), **Non-goals** (what it deliberately doesn't do). When `implementation.md` and `testing.md` exist, add `· [Implementation](implementation.md) · [Testing](testing.md)` to the header.
 
-## implementation.md: how it's built
+## implementation.md: once code exists
 
-*Before code exists: the plan (start the Approach with "**Plan, no code yet.**"). After: describes **the code as it is**. Read the code and use the real paths, names and constants. Shared, game-wide structure is in ARCHITECTURE.md; link to it instead of re-describing it.*
+*Describes **the code as it is**: read it, and use real paths, names and constants. Shared structure lives in ARCHITECTURE.md; link to it instead of re-describing it. If the user wants a plan before code, start Approach with "**Plan, no code yet.**" and rewrite it when the code lands.*
 
 ~~~markdown
 # <Feature name>: implementation
 
-**Updated:** <YYYY-MM-DD> · [GDD](../../GDD.md) · [Design](design.md) · Implementation · [Testing](testing.md) · [Architecture](../../ARCHITECTURE.md)
+**Updated:** <YYYY-MM-DD> · [Design](design.md) · [Testing](testing.md)
 
 ## Approach
-<A few sentences: the shape of the solution and why this shape. Mention rejected approaches if they were real options.>
+<A few sentences: the shape of the solution and why. Name a rejected approach if it was a real option.>
 
 ## Code map
-| File / module | Role in this feature | New / changed |
-|---|---|---|
-| `src/systems/combo.ts` | meter + multiplier state machine | new |
+| File / module | Role in this feature |
+|---|---|
+| `src/systems/combo.ts` | meter and multiplier state |
 
 ## Data and config
-- **Config constants:** *(name → design.md number, e.g. `COMBO_MAX_MULT` = "max multiplier")*
-- **Data files / content tables:**
-- **Persistence:** *(what is saved, save-version bump and migration, or "none")*
-
-## Flow
-*Events emitted/consumed, update order, state machine. A small diagram helps for anything with states.*
-```
-<diagram>
-```
-
-## Dependencies
-- **Uses:** *(other features' modules, shared systems from ARCHITECTURE)*
-- **Used by:**
-
-## Performance
-*Per-frame cost, pooling, allocations, draw calls, asset size; or "negligible" with a reason.*
+- **Config constants:** *(name → the design.md number it holds, e.g. `COMBO_MAX_MULT` = max multiplier)*
+- **Persistence:** *(what is saved and the save version, or "none")*
 
 ## Deviations from design
-*Where the code differs from design.md, and why: either design.md gets updated (and the decision logged) or the deviation is a bug to fix. Empty = code matches design.*
-
-## Risks and TODO
-- …
+*Where the code differs from design.md and why. Each one either updates design.md (and logs a decision) or is a bug to fix. Empty means the code matches the design.*
 
 ## History
-- <YYYY-MM-DD>: plan written. *(Later: "2026-11-05: implemented in 6b4fe1b.")*
+- <YYYY-MM-DD>: implemented in <commit>.
 ~~~
 
----
+Add when it matters: **Flow** (events emitted and consumed, update order, a state diagram), **Performance** (per-frame cost, pooling, asset size), **Risks and TODO**.
 
-## testing.md: how we know it works
+## testing.md: once code exists
 
-*Acceptance criteria are checkable statements with numbers or observable results. Tick one only when a named test or a dated manual check proves it, and write the proof next to it. Unticked means not proven yet.*
+*Each criterion maps to a rule or number in design.md and ends with its proof, or the reason it has none ([proof annotations](doc-rules.md#proof-annotations)). Unticked means not proven yet, which is useful information.*
 
 ~~~markdown
 # <Feature name>: testing
 
-**Updated:** <YYYY-MM-DD> · [GDD](../../GDD.md) · [Design](design.md) · [Implementation](implementation.md) · Testing
+**Updated:** <YYYY-MM-DD> · [Design](design.md) · [Implementation](implementation.md)
 
 ## Acceptance criteria
-*Group by rule or area. Each one maps to a rule or number in design.md. Tick only what a test's assertions or a dated check prove; split a criterion when the proof covers part of it (see doc-rules.md, "Proof annotations" and "Testing pitfalls").*
-Ticked = proven by the named test or check. Unticked = not proven yet.
-
 - [x] <Checkable statement, worded as narrowly as its proof>. *(`tests/<file>.test.ts` › <suite>)*
-- [x] <Statement>. *(browser check <date>: <browser>, <viewport>, <anything stubbed>)*
+- [x] <Statement>. *(manual check <date>: <device or browser>, <anything stubbed>)*
 - [ ] <The part not proven yet>. *(not proven: <no test / the test checks less / needs a device>)*
 
 Covered in [<other feature>](../<slug>/testing.md): <a rule whose criterion lives there>.
 
-## Automated tests
-| Test file / suite | Covers |
-|---|---|
-
-## Manual / playtest checks
-*Steps a person runs, with the expected result. Note which devices or inputs.*
-1. …
-
-## Metrics to watch
-*What to measure in playtests or bot runs to tune the numbers (e.g. "average multiplier at 800 m, target ×1.5–2").*
-
-## Regression risks
-*Other features this could break, and the tests that guard them.*
+## Playtest checks
+1. *(steps a person runs, with the expected result and the device)*
 
 ## History
 - <YYYY-MM-DD>: criteria written.
 ~~~
+
+Add when it matters: **Metrics to watch** (what to measure in playtests to tune the numbers, e.g. "average multiplier at 800 m, target ×1.5–2") and **Regression risks** (features this could break, and the tests that guard them).
