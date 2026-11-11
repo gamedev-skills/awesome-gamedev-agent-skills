@@ -2,6 +2,10 @@
 
 Depth companion to `godot-shaders`. The language is GLSL-like with engine built-ins.
 
+Contents: shader types and processor functions · common built-ins · uniform hints ·
+render modes · varying · vertex() displacement · custom light() · 2D normal maps ·
+visual shaders · performance notes
+
 ## Shader types and processor functions
 
 | `shader_type` | Used by | Main functions | Key output writes |

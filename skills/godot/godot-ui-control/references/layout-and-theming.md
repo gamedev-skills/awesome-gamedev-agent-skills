@@ -2,6 +2,10 @@
 
 Depth companion to `godot-ui-control`.
 
+Contents: anchors and offsets · container types · size flags · Theme and StyleBox ·
+focus navigation · offset transforms (4.7+) · touch joystick (4.7+) · HUDs over the game ·
+common signals
+
 ## Anchors and offsets
 
 A `Control` has four anchors (`anchor_left/top/right/bottom`), each a fraction `0.0–1.0`

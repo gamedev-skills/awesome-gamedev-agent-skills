@@ -2,6 +2,10 @@
 
 Depth companion to `godot-signals-groups`.
 
+Contents: connection flags · bind vs unbind · custom signals with typed arguments ·
+awaiting a signal with a timeout · disconnecting safely · groups API · signals vs direct
+calls · global event bus (autoload)
+
 ## Connection flags
 
 `Object.connect` / `Signal.connect` accept a flags bitmask:
