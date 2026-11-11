@@ -2,6 +2,9 @@
 
 Depth companion to `godot-animation`.
 
+Contents: AnimationPlayer essentials; AnimationTree nodes; Root motion; AnimatedSprite2D
+(sprite sheets); Tween (create_tween) details.
+
 ## AnimationPlayer essentials
 
 - Author clips in the editor's Animation panel; each clip keys node properties over time.
@@ -23,25 +26,26 @@ rule), so test them in the running game.
 
 Set `AnimationTree.tree_root` to one of:
 
-- `AnimationNodeStateMachine` — named states with transitions. Drive via the playback
-  object:
-  ```gdscript
-  var sm: AnimationNodeStateMachinePlayback = tree.get("parameters/playback")
-  sm.travel("attack")          # finds a path through transitions to "attack"
-  sm.start("idle")             # jump immediately, ignoring transitions
-  sm.get_current_node()        # current state name
-  ```
-  Transitions can be set to **Immediate**, **Sync**, or **At End**, and gated by
-  **advance conditions** (booleans you set: `tree.set("parameters/conditions/is_dead", true)`)
-  or an advance expression.
+- `AnimationNodeStateMachine` — named states with transitions, driven through the playback
+  object (first example below). Transitions can be set to **Immediate**, **Sync**, or
+  **At End**, and gated by **advance conditions** (booleans you set) or an advance
+  expression.
 - `AnimationNodeBlendSpace1D` / `BlendSpace2D` — place clips at points; set
   `"parameters/blend_position"` when the blend space is the root, or
   `"parameters/<name>/blend_position"` for a named child (e.g. directional locomotion).
 - `AnimationNodeBlendTree` — a graph of blend/add/one-shot nodes with named outputs.
-- `AnimationNodeOneShot` — fire a one-off (e.g. a hit reaction) over a base animation:
-  ```gdscript
-  tree.set("parameters/Shot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
-  ```
+- `AnimationNodeOneShot` — fire a one-off (e.g. a hit reaction) over a base animation.
+
+```gdscript
+func drive_tree(tree: AnimationTree) -> void:
+    var sm: AnimationNodeStateMachinePlayback = tree.get("parameters/playback")
+    sm.travel("attack")          # finds a path through transitions to "attack"
+    sm.start("idle")             # jump immediately, ignoring transitions
+    print(sm.get_current_node()) # current state name
+    tree.set("parameters/conditions/is_dead", true)   # an advance condition
+    # A OneShot node named "Shot" inside a blend tree:
+    tree.set("parameters/Shot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+```
 
 Parameter paths start at `"parameters/"`, then add each named child along the path and
 the property. The root itself adds no name: root blend position is

@@ -1,131 +1,134 @@
 ---
 name: godot-export
 description: >
-  Export and build a Godot 4.7 project for distribution: install export templates,
-  define export presets (Windows/macOS/Linux/Web/Android), run headless command-line
-  exports for CI, and handle web (HTML5) COOP/COEP and dedicated-server/headless
-  builds. Use when exporting a Godot game, configuring export_presets.cfg, building
-  for web/desktop/mobile, or automating builds from the command line.
+  Export a Godot 4 project for distribution: export templates, export_presets.cfg presets
+  for Windows, macOS, Linux, Web and Android, command-line exports with --export-release,
+  --export-pack and --export-patch, export builds in CI, web COOP/COEP headers,
+  dedicated-server builds, and feature tags. Use when exporting or packaging a Godot
+  game, automating builds, or when an export fails with "No export template found", a
+  preset is not found, the web build shows a blank page or SharedArrayBuffer error, or the
+  exported game is missing files or cannot save. Not for running tests in CI (use
+  `godot-gdscript-headless-testing`), uploading to stores (use `steam-publish` or
+  `itch-publish`), or server networking code (use `godot-multiplayer`).
 ---
 
 # Godot Export & Builds (4.x)
 
-Turn a project into runnable platform builds via export presets and the command line, and
-handle the web/dedicated-server gotchas. Targets **Godot 4.7**.
+Turn a project into builds from export presets on the command line, then prove the build
+runs. Targets **Godot 4.7**; export templates must match the editor version exactly, so
+read `config/features` in `project.godot` and the CI's Godot version first.
 
-## When to use
+## Workflow
 
-- Use when producing a shippable build: installing export templates, creating/editing
-  export presets, exporting from the editor or headless CLI (CI), or troubleshooting web
-  (HTML5) and dedicated-server exports.
-
-**When *not* to use:** storefront publishing flows → `steam-publish`/`itch-publish`; the
-networking code of a server → `godot-multiplayer` (this skill covers building it headless).
-
-## Core workflow
-
-1. **Install export templates** matching your engine version: Editor menu >
-   *Manage Export Templates* (download), or install the `.tpz` offline. Versions must
-   match the editor exactly. Since 4.7 the downloader can fetch templates for a single
-   platform or architecture instead of the full set.
-2. **Add export presets** in *Project > Export*: pick a platform (Windows Desktop, macOS,
-   Linux, Web, Android, iOS), set the export path, icons, features, and resource
-   include/exclude filters. Presets are saved to `export_presets.cfg`.
-3. **Export from the editor** with *Export Project* (release) or *Export PCK/ZIP*.
-4. **Or export headless from the CLI** for automation/CI using
-   `--export-release "<preset name>" <output path>`.
-5. **Per platform:** Web needs cross-origin isolation (COOP/COEP) only if the preset's
-   *Thread Support* is on (off by default); Android needs the SDK/keystore; macOS/iOS need
-   signing for distribution.
-6. **Smoke-test the build** on the target before shipping — exported builds use `res://`
-   read-only; write to `user://`.
+1. **Read `export_presets.cfg`.** Each `[preset.N]` has a `name` (what the CLI wants), a
+   `platform` and an `export_path`. If the file is missing, create presets in
+   *Project > Export* or ask the user to; avoid hand-writing a full preset from nothing.
+2. **Install matching templates** (*Editor > Manage Export Templates*, or unpack the
+   `.tpz` so its files land in the folder the error message names, for example
+   `~/.local/share/godot/export_templates/4.7.2.stable/` on Linux). `--export-pack` needs
+   none.
+3. **Export from the CLI**, from the project folder, into a folder that already exists:
+   `godot --headless --export-release "<preset name>" build/<platform>/<file>`.
+4. **Per platform:** Web needs COOP/COEP headers only when the preset's *Thread Support* is
+   on (off by default); Android needs SDK paths and a keystore; macOS needs signing and
+   notarization to pass Gatekeeper.
+5. **Verify before you finish:**
+   - The export command exits 0 and the output file exists. A non-zero exit always means
+     failure (missing template, unknown preset, unwritable path); the reason is in the log.
+   - Smoke-run the exported data without templates: `godot --headless --path <project> --export-pack "<preset>" build/game.pck`,
+     then `godot --headless --main-pack build/game.pck --quit-after 300 > run.log 2>&1` and
+     `grep -nE "SCRIPT ERROR|^ERROR:" run.log`. This catches files the preset's filters left
+     out and `res://` writes, because it loads only what was packed.
+   - For a Linux or server build, run the binary itself the same way:
+     `./build/linux/game.x86_64 --headless --quit-after 300`.
+   - Platforms you cannot run here (consoles, iOS, a signed macOS app, phones): ask the user
+     to launch the build on the device and report whether it starts, saves and loads.
 
 ## Patterns
 
-### 1. Headless CLI export (CI-friendly)
+### 1. Command-line exports
 
 ```bash
-# Preset name must match exactly what's in Project > Export (quote it).
-# Run from the project directory (where project.godot lives).
-# The output folder must already exist; Godot does not create it.
-mkdir -p build/windows build/linux build/web
+mkdir -p build/windows build/linux build/web          # Godot will not create the folder
 godot --headless --export-release "Windows Desktop" build/windows/game.exe
 godot --headless --export-release "Linux"           build/linux/game.x86_64
 godot --headless --export-release "Web"             build/web/index.html
-
-# Debug build (includes debug symbols / remote debug):
-godot --headless --export-debug "Windows Desktop" build/windows/game_debug.exe
-
-# Export only the data pack (no executable):
-godot --headless --export-pack "Linux" build/game.pck
-
-# Export only files changed since the given base pack(s):
-godot --headless --export-patch "Linux" build/patch1.pck --patches build/game.pck
+godot --headless --export-debug   "Windows Desktop" build/windows/game_debug.exe
+godot --headless --export-pack    "Linux"           build/game.pck   # .zip for a ZIP pack
+godot --headless --export-patch   "Linux"           build/patch1.pck --patches build/game.pck
 ```
 
-### 2. Run a project headless (dedicated server / tests)
-
-```bash
-# No window/GPU — for a server build or automated runs.
-godot --headless --path . res://server_main.tscn
-# Quit after N main-loop iterations (frames, NOT seconds) — handy for a headless smoke test:
-godot --headless --path . --quit-after 600
-```
-
-### 3. Detect the build context at runtime
+### 2. Detect the build at runtime
 
 ```gdscript
 func _ready() -> void:
     if OS.has_feature("dedicated_server") or DisplayServer.get_name() == "headless":
-        _start_server_only()          # skip rendering/UI on a headless server
+        start_server_only()           # skip rendering and UI
     if OS.has_feature("web"):
-        _apply_web_tweaks()
-    # Custom feature tags (added per preset) are also queryable:
-    # if OS.has_feature("demo"): limit_content()
+        apply_web_settings()
+    if OS.has_feature("demo"):        # a custom tag set in one preset's Features
+        limit_content()
 ```
 
-### 4. Choose write paths that survive export
+### 3. Write paths that survive export
 
 ```gdscript
-# res:// is READ-ONLY in exported games. Always write to user://.
-func save_path() -> String:
-    return "user://savegame.tres"     # resolves to the OS app-data dir
+const SAVE_PATH := "user://savegame.tres"   # res:// is read-only inside a .pck
 
 func _ready() -> void:
-    print(OS.get_user_data_dir())     # where user:// actually lives
+    print(OS.get_user_data_dir())           # where user:// lives on this platform
 ```
 
-## Pitfalls
+## Gotchas
 
-- **"No export template found".** Templates must match the exact editor version (incl.
-  beta/rc). Re-download via *Manage Export Templates* after upgrading Godot.
-- **Preset name mismatch in CLI.** `--export-release "Windows"` fails if the preset is
-  named `"Windows Desktop"`. Names are case- and space-sensitive; quote them.
-- **Web build shows a blank page / threads error.** Builds with the preset's *Thread
-  Support* option enabled require the server to send
-  `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` (cross-origin isolation for
-  `SharedArrayBuffer`). Must be served over HTTP(S), not opened as a `file://`. itch.io has
-  a "SharedArrayBuffer support" toggle for this. If the host cannot set headers (GitHub
-  Pages), leave *Thread Support* off — the default since 4.3.
-- **Writing to `res://` at runtime fails** in exports (read-only, packed). Use `user://`.
-- **Missing resources in the build.** Non-resource files (e.g. external `.json`, `.txt`)
-  are not auto-included — add them via the preset's *Resources > Filters to export
-  non-resource files* (e.g. `*.json`).
-- **Android export needs setup**: Android SDK/JDK paths in Editor Settings, a debug or
-  release **keystore**, and the `INTERNET` permission for networked games.
-- **macOS/iOS distribution requires signing/notarization**; unsigned macOS apps are
-  blocked by Gatekeeper.
-- **Debug vs release.** `--export-debug` enables remote debugging and debug checks; ship
-  `--export-release`.
+- **`No export template found at the expected path`** → templates are missing or for another
+  version (including beta/rc). Install the exact version; 4.7 can download one platform's
+  templates instead of the full set.
+- **`Invalid export preset name: ...`** → names are case- and space-sensitive; the output
+  then lists the presets it found. Quote the name.
+- **`Can't open file for writing`** → the output folder does not exist. `mkdir -p` first.
+- **A file is missing only in the build** → non-resource files (`.json`, `.txt`, `.csv`) are
+  not exported unless listed in the preset's *Filters to export non-resource files*
+  (`include_filter="*.json"`). Resources excluded by `exclude_filter` vanish too.
+- **Saving works in the editor, fails in the build** → the game writes under `res://`. Use
+  `user://`.
+- **Web build: blank page or `SharedArrayBuffer` error** → *Thread Support* is on and the host
+  does not send `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Embedder-Policy: require-corp`. Turn threads off, enable the host's option
+  (itch.io has one), or use the PWA option that adds the headers. `file://` never works.
+- **Web build looks different** → web always uses the Compatibility renderer.
+- **C# project will not export to web** → not supported in Godot 4; see `godot-csharp`.
+- **Secrets end up in Git** → keystore passwords and encryption keys live in
+  `.godot/export_credentials.cfg`, not `export_presets.cfg`. Keep `.godot/` ignored and
+  supply secrets in CI through environment variables or a restored file.
+- **Shipping a debug build** → `--export-debug` keeps the remote debugger and debug checks;
+  ship `--export-release`.
 
 ## References
 
-- For the `export_presets.cfg` structure, all useful CLI flags, custom feature tags,
-  PCK/expansion patching, encryption, and per-platform setup (Android keystore, macOS
-  signing, web headers), read `references/presets-and-cli.md`.
+- Read `references/presets-and-cli.md` for the `export_presets.cfg` layout, every useful CLI
+  flag, feature tags, web, Android and Apple setup, PCK patches and DLC, and why PCK
+  encryption needs custom templates.
 
 ## Related skills
 
-- `godot-multiplayer` — the dedicated-server code you export headless.
-- `steam-publish` / `itch-publish` — getting the build to players.
-- `prototype-fast` / `game-jam` — quick web/desktop builds for sharing.
+- `godot-gdscript-headless-testing`: tests before the export step in CI.
+- `godot-multiplayer`: the dedicated-server code you export.
+- `godot-csharp`: .NET export limits.
+- `steam-publish` / `itch-publish`: getting the build to players.
+
+## Version notes
+
+Last verified: 2026-11-11 against the Godot 4.7.2 CLI help and a 4.7.2 headless export of a
+test project (pack export and `--main-pack` run; template exports were checked only for
+their failure messages, since no templates were installed).
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- Web *Thread Support* is off by default since 4.3; web exports always use Compatibility.
+- 4.7 adds per-platform template downloads. Confidential export options have lived in
+  `.godot/export_credentials.cfg` since at least 4.2.
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Exporting projects](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html),
+  [Exporting for the Web](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html),
+  [Command line tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html),
+  [main.cpp @ 4.7.2](https://github.com/godotengine/godot/blob/4.7.2-stable/main/main.cpp).

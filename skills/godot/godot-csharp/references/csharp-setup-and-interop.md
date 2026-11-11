@@ -2,6 +2,10 @@
 
 Depth companion to `godot-csharp`.
 
+Contents: Project setup; Export attributes; Collections: Godot vs System; Async with signals;
+Custom Resource in C#; Calling C# from GDScript; Common Godot C# API equivalents; Build/export
+notes.
+
 ## Project setup
 
 - Use the **Godot .NET** editor build (labeled ".NET"/"Mono").

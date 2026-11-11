@@ -1,75 +1,45 @@
 # 2D controller recipes (Godot 4.7)
 
-Depth companion to `godot-2d-movement`.
-
-## Variable jump height (release to cut the jump short)
-
-```gdscript
-func _physics_process(delta: float) -> void:
-    if not is_on_floor():
-        velocity.y += gravity * delta
-    if Input.is_action_just_pressed("jump") and is_on_floor():
-        velocity.y = jump_velocity
-    # Releasing jump early dampens upward velocity -> shorter hop.
-    if Input.is_action_just_released("jump") and velocity.y < 0.0:
-        velocity.y *= 0.5
-    # ... horizontal + move_and_slide()
-```
-
-## Jump buffering (press slightly before landing still jumps)
-
-```gdscript
-@export var buffer_time := 0.1
-var _buffer := 0.0
-
-func _physics_process(delta: float) -> void:
-    if Input.is_action_just_pressed("jump"):
-        _buffer = buffer_time
-    else:
-        _buffer = max(_buffer - delta, 0.0)
-
-    if _buffer > 0.0 and is_on_floor():
-        velocity.y = jump_velocity
-        _buffer = 0.0
-    # ... gravity + horizontal + move_and_slide()
-```
+Depth companion to `godot-2d-movement`. Coyote time, jump buffering and variable jump height
+live in the `platformer` skill.
 
 ## One-way platforms
 
-On the platform's `CollisionShape2D` / `CollisionPolygon2D`, enable **one-way collision**
-(the editor draws an arrow). With the default `one_way_collision_direction` of
-`Vector2(0, 1)` (added in 4.7; earlier versions always use this local-down direction) a
-`CharacterBody2D` lands on top and passes through from below. Rotate the vector instead of
-the node to make one-way walls. Raise `one_way_collision_margin` if fast bodies fall
-through. To drop through deliberately, briefly clear the platform's layer from the body's
-mask with `set_collision_mask_value()` for a few frames.
+Tick **One Way Collision** on the platform's `CollisionShape2D` / `CollisionPolygon2D` (or set
+`one_way_collision = true`). With the default `one_way_collision_direction` of `Vector2(0, 1)`
+a body lands on top and passes through from below. The direction property is new in 4.7;
+earlier versions always use the shape's local down, so you had to rotate the node to get
+one-way walls. Raise `one_way_collision_margin` (default 1) if fast bodies drop through.
+
+To drop through on purpose, clear the platform's layer from the body's mask for a few physics
+frames with `set_collision_mask_value(layer, false)`, then restore it.
 
 ## Moving platforms
 
-Make the platform an `AnimatableBody2D` (moves via animation/code, pushes bodies) and
-animate it with an `AnimationPlayer` or a `Tween`. A `CharacterBody2D` standing on it
-inherits the platform's velocity automatically through `move_and_slide()` (controlled by
-`platform_floor_layers` and `platform_on_leave`).
+Make the platform an `AnimatableBody2D` and move it with an `AnimationPlayer`, a `Tween` or
+code. Keep `sync_to_physics` on (default) so it moves in step with physics. A
+`CharacterBody2D` standing on it is carried by `move_and_slide()`:
 
-## move_and_collide() — manual collision response
+- `platform_floor_layers` (default: all layers) picks which floors can carry the body.
+- `platform_on_leave` decides what happens to the platform's velocity when the body leaves:
+  `PLATFORM_ON_LEAVE_ADD_VELOCITY` (default, the body keeps the momentum),
+  `ADD_UPWARD_VELOCITY` or `DO_NOTHING`.
 
-When you want full control (custom bounce, no sliding), use `move_and_collide()`:
+## move_and_collide(): manual collision response
+
+Use it when you want your own response, such as a bounce, instead of sliding:
 
 ```gdscript
 func _physics_process(delta: float) -> void:
-    var motion := velocity * delta                 # here you DO scale by delta
-    var collision := move_and_collide(motion)
+    var collision := move_and_collide(velocity * delta)   # this one takes per-frame motion
     if collision:
-        # Reflect velocity off the surface normal (a simple bounce).
         velocity = velocity.bounce(collision.get_normal())
 ```
 
 `KinematicCollision2D` exposes `get_normal()`, `get_collider()`, `get_position()`,
-`get_remainder()`, and `get_travel()`.
+`get_remainder()` and `get_travel()`. `move_and_collide(motion, true)` only tests the move.
 
-## Acceleration-based feel
-
-Instead of snapping `velocity.x` to `dir * speed`, ramp it for weightier movement:
+## Acceleration and friction
 
 ```gdscript
 @export var accel := 1500.0
@@ -77,18 +47,24 @@ Instead of snapping `velocity.x` to `dir * speed`, ramp it for weightier movemen
 
 func _physics_process(delta: float) -> void:
     var dir := Input.get_axis("move_left", "move_right")
-    if dir != 0.0:
-        velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
-    else:
-        velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+    var target := dir * speed
+    var rate := accel if dir != 0.0 else friction
+    velocity.x = move_toward(velocity.x, target, rate * delta)
     move_and_slide()
 ```
 
-## Useful CharacterBody2D properties
+With low friction the bundled test's "stops within 1 s" check can fail on purpose; raise its
+frame count rather than the friction if the slide is intended.
 
-- `floor_max_angle` (rad) — steepest slope still treated as floor (default 45°).
-- `floor_snap_length` — keeps the body glued to downward slopes.
-- `floor_stop_on_slope` — prevents sliding when idle on a slope.
-- `max_slides` — iteration cap per `move_and_slide()` (default 4).
-- `up_direction` — defines floor/wall/ceiling; `Vector2.UP` for side-scrollers.
-- `slide_on_ceiling` — slide vs. stop when hitting a ceiling mid-jump.
+## CharacterBody2D properties worth knowing (4.7 defaults)
+
+| Property | Default | Why it matters |
+|---|---|---|
+| `up_direction` | `Vector2.UP` | Defines floor, wall and ceiling. |
+| `floor_max_angle` | 45° (0.785 rad) | Steeper slopes count as walls. |
+| `floor_snap_length` | 1 px | Raise to stay glued when walking downhill. |
+| `floor_stop_on_slope` | true | Stops idle sliding on slopes. |
+| `floor_constant_speed` | false | True keeps speed equal uphill and downhill. |
+| `max_slides` | 4 | Collision iterations per `move_and_slide()`. |
+| `safe_margin` | 0.08 | Higher detects floors and walls more reliably, with less precision. |
+| `slide_on_ceiling` | true | False stops upward motion on ceiling hits. |
