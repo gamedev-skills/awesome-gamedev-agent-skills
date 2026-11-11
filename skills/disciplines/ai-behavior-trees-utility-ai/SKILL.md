@@ -1,99 +1,58 @@
 ---
 name: ai-behavior-trees-utility-ai
 description: >
-  Build a production behavior-tree runtime (Blackboard, action/condition leaves,
-  sequence/selector/parallel composites, decorators) and a Utility AI system (response
-  curves — linear, exponential, sigmoid, quadratic — considerations, and action evaluators),
-  plus hybrid BT-drives-Utility agents. Use when implementing a reusable behavior-tree or
-  utility-based decision system, or tuning enemy/NPC decisions beyond a simple FSM, or when
-  the user mentions behavior tree, blackboard, decorator, selector, sequence, tick status,
-  utility AI, response/scoring curve, or consideration. For choosing between FSM/BT/steering
-  or for pathfinding, use game-ai; for Unreal's BehaviorTree/Blackboard assets, use
-  unreal-behavior-trees.
+  Engine-neutral behavior tree and utility AI code for NPCs in any language: Blackboard, reactive
+  composites, decorators and response-curve scoring. Use when an enemy keeps chasing after losing
+  sight, restarts its action every frame or flip-flops between choices. Not for FSMs, steering or
+  pathfinding (`game-ai`) or Unreal BT, EQS and StateTree (`unreal-behavior-trees`).
 ---
 
-# Behavior Trees & Utility AI
+# Behavior trees and Utility AI
 
-Two complementary ways to structure NPC decision-making, plus how to combine them. A
-**behavior tree (BT)** expresses *structured, prioritized, reactive* logic as a tree that is
-"ticked" each step. **Utility AI** answers *"how much do I want each option right now?"* by
-scoring actions with normalized curves and picking the best. Ship believable agents by using a
-BT for structure and Utility AI where graded trade-offs matter.
-
-This skill is the **implementation** companion to `game-ai` (which helps you *choose* between
-FSM / BT / steering / pathfinding). Read `game-ai` to pick a model; read this to build the
-runtime.
+A behavior tree (BT) gives an agent ordered, interruptible priorities; Utility AI scores every
+option and picks the most wanted one. The code is plain C# so it ports to any engine; the
+non-obvious part is the lifecycle contract (who resets what, and when), which is where almost
+every BT bug lives.
 
 ## When to use
 
-- Use to build a **reusable BT runtime**: a `Blackboard`, `Node` base, action/condition leaves,
-  `Sequence`/`Selector`/`Parallel` composites, and decorators (Inverter, Cooldown, Repeat).
-- Use to build a **Utility AI** decider: response curves, considerations, and an evaluator that
-  scores and selects actions (max, softmax, or weighted-random for variety).
-- Use to build **hybrid AI** — a BT whose leaf delegates the "which attack / which target"
-  choice to a utility evaluator.
+- Build or fix a reusable BT runtime: Blackboard, leaves, composites, decorators.
+- Build a utility decider: curves, considerations, a selector with hysteresis.
+- Combine them: a BT branch that hands a graded choice (which attack, which target) to utility.
 
-**When *not* to use:** to *choose* between FSM, BT, steering, or pathfinding, and for A*/navmesh
-routing, use `game-ai`. For Unreal's asset-based `BehaviorTree`/`Blackboard`, `BTTask`/`BTService`
-and `AIController`, use `unreal-behavior-trees`. For the navmesh agent that *moves* the NPC, use
-`unity-navmesh` or the engine's navigation node.
+**Not this skill:** choosing FSM vs BT, steering, A*, flow fields and perception belong to
+`game-ai`. Unreal's `BehaviorTree`/`Blackboard` assets, `BTTask`/`BTService`, EQS and StateTree
+belong to `unreal-behavior-trees`. The agent that physically moves (`NavMeshAgent`,
+`NavigationAgent3D`) belongs to the engine navigation skill.
 
-## Core workflow
+## Workflow
 
-1. **Pick the model.** Structured, prioritized, interruptible behavior → **BT**. Continuous
-   "score every option" decisions (targeting, needs, item choice) → **Utility**. Both → **hybrid**.
-2. **Design the Blackboard first.** One typed key/value store per agent is the shared memory that
-   decouples nodes; leaves read/write it and never hold references to each other.
-3. **Write leaves.** *Conditions* return `Success`/`Failure` immediately; *actions* return
-   `Running` across frames until they finish. Keep leaves small and side-effect-explicit.
-4. **Compose.** `Selector` = OR/fallback (first non-failure wins); `Sequence` = AND (stop at first
-   non-success); `Parallel` for concurrent branches. Wrap with decorators for policy (invert,
-   cooldown, repeat, force-success).
-5. **For Utility:** enumerate considerations, map each raw fact through a **normalized 0..1 curve**,
-   combine (weighted product with compensation, or weighted sum), then select the max — add
-   hysteresis so agents don't flip-flop on ties.
-6. **Tick deliberately.** Tick the tree/evaluator once per *decision step* (often slower than
-   render). Preserve `Running` state between ticks; verify by drawing the active path and the
-   per-action scores on screen while tuning.
+1. **Read what exists.** Find the current AI code, its tick site and how it reads the world. If
+   the project already ships a BT plugin (Godot LimboAI or Beehave, Unity Behavior, NodeCanvas),
+   extend it instead of adding a second runtime.
+2. **Pick the default shape: BT outside, utility inside.** The BT decides engage, flee or patrol;
+   a utility node inside the engage branch picks how. Use utility at the top only when every
+   top-level behavior is a graded trade-off (needs-driven villagers), because it is harder to
+   debug and prone to thrashing.
+3. **Design the Blackboard first.** Perception writes facts (`targetPos`, `health01`,
+   `distToPlayer`); leaves read them. Nodes never hold references to each other.
+4. **Choose memory or reactive per composite.** Priority selectors at the top are reactive so
+   a higher branch can preempt; a `Sequence` whose first child is a guard condition must be a
+   `ReactiveSequence`, or the guard stops being checked once the action runs.
+5. **Normalize every utility input to 0..1** through a curve before combining; multiply with
+   compensation so a 0 still vetoes.
+6. **Tick on a decision cadence** (5-15 Hz for most NPCs) from an accumulator, staggered across
+   agents. Movement and animation still run every frame.
+7. **Prove it with a headless tick test** (below): script the Blackboard, tick N times and
+   assert the status sequence and reset counts. Then draw the running leaf and per-action
+   scores on screen while tuning.
 
-## Architecture at a glance
+## The lifecycle contract
 
-A behavior tree evaluates top-down, left-to-right; each node returns a status up to its parent:
-
-```mermaid
-flowchart TD
-    Root["Selector (root)"] --> Combat["Sequence: Combat"]
-    Root --> Patrol["Action: Patrol"]
-    Combat --> See["Condition: CanSeePlayer?"]
-    Combat --> InRange{"Selector: Reach"}
-    Combat --> Attack["Action: Attack (Running)"]
-    InRange --> Close["Condition: InAttackRange?"]
-    InRange --> MoveTo["Action: MoveToPlayer (Running)"]
-```
-
-Utility AI is a scoring pipeline — every candidate action is scored, then one is selected:
-
-```text
-facts (distance, health, ammo…)
-      │  each fact → a normalized 0..1 response curve (consideration)
-      ▼
-score(action) = weight · combine(consideration_1 … consideration_n)   # product+compensation or sum
-      ▼
-select: argmax  ·  or softmax / weighted-random for variety  ·  + hysteresis to avoid jitter
-```
-
-**Status is a three-value enum** shared by every node — this is the contract that makes the tree
-composable:
-
-```csharp
-public enum Status { Success, Failure, Running }
-
-public abstract class Node
-{
-    public abstract Status Tick(Blackboard bb, float dt);
-    public virtual void Reset() { }   // idempotent cleanup after completion or abort
-}
-```
+Every node returns `Success`, `Failure` or `Running`. Parents reset a child as soon as it returns
+a terminal status and when they abandon it while `Running`; the tree resets a terminal root.
+`Reset()` must be idempotent and must clear only execution-local state (timers, reservations),
+never persistent state such as a cooldown deadline.
 
 ```csharp
 // Selector = fallback/OR: return the first child that is not Failure.
@@ -115,11 +74,9 @@ public sealed class Selector : Composite
 }
 ```
 
-The reciprocal `Sequence` (AND — stop at first non-`Success`), the reactive variants that let a
-higher-priority branch interrupt a running one, `Parallel`, the `Blackboard`, the leaf base
-classes, and every decorator are in `references/behavior-tree-core.md`. The leaves use Unity's
-`Vector2` member names (`magnitude`, `normalized`, `sqrMagnitude`); in Godot C# use `Length()`,
-`Normalized()` and `LengthSquared()`.
+This is the memory variant: it cannot be preempted. `Sequence`, `ReactiveSelector`,
+`ReactiveSequence`, `Parallel`, the decorators and `BehaviorTree` follow the same contract in
+`references/behavior-tree-core.md`.
 
 ## Utility scoring in one snippet
 
@@ -135,45 +92,93 @@ float Score(Blackboard bb)
 }
 ```
 
-The full curve library (linear, quadratic, exponential, logistic/sigmoid, smoothstep), the
-`Consideration`/`UtilityAction` types, and the `UtilityEvaluator` selection strategies are in
-`references/utility-ai-system.md`.
+Selection: argmax with an inertia bonus of about 0.05 for the running action is the default;
+softmax (temperature about 0.2) when designers want variety without silly picks.
 
-## Pitfalls
+## Headless tick test
 
-- **Resetting a `Running` subtree every frame restarts it.** Return `Running` and
-  preserve its state until completion or abort. Parents reset terminal children immediately;
-  `BehaviorTree` resets the terminal root. Make cleanup idempotent for ancestor resets.
-- **Deep trees re-evaluated wholesale each tick** waste time and cause thrash. Prefer shallow
-  trees and *conditional aborts* (a higher-priority condition can interrupt a lower branch).
-- **A guard condition stops being checked once the action after it is `Running`.** A memory
-  `Sequence` resumes at the running child, so `[CanSeePlayer?, Chase]` keeps chasing after sight
-  is lost. Use a `ReactiveSequence` (re-checks from the first child each tick) or have the action
-  itself fail when its blackboard input disappears.
-- **A cooldown that clears on `Reset()`** lets an agent bypass it by flickering between branches.
-  Keep the ready-time when the branch is aborted.
-- **Un-normalized considerations.** If one curve outputs 0..100 and another 0..1, the big one
-  dominates. Every consideration must return 0..1.
-- **Utility jitter on near-ties.** Add hysteresis: give the currently-running action a small bonus
-  so the agent commits instead of oscillating.
-- **Allocating nodes, closures, or arrays every tick** creates GC spikes. Build the tree once at
-  spawn; keep per-tick work allocation-free.
+Run this shape in the project's test runner (Unity Test Framework, GdUnit4, xUnit) before
+tuning by eye; `Assert` stands for the framework's assertion. A probe leaf counts ticks and
+resets, so lifecycle bugs show up as numbers.
+
+```csharp
+sealed class Probe : Leaf
+{
+    public int Ticks, Resets; readonly int _after; readonly Status _end;
+    public Probe(int after, Status end = Status.Success) { _after = after; _end = end; }
+    public override Status Tick(Blackboard bb, float dt) => ++Ticks >= _after ? _end : Status.Running;
+    public override void Reset() { Ticks = 0; Resets++; }
+}
+// Guard lost mid-action: the running action must be aborted, not resumed.
+var bb = new Blackboard(); var chase = new Probe(after: 3);
+var seq = new ReactiveSequence().Add(new Condition(b => b.Get<bool>("sees"))).Add(chase);
+bb.Set("sees", true);  Assert(seq.Tick(bb, 0.1f) == Status.Running);
+bb.Set("sees", false); Assert(seq.Tick(bb, 0.1f) == Status.Failure && chase.Ticks == 0);
+```
+
+Cover at least: a `Wait` that runs twice in a row takes full time both runs; a lost guard
+aborts its action; a cooldown still blocks after its branch is aborted; utility returns `null`
+(and the caller copes) when every action scores 0.
+
+## Gotchas
+
+- **Guard not re-checked.** A memory `Sequence` resumes at its running child, so
+  `[CanSeePlayer?, Chase]` chases forever after sight is lost. Use `ReactiveSequence`, or make
+  the action fail when its Blackboard input disappears.
+- **Priority never preempts.** A memory `Selector` at the root keeps resuming a running Patrol
+  and never re-asks Attack. Top-level priority selectors are reactive, and they must `Reset()`
+  the branch they abandon or its move or animation keeps running.
+- **Timed actions finish instantly the second time.** `Wait`/`Repeat` accumulators were not
+  cleared because the parent skipped `Reset()` on a terminal child.
+- **Cooldown bypass.** A `Cooldown` that clears its ready-time in `Reset()` lets an agent attack
+  every time it flickers between branches. Keep the deadline across resets.
+- **`Parallel` restarts finished children.** Re-ticking a child that already succeeded restarts
+  it, and `RequireAll` then never sees all children succeed on one tick. Store per-child results.
+- **Cooldown inside a `Sequence` makes the agent step back to patrol** for a tick each time it is
+  blocked. Wrap it in `ForceSuccess` when "wait for the cooldown" should hold the branch.
+- **Mixed ranges.** One consideration in 0..100 next to others in 0..1 dominates and makes
+  weights meaningless. Clamp every curve output to 0..1.
+- **Plain products sink with more considerations.** Five factors of 0.8 give 0.33. Apply the
+  compensation factor (`Curves.Compensate`), which keeps an exact 0 as a veto.
+- **Inertia revives a vetoed action.** Add the hysteresis bonus only to positive raw scores.
+- **Softmax overflows** at small temperatures (`exp(score / 0.01)` is infinity in float). Subtract
+  the best score before `exp`.
+- **GC spikes.** Build the tree once at spawn; `Tick` allocates nothing (no LINQ, no closures
+  capturing locals, no boxing in hot Blackboards). Use a fields class instead of a
+  `Dictionary<string, object>` for agents that tick often.
+- **Cost lives in the leaves.** Raycasts and path queries inside conditions dominate CPU; let
+  perception cache facts on the Blackboard and pathfind on a timer.
 
 ## References
 
-- `references/behavior-tree-core.md` — Blackboard, `Node`/leaf base classes, action & condition
-  leaves, `Sequence`/`Selector`/`Parallel`, and the decorator library (full C#).
-- `references/utility-ai-system.md` — response-curve library, `Consideration`, `UtilityAction`,
-  and the `UtilityEvaluator` (argmax, softmax, weighted-random, hysteresis).
-- `references/practical-examples.md` — a guard Patrol→Combat BT, a villager needs-based Utility
-  AI, and a hybrid agent, as drop-in templates.
-- `references/best-practices-and-pitfalls.md` — memory management, profiling, avoiding deep trees,
-  event-driven aborts, and combining Utility AI with BTs (hybrid architecture).
+- `references/behavior-tree-core.md`: read when writing or reviewing the runtime itself
+  (Blackboard, base classes, every composite including the reactive ones, `Parallel`,
+  decorators, `BehaviorTree`).
+- `references/utility-ai-system.md`: read when building the scorer (curve library,
+  compensation, `Consideration`, `UtilityAction`, argmax and softmax selection).
+- `references/practical-examples.md`: read when you need a full agent to adapt (guard
+  Patrol/Combat BT, needs-driven villager, hybrid `UtilitySelectorNode`).
+- `references/best-practices-and-pitfalls.md`: read when scaling to many agents or debugging
+  (time-slicing, AI LOD, event-driven aborts, debug overlays, reproducible randomness).
 
 ## Related skills
 
-- `game-ai` — choose between FSM / BT / steering; A* and navmesh pathfinding.
-- `unreal-behavior-trees` — Unreal's asset-based BT/Blackboard, tasks, decorators, services.
-- `unity-navmesh` — the `NavMeshAgent` that carries out "move to" intents.
-- `physics-tuning` — agent radius, movement, and collision response for the motion layer.
-- `tower-defense`, `fps-shooter`, `rpg` — genres that compose this decision layer.
+- `game-ai`: decision-model choice, FSMs, steering, pathfinding, perception.
+- `unreal-behavior-trees`: Unreal's asset-based BT, Blackboard, EQS and StateTree.
+- `unity-navmesh`: the `NavMeshAgent` that carries out "move to" intents.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- The C# compiles with no engine types. Example leaves use Unity 6 `Vector2` member names
+  (`magnitude`, `normalized`, `sqrMagnitude`); Godot 4 C# uses `Length()`, `Normalized()`,
+  `LengthSquared()`; `System.Numerics.Vector2` uses `Length()` and `Vector2.Normalize(v)`.
+- The repository test `tests/test_ai_examples.py` compiles the published blocks with the .NET 10
+  SDK and runs the lifecycle scenarios.
+- BT plugins worth extending instead of replacing (latest releases at check): Unity Behavior
+  `com.unity.behavior` 1.0.17, LimboAI 1.8.1 and Beehave 2.9.3 for Godot.
+- Sources: compensation factor from Dave Mark and Mike Lewis, "Building a Better Centaur: AI at
+  Massive Scale", GDC 2015 AI Summit (https://www.gdcvault.com/play/1021848); Unity package
+  registry (https://packages.unity.com/com.unity.behavior); GitHub releases of
+  limbonaut/limboai and bitbrain/beehave.

@@ -1,71 +1,73 @@
 ---
 name: godot-audio
 description: >
-  Play and mix audio in Godot 4.7: AudioStreamPlayer (2D/3D variants), audio buses
-  with volume/mute and effects, music vs SFX routing, db/linear volume, and precise
-  sync-to-beat playback timing. Use when playing sounds or music in a Godot project,
-  routing AudioStreamPlayer nodes to buses, adjusting bus volume via AudioServer, or
-  syncing gameplay to the beat.
+  Godot 4.7 audio APIs: AudioStreamPlayer 2D and 3D, the bus layout, AudioServer volume and mute,
+  polyphony, looping imports and playback position for beat sync. Use when wiring SFX, music or
+  volume sliders in Godot, or a sound is silent, cut off, does not loop or ignores its bus. Not
+  for engine-neutral mixing, ducking or adaptive music (`audio-design`).
 ---
 
 # Godot Audio (4.x)
 
-Play SFX and music, route them through buses, control volume in decibels, and time
-gameplay to the beat. Targets **Godot 4.7**.
+Play, route and control sound through Godot's player nodes and `AudioServer`, then prove
+the bus wiring with a headless check. Targets **Godot 4.7**; check `config/features` in
+`project.godot` first.
 
-## When to use
+## Workflow
 
-- Use when playing sound effects or music, routing audio to buses (Master/Music/SFX),
-  adjusting volume/mute from code, adding bus effects (reverb, compressor), positional 3D
-  audio, or syncing events to music.
-
-**When *not* to use:** engine-agnostic audio *design* (adaptive music structure, mixing
-philosophy, ducking patterns) → `audio-design`; importing/encoding assets outside Godot.
-
-## Core workflow
-
-1. **Pick the player node:**
-   - `AudioStreamPlayer` — non-positional (music, UI, global SFX).
-   - `AudioStreamPlayer2D` / `AudioStreamPlayer3D` — positional; volume/pan from distance.
-2. **Assign an `AudioStream`** to `stream` (`.ogg` for music/loops, `.wav` for short SFX)
-   and `play()`. Set `autoplay` for music that starts with the scene.
-3. **Route to a bus.** Set the player's `bus` to a named bus (e.g. `"Music"`, `"SFX"`).
-   Define buses in the Audio panel (bottom dock); each can have volume, mute, solo, and
-   effects.
-4. **Control volume in dB**, not linear (audio is logarithmic). `0 dB` = unchanged,
-   `-80 dB` ≈ silent. Convert with `linear_to_db`/`db_to_linear`, or use the linear helpers
-   (`volume_linear` on players, `AudioServer.set_bus_volume_linear()`), which convert for you.
-5. **Drive volume/mute from code** with `AudioServer` by bus index.
-6. **For rhythm**, compute precise playback time using output latency compensation.
+1. **Read the bus layout first.** It lives in the file named by
+   `audio/buses/default_bus_layout` (default `res://default_bus_layout.tres`); each
+   `bus/N/name` is a bus. Bus names in scenes and code must match it exactly.
+2. **Pick the node:** `AudioStreamPlayer` for music, UI and global SFX;
+   `AudioStreamPlayer2D`/`3D` when distance and panning matter.
+3. **Route every player** by setting `bus` (for example `&"SFX"`). Add a bus by editing the
+   layout file, the Audio dock, or `AudioServer.add_bus()` at runtime.
+4. **Volume is in decibels.** For 0..1 sliders use `volume_linear` on players and
+   `AudioServer.set_bus_volume_linear()`, which convert for you.
+5. **Loops are an import setting.** Set loop on the `.ogg`/`.mp3`/`.wav` import (or
+   `AudioStreamWAV.loop_mode`), not on the player.
+6. **Verify before you finish** (paths are relative to this skill's folder):
+   - Run `godot --headless --path <project> --script <this skill>/assets/check_audio_buses.gd`.
+     It loads the real bus layout and fails on every `bus = "..."` or `get_bus_index("...")`
+     name it does not define, with file and line.
+   - If `godot-nodes-scenes` is installed, run `python3 ../godot-nodes-scenes/scripts/check_godot_project.py <project>`
+     to catch missing stream files.
+   - Playback logic can be tested headless: the Dummy driver plays in real time, so
+     `playing`, `get_playback_position()` and `finished` behave (see
+     `godot-gdscript-headless-testing` for the runner). Loudness and mix cannot: ask the user
+     to listen and report levels, clipping and anything inaudible.
 
 ## Patterns
 
-### 1. One-shot SFX (fire-and-forget)
+### 1. One-shot SFX that can overlap
 
 ```gdscript
-@onready var sfx: AudioStreamPlayer = $Sfx   # stream assigned in the editor
+@onready var sfx: AudioStreamPlayer = $Sfx   # stream assigned in the scene
 
-func play_jump() -> void:
-    sfx.pitch_scale = randf_range(0.95, 1.05)   # slight variation avoids fatigue
+func _ready() -> void:
+    sfx.max_polyphony = 4                      # default 1: a retrigger cuts the last play
+
+func play_hit() -> void:
+    sfx.pitch_scale = randf_range(0.95, 1.05)
     sfx.play()
-
-# For overlapping copies, raise sfx.max_polyphony (default 1), use an
-# AudioStreamPolyphonic stream, or spawn short-lived players and free on `finished`.
 ```
 
-### 2. Set a bus's volume and mute via AudioServer
+For many variants use an `AudioStreamRandomizer` as the stream instead of code.
+
+### 2. Volume slider and mute for a bus
 
 ```gdscript
-func set_music_volume(linear_0_to_1: float) -> void:
-    var bus := AudioServer.get_bus_index("Music")
-    # Convert a 0..1 slider to decibels; clamp avoids -inf at 0.
-    AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(linear_0_to_1, 0.0001)))
-
-func toggle_sfx(muted: bool) -> void:
-    AudioServer.set_bus_mute(AudioServer.get_bus_index("SFX"), muted)
+func set_bus_volume(bus_name: StringName, value_0_to_1: float) -> void:
+    var bus := AudioServer.get_bus_index(bus_name)
+    if bus == -1:
+        push_error("No audio bus named %s" % bus_name)
+        return
+    AudioServer.set_bus_mute(bus, value_0_to_1 <= 0.0)   # mute at 0 instead of -inf dB
+    if value_0_to_1 > 0.0:
+        AudioServer.set_bus_volume_linear(bus, value_0_to_1)
 ```
 
-### 3. Crossfade between two music tracks
+### 3. Crossfade between two music players
 
 ```gdscript
 @onready var a: AudioStreamPlayer = $MusicA
@@ -76,50 +78,76 @@ func crossfade_to(stream: AudioStream, secs := 1.5) -> void:
     b.volume_db = -40.0
     b.play()
     var tw := create_tween().set_parallel(true)
-    tw.tween_property(a, "volume_db", -40.0, secs)   # fade out current
-    tw.tween_property(b, "volume_db", 0.0, secs)     # fade in next
-    tw.chain().tween_callback(a.stop)
-    var tmp := a; a = b; b = tmp                      # swap roles
+    tw.tween_property(a, "volume_db", -40.0, secs)
+    tw.tween_property(b, "volume_db", 0.0, secs)
+    tw.chain().tween_callback(a.stop)   # bound to the old player now
+    var old := a
+    a = b
+    b = old
 ```
 
-### 4. Beat-accurate timing (compensate for output latency)
+### 4. Song time for beat sync
 
 ```gdscript
 @onready var music: AudioStreamPlayer = $Music
 
-func get_playback_time() -> float:
-    # Add time since the last audio mix, subtract output latency, for sub-frame accuracy.
-    var t := music.get_playback_position() + AudioServer.get_time_since_last_mix()
-    return t - AudioServer.get_output_latency()
+func song_time() -> float:
+    # playback position only updates once per mix; add the time since then, minus latency.
+    return music.get_playback_position() + AudioServer.get_time_since_last_mix() \
+        - AudioServer.get_output_latency()
 ```
 
-## Pitfalls
+Compare `song_time()` against beat times; `audio-design` covers quantizing and pre-roll.
 
-- **Treating volume as linear.** `volume_db`/`set_bus_volume_db` are decibels. Setting
-  `volume_db = 0.5` is nearly full volume, not half. Map sliders with `linear_to_db`.
-- **`linear_to_db(0.0)` is `-inf`.** It is silent, but tweening or doing math from `-inf`
-  produces NaN. Clamp the linear value to a small minimum (e.g. `0.0001`) before converting,
-  or special-case 0 → mute. `set_bus_volume_linear(bus, 0.0)` stores `-inf` too.
-- **Bus name typos fail quietly.** `get_bus_index("Muisc")` returns `-1`; calls then error
-  or no-op. Match the exact bus name from the Audio panel.
-- **Short SFX cut off** when the same player is retriggered → `max_polyphony` defaults to 1.
-  Raise it (e.g. 4) so `play()` overlaps copies, or use an `AudioStreamPolyphonic` /
-  separate players freed on `finished`.
-- **Music doesn't loop** unless the import/stream loop is enabled (`.ogg` import has a
-  Loop option; `AudioStreamWAV` has `loop_mode`).
-- **Syncing to `get_playback_position()` alone is jittery** — it updates per audio mix,
-  not per frame; add `get_time_since_last_mix()` and subtract `get_output_latency()`.
-- **3D audio inaudible** → no `AudioListener3D`/`Camera3D` to hear it, or `max_distance`/
-  attenuation too tight, or wrong bus muted.
+## Gotchas
+
+- **A sound plays on Master and ignores its bus volume** → its `bus` name does not exist.
+  Godot falls back to Master without an error, reading `player.bus` back returns `Master`,
+  and `get_bus_index()` returns -1 (later `AudioServer` calls on -1 print an out-of-bounds
+  error). Run the bus check.
+- **Half volume is still loud** → `volume_db = 0.5` is +0.5 dB. Use the linear helpers or
+  `linear_to_db()`.
+- **NaN or stuck volume after a fade to silence** → `linear_to_db(0.0)` is `-inf`, and
+  `set_bus_volume_linear(bus, 0.0)` stores `-inf` too. Mute at zero, as in Pattern 2.
+- **Rapid SFX cut each other off** → `max_polyphony` defaults to 1.
+- **Music does not loop** → loop is off in the import settings or `loop_mode`.
+- **3D sound is silent** → no current `Camera3D` or `AudioListener3D`, `max_distance` too
+  small, or `unit_size` too low for the scene's scale.
+- **An Area2D/Area3D reverb bus override does nothing (4.7+)** → positional players'
+  `area_mask` now defaults to 0. Tick the area's layer in the player's `area_mask`.
+- **Beat-synced visuals drift or jitter** → `get_playback_position()` alone steps once per mix
+  chunk. Use Pattern 4. Headless runs report an output latency of 0, so tune latency on the
+  real device.
+- **Bus effects, reverb, doppler or AudioStreamGenerator silent only in the web build** →
+  since 4.3 the web export plays through the browser's Web Audio API ("Sample" playback),
+  which skips them. Set the player's `playback_type` to Stream, or
+  `audio/general/default_playback_type.web` for the project, at the cost of more latency.
 
 ## References
 
-- For the bus layout (`.tres`), adding effects (reverb/compressor/EQ) and side-chain
-  ducking, `AudioStreamPolyphonic`/`AudioStreamInteractive`, microphone capture, and
-  procedural audio with `AudioStreamGenerator`, read `references/buses-and-effects.md`.
+- Read `references/buses-and-effects.md` for the layout file format, the full `AudioServer`
+  API, the effect list, side-chain compression, `AudioStreamPolyphonic`,
+  `AudioStreamInteractive` and friends, positional audio settings, and
+  `AudioStreamGenerator`.
+- `assets/check_audio_buses.gd` is the headless bus check used in step 6.
 
 ## Related skills
 
-- `audio-design` — engine-agnostic adaptive music, mixing, and ducking practice.
-- `godot-animation` — syncing animation/Tween to `get_playback_position()`.
-- `godot-ui-control` — volume sliders wired to `AudioServer`.
+- `audio-design`: mixing levels, ducking, adaptive music and beat-sync technique.
+- `godot-ui-control`: the sliders and toggles that call Pattern 2.
+- `godot-animation`: tweens for fades.
+- `godot-gdscript-headless-testing`: running playback tests in CI.
+
+## Version notes
+
+Last verified: 2026-11-11 against the Godot 4.7.2 class reference and a 4.7.2 headless run.
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- `volume_linear` on players and `AudioServer.set_bus_volume_linear()` exist since 4.4.
+- Web exports use Sample playback (Web Audio API) by default since 4.3.
+- 4.7 changed `area_mask` on `AudioStreamPlayer2D`/`3D` to default 0 (GH-107679).
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Upgrading to Godot 4.7](https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.7.html),
+  [Audio buses](https://docs.godotengine.org/en/stable/tutorials/audio/audio_buses.html),
+  [Exporting for the Web: audio playback](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html),
+  [AudioServer](https://docs.godotengine.org/en/stable/classes/class_audioserver.html).

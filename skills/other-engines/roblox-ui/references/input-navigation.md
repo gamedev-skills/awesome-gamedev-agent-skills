@@ -21,8 +21,8 @@ On screen open, select the most likely safe action—not a destructive action. U
 round trip through the graph.
 
 Set initial selection only after the control is rendered and only while
-`UserInputService.PreferredInput` is `Gamepad` (or `MicroGamepad`, reserved for TV remotes and
-not yet reported). Capability flags mislead here: `TouchEnabled` is true on touch laptops and a
+`UserInputService.PreferredInput` is `Gamepad` (or `MicroGamepad`, a gamepad without a
+thumbstick such as a TV remote). Capability flags mislead here: `TouchEnabled` is true on touch laptops and a
 phone with a paired gamepad should navigate by focus. Re-check on
 `GetPropertyChangedSignal("PreferredInput")`; do not force a selected object on a touch-first
 screen.
@@ -39,9 +39,10 @@ When a modal opens:
 5. on close, restore the prior object or a stable fallback.
 
 To keep directional navigation inside the modal, set `GuiBase2d.SelectionGroup = true` on the modal
-root and set its `SelectionBehaviorUp`/`Down`/`Left`/`Right` to `Enum.SelectionBehavior.Stop`. The
-older `GuiService:AddSelectionParent()`/`AddSelectionTuple()`/`RemoveSelectionGroup()` methods are
-all deprecated — do not use them in new work.
+root and set its `SelectionBehaviorUp`/`Down`/`Left`/`Right` to `Enum.SelectionBehavior.Stop`.
+Prefer these properties over the older `GuiService:AddSelectionParent()`/`AddSelectionTuple()`
+groups: the properties live on the modal's own Instance, so they are visible in Explorer and
+disappear with it, while a named `GuiService` group must be removed by hand.
 
 ## Context actions
 

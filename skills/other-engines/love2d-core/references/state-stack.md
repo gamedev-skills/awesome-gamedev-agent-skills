@@ -4,8 +4,17 @@ A small, complete screen manager: menu → game → pause, with the active scree
 overlays (pause on top of game) are trivial. Each *screen* is a plain Lua table with any of
 the optional methods `enter`, `leave`, `update(dt)`, `draw`, `keypressed(key)`.
 
-This is the full version of the brief snippet in `SKILL.md`. Drop `state_stack.lua` in your
-project root and the screens under `screens/`.
+Drop `state_stack.lua` in your project root and the screens under `screens/`. The module,
+wiring and example screens below were run together on LÖVE 11.5 (menu → game → pause →
+resume).
+
+## Contents
+
+- [`state_stack.lua`](#state_stacklua): push, pop, switch, current
+- [Wiring it in `main.lua`](#wiring-it-in-mainlua), including
+  [drawing overlays](#drawing-overlays-pause-on-top-of-the-paused-game)
+- [Example screens](#example-screens): menu, game, pause
+- [Notes](#notes): module caching, loading, transitions
 
 ## `state_stack.lua`
 

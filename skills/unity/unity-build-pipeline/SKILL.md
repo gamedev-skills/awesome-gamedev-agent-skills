@@ -128,7 +128,7 @@ public static class ProfileBuild
 </linker>
 ```
 
-## Pitfalls
+## Gotchas
 
 - **A scene loads in the Editor but is missing in the build** — it isn't in the scene list
   (File → Build Profiles → Scene List, or the built profile's own list) or is disabled.

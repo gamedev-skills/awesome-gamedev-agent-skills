@@ -3,6 +3,15 @@
 Detail behind `SKILL.md`. Engine-neutral pseudocode. Models how card effects resolve, how
 triggers stack, and how deck construction shapes the game.
 
+Contents:
+1. Effects as data and an interpreter
+2. The resolution queue or stack
+3. Triggers and keywords
+4. Targeting
+5. Deckbuilder versus constructed
+6. Shuffle fairness and per-engine RNG calls
+7. Mana and resource curves
+
 ## 1. Effects as data + an interpreter
 
 Define a small vocabulary of **operations**; every card is a list of them. Adding a card means
@@ -36,10 +45,15 @@ through an explicit structure so order is deterministic:
 # Stack model (pseudocode): pushing during resolution lets responses resolve first.
 stack = []
 def push_effect(fx, ctx): stack.append((fx, ctx))
+MAX_PUSHES = 100                       # per player action; stops A-triggers-B-triggers-A loops
 def resolve_stack():
+    pushes = 0
     while stack:
         fx, ctx = stack.pop()          # LIFO: last in resolves first
         resolve_effect(fx, ctx)        # may push more (triggers) -> they resolve next
+        pushes += 1
+        if pushes > MAX_PUSHES:
+            stack.clear(); log("trigger loop stopped", fx); break
 ```
 
 Decide simultaneity rules up front: when several triggers fire at once, order them by a fixed
@@ -71,10 +85,12 @@ on("creature_died", lambda ev: [push_effect(t, ctx_for(t)) for t in triggers_for
 | Deck built | Before the game, from a collection | During play (draft/buy cards) |
 | Variance | Mulligans, draw order | Reshuffle of a growing deck each "shuffle" |
 | Power growth | Fixed deck | Deck thins/grows; combos emerge mid-run |
-| Persistence | Collection + decklists | Run state (often roguelike: see `roguelike`) |
+| Persistence | Collection + decklists | Run state plus a profile of unlocks |
 
 In a roguelike deckbuilder, the deck *is* the build: adding/removing cards mid-run is the core
-progression. Keep run state separate from any meta-collection (see `save-systems`).
+progression. Keep run state separate from any meta-collection (see `save-systems`); the run
+map (paths of fights, elites, shops, rests, events) and post-win difficulty ladders work as in
+any roguelite, but the deck itself is the character sheet.
 
 ## 6. Shuffle fairness and consistency
 

@@ -1,61 +1,55 @@
 ---
 name: roblox-physics
 description: >
-  Implement Roblox physical simulation and queries with assemblies, anchoring, constraints,
-  collision groups, CanCollide/CanTouch/CanQuery, raycasts and overlap queries, mass, impulses,
-  forces, velocity, moving assemblies, cleanup, and network ownership. Use for Roblox collisions,
-  hit detection, RaycastParams, PhysicsService, projectiles, vehicles, knockback, constraints,
-  deprecated BodyMovers, unstable motion, or client-owned physics exploits.
+  Roblox physics and spatial queries: assemblies, constraints, collision groups, Raycast and
+  Shapecast, and network ownership. Use when parts fall through or jitter, Touched is unreliable,
+  a ray hits the shooter, or BodyMovers need replacing. Not for hit legitimacy
+  (`roblox-networking`), Humanoid movement (`roblox-characters`) or engine-neutral tuning
+  (`physics-tuning`).
 ---
 
 # Roblox physics
 
-Choose deliberately between simulation, character control, hit detection, and visual-only motion;
-they are different jobs. Targets Roblox's rolling platform APIs. Pair with `physics-tuning` for
-engine-neutral stability and feel.
+Simulation, character control, hit detection and visual-only motion are different jobs. Pick the
+mechanism first, then the API. Whether a hit counts is a server validation decision owned by
+`roblox-networking`; this skill supplies the queries it uses.
 
-## When to use
-
-- Use for BasePart assemblies, constraints, collision/query policy, ray/overlap queries, forces,
-  impulses, moving physical objects, network ownership, or physics cleanup.
-- Use when `Touched` is unreliable/security-sensitive, parts tunnel or jitter, a mechanism breaks
-  when anchored, or old BodyMover patterns appear.
-
-**When not to use:** ordinary Humanoid lifecycle/control belongs to `roblox-characters`; remote
-validation belongs to `roblox-networking`; decorative UI/world motion may only need a tween.
-
-## Decide the system first
+## Decide the mechanism
 
 | Goal | Mechanism |
 |---|---|
-| sustained physical interaction | unanchored assembly + modern constraints/forces |
-| instantaneous physical change | `ApplyImpulse` / `ApplyAngularImpulse` |
-| kinematic platform/path | controlled pivot/transform with an explicit passenger policy |
-| character locomotion | Humanoid/custom character controller (`roblox-characters`) |
-| authoritative hit test | server raycast/overlap with filters and gameplay validation |
-| cosmetic trail/recoil | local visual motion; no gameplay authority |
+| sustained physical interaction | unanchored assembly plus modern constraints or forces |
+| one-off physical change | `ApplyImpulse` / `ApplyAngularImpulse` |
+| kinematic platform or path | scripted pivot or CFrame with an explicit passenger policy |
+| character locomotion | Humanoid or Character Controller Library (`roblox-characters`) |
+| hit test | server raycast, shapecast, or overlap with explicit filters |
+| cosmetic trail or recoil | local visual motion; no gameplay authority |
 
 ## Workflow
 
-1. **Inspect the mechanism.** In Studio, visualize assemblies, anchors, constraints, collision
-   groups, massless parts, and network owners. Identify the assembly root and intended authority.
-2. **Define interaction policy.** Write the collision-group matrix and separately decide
-   `CanCollide`, `CanTouch`, and `CanQuery`. These flags are not interchangeable. Register groups
-   in the Studio Collision Groups editor or with `Workspace:RegisterCollisionGroup()` and
-   `Workspace:CollisionGroupSetCollidable()`; the `PhysicsService` collision-group methods are
-   deprecated and forward to `Workspace`.
-3. **Choose simulation or query.** Do not use `.Touched` as a universal hit detector. Use a ray for
-   a path/line, an overlap query for a volume, and simulation contacts when physical response is
-   actually required.
-4. **Apply motion at assembly level.** Forces on a part affect its assembly. Use modern
-   `LinearVelocity`, `AngularVelocity`, `VectorForce`, `AlignPosition`, and `AlignOrientation`
-   constraints as appropriate; migrate deprecated BodyMovers when changing that system.
-5. **Set ownership deliberately.** Server-own gameplay-critical loose assemblies when required;
-   client ownership can improve responsiveness but never authorizes gameplay results.
-6. **Bound cost and lifetime.** Reuse query parameters, cap query frequency/result count, remove
-   temporary constraints/attachments, and disconnect event listeners.
-7. **Verify under load and multiplayer.** Test anchored/unanchored transitions, mass extremes,
-   collision matrix, fast motion, multiple clients, ownership changes, streaming, and cleanup.
+1. **Inspect the mechanism.** In Studio, turn on the assembly, constraint and network-owner
+   visualizations; or read `part.AssemblyRootPart`, `part.AssemblyMass`, `part.Anchored` and
+   `part:GetNetworkOwner()` from code. Identify the assembly root and who should own it.
+2. **Write the interaction policy.** A collision-group matrix, then `CanCollide`, `CanTouch` and
+   `CanQuery` decided separately per role. Register groups once with
+   `Workspace:RegisterCollisionGroup()` and `CollisionGroupSetCollidable()` (or the Collision
+   Groups editor), from a single script so assignment never races registration.
+3. **Choose simulation or query.** A ray for a line, a shapecast for a moving volume, an overlap for
+   a static volume, and simulation contacts only when a physical response is wanted. `.Touched` is
+   neither reliable nor secure as a hit detector.
+4. **Apply motion at assembly level.** Forces on any part act on the whole assembly. Use
+   `LinearVelocity`, `AngularVelocity`, `VectorForce`, `AlignPosition` and `AlignOrientation`;
+   migrate BodyMovers when you touch that system.
+5. **Set ownership deliberately.** Server-own gameplay-critical loose assemblies when needed;
+   client ownership improves response but never authorizes results.
+6. **Bound cost and lifetime.** Reuse query params, cap query frequency and result counts, and
+   destroy temporary constraints, attachments and connections together.
+7. **Check from code.** With the Studio MCP server connected, start play and use `execute_luau` on
+   the `Server` datamodel to print the facts the change depends on: `AssemblyRootPart`,
+   `AssemblyMass`, `GetNetworkOwner()`, `workspace:CollisionGroupsAreCollidable(a, b)`, and the
+   result of one test query; then read `get_console_output`. Without MCP, ask the user to run the
+   same snippet from the Command Bar during play and paste the Output. Fast movers, ownership
+   hand-off and two-client interaction need a Server & Clients run.
 
 ## Pattern: filtered server raycast
 
@@ -68,7 +62,7 @@ params.FilterDescendantsInstances = {shooterCharacter}
 params.IgnoreWater = true
 params.CollisionGroup = "WeaponQuery"
 
-local direction = aimDirection.Unit * MAX_RANGE
+local direction = aimDirection.Unit * MAX_RANGE   -- direction length is the range
 local result = Workspace:Raycast(muzzlePosition, direction, params)
 if result then
     local model = result.Instance:FindFirstAncestorOfClass("Model")
@@ -79,8 +73,8 @@ if result then
 end
 ```
 
-The server must validate the origin/direction against server-known character/weapon state; do not
-accept an arbitrary client origin and treat the raycast itself as validation.
+`muzzlePosition` and `aimDirection` must come from server-known character and weapon state. A
+raycast from a client-supplied origin is not validation (see `roblox-networking`).
 
 ## Pattern: overlap volume with explicit policy
 
@@ -101,60 +95,68 @@ for _, part in Workspace:GetPartBoundsInBox(hitboxCFrame, hitboxSize, params) do
 end
 ```
 
-Bounds queries use bounding boxes and can include multiple parts from one target; deduplicate and
-perform exact/gameplay checks as needed. For exact geometry use `WorldRoot:GetPartsInPart(part, overlapParams)`
-only when its additional cost is justified. Note `OverlapParams.RespectCanCollide` decides whether a
-query honours `CanCollide` or `CanQuery` — set it deliberately, or it silently overrides the flag
-policy below. `OverlapParams.Tolerance` controls contact slop.
+Bounds queries test bounding boxes and return several parts per target, so deduplicate by model.
+`WorldRoot:GetPartsInPart()` is exact but costs more. `OverlapParams.RespectCanCollide` switches
+the query from `CanQuery` to `CanCollide`; set it on purpose or it silently overrides the flag
+policy.
 
 ## Assemblies, force, and ownership
 
-- Welded parts form one rigid assembly; force, impulse, velocity, mass, and ownership operate on
-  that assembly. Anchoring a part changes simulation/ownership and can make an assembly effectively
-  infinite mass.
-- Apply an impulse for a one-time change; use a force or velocity constraint for sustained control.
-  Setting `AssemblyLinearVelocity` is an immediate state change, not a continuous force model.
-- Prefer attachments plus modern constraints over `BodyPosition`, `BodyVelocity`, `BodyGyro`, and
-  other deprecated BodyMovers when authoring or revising a mechanism.
-- Automatic ownership may move nearby unanchored assemblies to clients. Use
-  `SetNetworkOwner(nil)` conservatively for critical objects, then measure responsiveness/server
-  cost. Visualize network owners in Studio.
-- A client owner can manipulate physical results and `.Touched` observations. The server validates
-  consequential hits, positions, timing, and permissions independently.
-- If `Workspace.AuthorityMode` is `Server`, the server owns simulation and clients predict parts
-  near their own character with rollback (`RunService:SetPredictionMode()`, client-only, overrides
-  per instance). Drive
-  predicted forces and constraints from `RunService:BindToSimulation()` on both sides rather than
-  from `Heartbeat` or client-only scripts; custom physics scripts need adapting when a place
-  switches modes. See `roblox-networking`.
+- Welded parts form one rigid assembly; force, impulse, velocity, mass and ownership act on the
+  assembly. One anchored part anchors the whole assembly.
+- Tune forces and impulses from intended acceleration times `AssemblyMass`, not by trial values.
+- Automatic ownership moves nearby unanchored assemblies to clients. Call `SetNetworkOwner(nil)`
+  for critical objects, then measure the server cost and responsiveness. Re-check ownership after
+  anchoring changes; it is not always kept.
+- A client owner can fake physical results and `.Touched` events. The server validates
+  consequential hits, positions, timing and permissions independently.
+- If `Workspace.AuthorityMode` is `Server`, the server owns simulation and clients predict nearby
+  assemblies with rollback. Drive predicted forces and constraints from
+  `RunService:BindToSimulation()` on both sides, not from `Heartbeat` or client-only scripts, and
+  expect custom physics scripts to need changes when a place switches modes.
 
-## Common failures
+## Gotchas
 
 | Symptom | Likely cause | Remedy |
 |---|---|---|
-| welded mechanism will not move | one part anchored | inspect full assembly; anchor only intentional world roots |
-| force behaves too strongly/weakly | assembly mass ignored | inspect `AssemblyMass`; tune force/impulse by intended acceleration |
-| hit misses fast projectile | discrete touch sampling/tunneling | swept query — `WorldRoot:Blockcast()`, `Spherecast()`, or `Shapecast()` — plus `physics-tuning`; do not rely only on `.Touched` |
-| ray hits shooter/effects | filters/collision group absent | reuse explicit params and query group |
-| same target damaged many times | overlap returned multiple body parts | deduplicate by target model and enforce attack ID/cooldown |
-| exploit fires impossible touch | client owns relevant physics | server query/context validation; deliberate ownership |
-| invisible trigger blocks or cannot query | three flags conflated | set `CanCollide`, `CanTouch`, `CanQuery` independently |
-| mechanism leaks attachments | temporary constraint lifecycle missing | own and destroy constraints, attachments, and connections together |
+| welded mechanism will not move | one part anchored | inspect the whole assembly; anchor only world roots |
+| force too strong or too weak | assembly mass ignored | read `AssemblyMass`; size force for the intended acceleration |
+| fast projectile misses | discrete contact sampling | swept query (`Blockcast`, `Spherecast`, `Shapecast`) per step; see `physics-tuning` |
+| ray hits the shooter or effects | no filter or query group | reuse explicit params and a query collision group |
+| one target damaged many times | overlap returned several body parts | deduplicate by model; attack ID or cooldown |
+| exploit fires impossible touches | client owns the relevant part | server query plus context validation; deliberate ownership |
+| invisible trigger blocks players or queries miss it | the three Can* flags conflated | set `CanCollide`, `CanTouch`, `CanQuery` independently |
+| attachments pile up | temporary constraint lifecycle missing | create and destroy constraint, attachments and connections together |
+| collision group "does not exist" at startup | groups registered from several scripts | register in one script before assigning |
 
 ## Resources
 
-- Read `references/queries-and-ownership.md` for collision/query matrices, assembly debugging,
-  ownership security, migration choices, and the physics verification matrix.
+- Read `references/queries-and-ownership.md` when designing collision groups, query filters, a
+  vehicle or other ownership-sensitive object, or a BodyMover migration; it has the flag roles,
+  query choice, ownership debugging, and the physics test matrix.
 
 ## Related skills
 
-- `physics-tuning` — timestep, jitter, tunneling, mass ratios, and stability methodology.
-- `roblox-characters` — Humanoid/custom movement and respawn lifecycle.
-- `roblox-networking` — authoritative validation of client-requested physical actions.
-- `roblox-studio-workflow` — visualization, Output, and multi-client verification.
+- `physics-tuning`: timestep, jitter, tunnelling, mass ratios, and feel.
+- `roblox-characters`: Humanoid and custom movement across respawns.
+- `roblox-networking`: authoritative validation of client-requested physical actions.
+- `roblox-studio-workflow`: visualization, Output, and multi-client verification.
 
-## Primary references
+## Version notes
 
-- `https://create.roblox.com/docs/physics/assemblies`
-- `https://create.roblox.com/docs/physics/network-ownership`
-- `https://create.roblox.com/docs/workspace/raycasting`
+Last verified: 2026-11-11.
+
+- Collision groups are registered on `Workspace` or a `WorldModel` (`WorldRoot` methods); the
+  `PhysicsService` collision-group methods are deprecated. A `WorldModel` keeps its own matrix
+  unless `UseWorkspaceCollisionGroups` is on.
+- BodyMovers (`BodyPosition`, `BodyVelocity`, `BodyGyro` and others) are deprecated in favour of
+  the constraint-based movers.
+- Server Authority reached full release in July 2026; see `roblox-networking` for its rules.
+- To re-check an API: append `.md` to its Creator Hub URL, or start from
+  `https://create.roblox.com/docs/llms.txt`.
+
+Sources: `https://create.roblox.com/docs/physics/assemblies`,
+`https://create.roblox.com/docs/physics/network-ownership`,
+`https://create.roblox.com/docs/workspace/raycasting`,
+`https://create.roblox.com/docs/workspace/collisions`,
+`https://create.roblox.com/docs/projects/server-authority`.

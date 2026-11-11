@@ -4,6 +4,15 @@ The Scene Manager runs every scene through a small state machine. Knowing which
 transition verb does what prevents the most common Phaser bugs: hidden scenes,
 stale state after a restart, and duplicate event listeners.
 
+Contents:
+
+- Lifecycle order
+- Transition verbs (table and rules of thumb)
+- The restart-state bug
+- Duplicate listeners
+- Removing or replacing a scene
+- Keys stay down after release (Phaser 4.2.1)
+
 ## Lifecycle order
 
 A scene is **booted once** (status `INIT`) and can be **started any number of

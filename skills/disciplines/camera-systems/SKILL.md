@@ -1,55 +1,51 @@
 ---
 name: camera-systems
 description: >
-  Build game cameras that feel good — 2D follow with a deadzone, look-ahead, smoothing, and
-  level-bounds clamping; 3D third-person orbit with collision and first-person look; plus
-  multi-target framing and a shake hook. Engine-neutral techniques that pair with the engine's
-  camera node and rigs like Unity Cinemachine or Godot Camera2D/PhantomCamera. Use when the user
-  mentions camera follow, follow camera, deadzone, look-ahead, camera smoothing, camera bounds/
-  limits, third-person camera, orbit camera, first-person look, Cinemachine, or camera jitter.
+  Builds and tunes game cameras, engine-neutral with Godot and Cinemachine 3 mappings: 2D follow
+  with deadzone and look-ahead, third-person orbit, first-person look and split-screen. Use when
+  the camera lags, jitters while following, shows past the level edge, clips through walls or
+  changes with frame rate. Not for shake (`game-feel`) or physics timestep jitter
+  (`physics-tuning`).
 ---
 
 # Camera systems
 
-The camera is the player's window; bad camera work makes a good game feel awful. This skill
-covers the engine-neutral camera techniques — smooth follow, deadzones, look-ahead, bounds
-clamping, third-person orbit with collision, first-person look, and multi-target framing — and
-maps them onto each engine's camera node or rig.
+A good camera follows smoothly at any frame rate, leads the action, never shows outside the
+level and never clips through walls. This skill owns those techniques and maps them onto each
+engine's camera node or rig; prefer the engine's built-in rig before hand-rolling one.
 
 ## When to use
 
-- Use when a 2D camera should follow the player smoothly, stay inside the level, lead the
-  player's motion, or ignore small movements (deadzone).
-- Use when building a 3D third-person orbit camera (mouse/stick look, collision push-in) or a
-  first-person look controller, or framing multiple targets at once.
-- Use to fix camera jitter, snapping, motion sickness, or a camera that shows past the level edge.
+- A 2D camera should follow smoothly, ignore small movements, lead motion and stay in bounds.
+- A 3D third-person orbit or first-person look controller, or framing several targets.
+- Fixing jitter, snapping, motion sickness or a camera that peeks past the level.
 
-**When *not* to use:** for the *magnitude and trigger* of screen shake and impact juice, use
-`game-feel` (this skill exposes the shake offset hook it drives). For the engine's concrete
-camera node/component setup, use `godot-3d-essentials` (Camera3D, environment) or the engine
-skill. For player movement itself use the engine movement skill (`godot-2d-movement`). For
-performance of many cameras/render targets, see `performance-optimization`.
+**Not this skill:** shake magnitude and triggers (`game-feel`; this skill only exposes the
+offset), physics jitter of the body itself (`physics-tuning`), `Camera3D` and environment setup
+(`godot-3d-essentials`), player movement (`godot-2d-movement` or the engine movement skill),
+look-sensitivity input curves (`input-systems`).
 
 ## Core workflow
 
-1. **Decide what the camera serves.** Platformer (lead the jump, see hazards), top-down (center
-   with deadzone), third-person (orbit + collision), first-person (look only). The genre sets the
-   rules.
-2. **Follow smoothly and frame-rate independently.** Move the camera toward the target with
-   exponential smoothing or a spring (`SmoothDamp`), not a fixed `lerp(a, b, 0.1)` — that 0.1 is
-   per-frame and changes with frame rate.
-3. **Add a deadzone** so tiny target movements don't nudge the camera; it only follows once the
-   target leaves a box/zone. Stops nausea in twitchy games.
-4. **Lead the action with look-ahead** by offsetting the camera target in the direction of
-   motion or facing, eased in/out so it doesn't whip.
-5. **Clamp to level bounds** so the camera never shows outside the playable area; combine with
-   smoothing so it eases to a stop at the edge.
-6. **For 3D, separate look from collision.** Orbit via yaw/pitch on a rig; use a spring arm /
-   ray to pull the camera in when geometry blocks it; clamp pitch.
-7. **Update the camera after the target moves.** Follow in the late/post step (after movement and
-   physics resolve) to avoid a one-frame lag jitter.
-8. **Verify by moving the target at low and high frame rates**, into corners and walls, and at
-   the level edges; confirm no jitter, no peeking past bounds, smooth stops. Report what you saw.
+1. **Decide what the camera serves.** Platformer (lead the jump, see hazards), top-down (centre
+   with deadzone), third-person (orbit plus collision), first-person (look only).
+2. **Use the built-in rig first**: Godot `Camera2D` smoothing, limits and drag margins, or
+   `SpringArm3D`; Unity Cinemachine 3 (`CinemachineCamera` plus Position Composer, Orbital
+   Follow, Deoccluder, Confiner). Hand-roll only what the rig cannot do.
+3. **Smooth with `1 - exp(-rate * dt)`** or a critically damped spring (`SmoothDamp`), never a
+   fixed `lerp(a, b, 0.1)` per frame.
+4. **Add a deadzone, then look-ahead** eased toward its goal so direction flips don't whip.
+5. **Clamp the view, not the centre**, to the level rectangle, accounting for zoom.
+6. **For 3D, separate look from collision**: yaw and pitch on a pivot, a spring arm or ray pulls
+   the camera in, pitch clamped.
+7. **Update after the target moves** (late update, or after physics) and follow the target's
+   interpolated transform when physics interpolation is on.
+8. **Verify with a runnable check, then by eye.** Step the follow code headless with a target
+   moving at 300 px/s for 2 s at `dt = 1/30` and at `dt = 1/144`, and compare how far the camera
+   trails the target. With `rate = 8` exponential smoothing the lag is about 33 px and 37 px; a
+   fixed `lerp(..., 0.1)` gives about 90 px and 19 px, a sign the follow is frame-rate
+   dependent. Then ask the user to run into corners, walls and level edges at low and high frame
+   rates and report any jitter, peeking or snapping.
 
 ## Patterns
 
@@ -126,38 +122,59 @@ func _apply(final_focus: Vector2) -> void:
 # hitter plus a CinemachineImpulseListener on the camera.
 ```
 
-## Pitfalls
+## Gotchas
 
-- **`lerp(pos, target, const)` per frame** is frame-rate dependent — floatier at 30 FPS, snappier
-  at 144. Use `1 - exp(-rate*dt)` or `SmoothDamp`.
-- **Following in the normal update before the target has moved** yields a one-frame lag jitter.
-  Follow in `LateUpdate` / after movement/physics resolve.
-- **No bounds clamp** lets the camera show black past the level edge. Clamp focus to the level
-  rect (account for the viewport half-size so the *view*, not the center, stays inside).
-- **No deadzone in twitchy games** makes the camera twitch with every micro-movement → nausea.
-- **Unclamped pitch** in third/first-person flips the camera over the top. Clamp pitch (about
-  -80° to +45° for an orbit, ±80° for first-person).
-- **Mouse-look sensitivity that changes with window size** (Godot): `InputEventMouseMotion.relative`
+- **`lerp(pos, target, const)` per frame** is frame-rate dependent: floatier at 30 FPS,
+  snappier at 144. Use `1 - exp(-rate * dt)` or `SmoothDamp`.
+- **Jitter while following a physics body**: the body moves at the physics tick (60 Hz) and the
+  camera at the display rate. Turn on physics interpolation (Godot
+  `physics/common/physics_interpolation`) and follow the body's interpolated transform in
+  `_process` (`get_global_transform_interpolated()` in 3D), or follow in the physics step with
+  `Camera2D.process_callback = CAMERA2D_PROCESS_PHYSICS`. Mixing the two is what jitters.
+- **One-frame lag** when following in the normal update before the target has moved. Follow in
+  `LateUpdate` (Unity) or after movement and physics resolve.
+- **Camera parented to the moving player** inherits every bump and fights interpolation. Keep
+  the camera on its own branch (or `top_level = true`) and follow in code or with a rig.
+- **Clamping the centre instead of the view** shows black past the edge. Clamp to
+  `[min + half_view, max - half_view]`, and centre on any axis where the level is smaller than
+  the view.
+- **No deadzone in twitchy games** makes the camera twitch with every micro-movement; a box
+  deadzone and a circular one feel different, so pick deliberately.
+- **Unclamped pitch** flips the camera over the top. About -80° to +45° for an orbit, ±80° for
+  first-person.
+- **Mouse-look sensitivity changes with window size** in Godot: `InputEventMouseMotion.relative`
   is scaled by the stretch settings; read `screen_relative` for captured-mouse aiming.
-- **Camera clipping through walls** in 3D — use a spring arm / occlusion ray to pull in.
-- **Snapping on teleport/respawn** is jarring; either hard-cut intentionally (and reset
-  smoothing) or fast-ease. Don't let a huge `SmoothDamp` distance whip across the level.
-- **Shake driving the follow target** instead of an additive offset makes follow fight shake.
-  Compose: smooth follow first, add shake offset last.
-- **Per-axis vs radial deadzone confusion** — a box deadzone feels different from a circular one;
-  pick deliberately.
+- **Clipping through walls** in 3D: use a spring arm or occlusion ray, with a probe radius a
+  little larger than the camera's near-plane half-size.
+- **Slingshot after teleport or respawn**: a smoothed camera whips across the level. Hard-cut and
+  reset the smoothing state (Godot `Camera2D.reset_smoothing()`), or fast-ease deliberately.
+- **Shake written into the follow target** makes follow fight shake. Smooth follow first, add the
+  shake offset last.
 
 ## References
 
-- For the exponential-smoothing/spring derivation, a complete deadzone+look-ahead+bounds 2D rig,
-  3D spring-arm/orbit details, first-person look, multi-target/group framing and split-screen,
-  cinematic camera blends, and the Cinemachine 3 / Godot Camera2D / PhantomCamera mapping, read
-  `references/follow-and-framing.md`.
+- `references/follow-and-framing.md`: read for the smoothing derivation, a full deadzone plus
+  look-ahead plus bounds 2D rig, orbit and first-person details, group framing and
+  split-screen, cutscene blends, and the Godot/Cinemachine 3 component mapping table.
 
 ## Related skills
 
-- `game-feel` — owns screen-shake trauma/triggers; this skill exposes the offset it writes.
-- `godot-2d-movement`, `godot-3d-essentials` — the player/world the camera frames; Camera3D setup.
-- `physics-tuning` — interpolate camera follow with the physics step to kill jitter.
-- `platformer`, `fps-shooter` — genres whose camera rules this skill implements.
-- `performance-optimization` — cost of extra cameras, render targets, and split-screen.
+- `game-feel`: shake trauma and triggers; writes this skill's offset.
+- `godot-2d-movement`, `godot-3d-essentials`: the player and world the camera frames.
+- `physics-tuning`: timestep and interpolation for the bodies being followed.
+- `input-systems`: look sensitivity, invert and stick response curves.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7: `Camera2D.position_smoothing_*`, `limit_*`, `drag_*`, `process_callback`,
+  `reset_smoothing()`; `InputEventMouseMotion.screen_relative`; physics interpolation and manual
+  camera interpolation per
+  https://docs.godotengine.org/en/4.7/tutorials/physics/interpolation/advanced_physics_interpolation.html.
+- Unity 6.3 LTS with Cinemachine 3.1 (3.1.7 is the latest release, 9 June 2026; namespace
+  `Unity.Cinemachine`). The 2.x names `CinemachineVirtualCamera`, `CinemachineCollider` and
+  `CinemachineFramingTransposer` are deprecated in 3.x
+  (https://packages.unity.com/com.unity.cinemachine).
+- PhantomCamera (Godot addon) latest release v0.11.0.4, October 2026
+  (https://github.com/ramokz/phantom-camera/releases).

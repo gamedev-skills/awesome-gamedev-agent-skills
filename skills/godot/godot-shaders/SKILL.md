@@ -1,77 +1,91 @@
 ---
 name: godot-shaders
 description: >
-  Write Godot 4.7 shaders in the Godot Shading Language: canvas_item shaders for 2D
-  and spatial shaders for 3D, with vertex/fragment functions, uniforms (source_color,
-  hint_range), TIME/UV animation, and screen-reading via hint_screen_texture. Use
-  when authoring .gdshader files, writing fragment/vertex code, making 2D/3D visual
-  effects, or porting 3.x shaders (SCREEN_TEXTURE, hint_color) to 4.x.
+  Godot 4.7 Shading Language syntax and pipeline: canvas_item, spatial and particle shaders,
+  built-ins, ShaderMaterial wiring, a headless compile check and 3.x porting. Use for a .gdshader,
+  a SHADER ERROR, shader parameters set from GDScript, or an effect that looks washed out or sorts
+  wrong. Not for effect maths such as dissolve or outline (`shader-programming`).
 ---
 
 # Godot Shaders (4.x)
 
-Write `canvas_item` (2D) and `spatial` (3D) shaders in the Godot Shading Language, animate
-with `TIME`/`UV`, expose `uniform`s, and read the screen. Targets **Godot 4.7**.
+Write `.gdshader` files in the Godot Shading Language, wire them to materials, and prove
+they compile. Targets **Godot 4.7** (see Version notes). The effect technique (the maths
+of a dissolve, outline, toon ramp) lives in `shader-programming`; this skill covers
+Godot's syntax, built-ins and pipeline.
 
 ## When to use
 
-- Use when writing `.gdshader` code or a `ShaderMaterial`: 2D effects (outline, dissolve,
-  flash, water), 3D surface shaders (rim light, toon, scrolling UV), or screen-space
-  post effects.
+- Writing or porting `.gdshader` code, fixing a `SHADER ERROR`, wiring a
+  `ShaderMaterial`, picking render modes, or setting uniforms from code.
 
-**When *not* to use:** the cross-engine *concepts* of shading (UVs, vertex/fragment
-theory) → `shader-programming`; particles/VFX nodes → general 3D; non-shader visuals.
+**When *not* to use:** cross-engine shading technique → `shader-programming`;
+`StandardMaterial3D`, lights and environment → `godot-3d-essentials`. `GPUParticles`
+node properties (as opposed to a `particles` shader) are outside this skill.
 
 ## Core workflow
 
-1. **Pick the shader type** on the first line: `shader_type canvas_item;` for 2D
-   (Sprite2D, TextureRect, anything `CanvasItem`) or `shader_type spatial;` for 3D
-   materials. (`particles`, `sky`, `fog` also exist.)
-2. **Attach via a `ShaderMaterial`.** Create a `ShaderMaterial`, assign your `.gdshader`,
-   and put it on the node's `material`. Uniforms appear in the Inspector.
-3. **Write `fragment()`** to set the output: `COLOR` (2D) or `ALBEDO`/`EMISSION`/`ALPHA`
-   (3D). Optionally `vertex()` to move geometry and `light()` for custom lighting.
-4. **Expose tunables as `uniform`s** with hints (`source_color`, `hint_range`) so they are
-   editable and correctly color-managed.
-5. **Animate with the built-in `TIME`** and sample textures with `texture(tex, UV)`.
-6. **Set uniforms from code** with `material.set_shader_parameter("name", value)`.
+1. **Pick the shader type** on the first line: `shader_type canvas_item;` for anything
+   `CanvasItem` (Sprite2D, TextureRect, Control) or `shader_type spatial;` for 3D meshes.
+   `particles`, `sky` and `fog` exist too.
+2. **Write the output the type expects:** `COLOR` in `canvas_item`; `ALBEDO`, `EMISSION`,
+   `ROUGHNESS`, `METALLIC` in `spatial`. `vertex()` moves geometry; `light()` replaces
+   lighting.
+3. **Expose tunables as `uniform`s** with hints (`source_color` for colors, `hint_range`
+   for sliders) so they show in the Inspector and are color-managed.
+4. **Wire the material.** In a `.tscn` this is plain text, so no Inspector clicks are
+   needed:
+
+   ```ini
+   [ext_resource type="Shader" path="res://fx/scroll.gdshader" id="1_fx"]
+
+   [sub_resource type="ShaderMaterial" id="ShaderMaterial_fx"]
+   shader = ExtResource("1_fx")
+   shader_parameter/scroll_speed = 0.5
+
+   [node name="Water" type="Sprite2D" parent="."]
+   material = SubResource("ShaderMaterial_fx")
+   ```
+
+   From code: `material.set_shader_parameter("scroll_speed", 0.5)`.
+5. **Check before you finish.**
+   - Compile every shader headless with Pattern 4, then grep the log:
+
+     ```bash
+     godot --headless --path . --script res://tests/compile_shaders.gd > shaders.log 2>&1
+     grep -nE "SHADER ERROR|Shader compilation failed" shaders.log   # no output = pass
+     ```
+
+     Headless uses a dummy renderer that still runs Godot's shader compiler, so syntax,
+     unknown built-ins, wrong output variables and bad hints all show up. It does not run
+     the GPU driver, so ask the user to open the scene with the project's renderer
+     (Forward+, Mobile or Compatibility) and report how it looks and any errors in the
+     Output panel.
+   - If you wired a material in a `.tscn`, also run the `godot-nodes-scenes` skill's
+     `scripts/check_godot_project.py <project-dir>` to confirm the `ext_resource` path.
+   - With no Godot binary (`godot`, `godot4` or `$GODOT_BIN`), ask the user to run the
+     command above and paste `shaders.log`.
 
 ## Patterns
 
-### 1. 2D (canvas_item): tint + scrolling UV
+### 1. canvas_item: tint and scrolling UV
 
 ```glsl
 shader_type canvas_item;
 
-uniform vec4 tint : source_color = vec4(1.0);     // source_color = sRGB-correct color
+uniform vec4 tint : source_color = vec4(1.0);
 uniform float scroll_speed : hint_range(0.0, 2.0) = 0.3;
 
 void fragment() {
-    vec2 uv = UV;
-    uv.x += TIME * scroll_speed;                  // scroll horizontally over time
-    COLOR = texture(TEXTURE, uv) * tint;          // TEXTURE = the node's texture
+    vec2 uv = UV + vec2(TIME * scroll_speed, 0.0);
+    COLOR = texture(TEXTURE, uv) * tint;          // TEXTURE = the node's own texture
 }
 ```
 
-### 2. 2D dissolve using a noise threshold
+The node's texture must repeat for the scroll to wrap: set `texture_repeat` on the
+CanvasItem, or sample your own `uniform sampler2D tex : repeat_enable;`.
 
-```glsl
-shader_type canvas_item;
-
-uniform sampler2D noise : repeat_enable;          // a NoiseTexture2D
-uniform float amount : hint_range(0.0, 1.0) = 0.0;
-
-void fragment() {
-    vec4 tex = texture(TEXTURE, UV);
-    float n = texture(noise, UV).r;
-    if (n < amount) {
-        discard;                                  // cut the pixel away
-    }
-    COLOR = tex;
-}
-```
-
-### 3. 3D (spatial): emissive rim light
+### 2. spatial: emissive rim on an opaque material
 
 ```glsl
 shader_type spatial;
@@ -82,18 +96,16 @@ uniform float rim_power : hint_range(0.5, 8.0) = 3.0;
 
 void fragment() {
     ALBEDO = base_color.rgb;
-    // VIEW and NORMAL are view-space built-ins; rim is strong at grazing angles.
-    float rim = pow(1.0 - dot(NORMAL, VIEW), rim_power);
-    EMISSION = rim_color * rim;
+    float rim = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), rim_power);  // view space
+    EMISSION = rim_color * rim;                   // no ALPHA write: stays opaque
 }
 ```
 
-### 4. Screen-reading post effect (4.x hint, not SCREEN_TEXTURE)
+### 3. Screen-reading post effect (4.x hint, not SCREEN_TEXTURE)
 
 ```glsl
 shader_type canvas_item;
 
-// 4.x: declare the screen as a uniform with hint_screen_texture.
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform float blur : hint_range(0.0, 4.0) = 1.0;
 
@@ -106,43 +118,84 @@ void fragment() {
 }
 ```
 
-Set a uniform from GDScript:
+### 4. Headless compile check for every `.gdshader`
 
 ```gdscript
-$Sprite2D.material.set_shader_parameter("amount", 0.7)
+# res://tests/compile_shaders.gd
+extends SceneTree
+
+func _initialize() -> void:
+    var paths := _find("res://", "gdshader")
+    for path in paths:
+        print("compiling ", path)                 # a SHADER ERROR prints right after this
+        var shader := load(path) as Shader
+        shader.get_shader_uniform_list()         # forces the compile; load() alone is lazy
+    print("Compiled %d shaders" % paths.size())
+    quit(0)
+
+func _find(dir: String, ext: String) -> PackedStringArray:
+    var found := PackedStringArray()
+    for file in DirAccess.get_files_at(dir):
+        if file.get_extension() == ext:
+            found.append(dir.path_join(file))
+    for sub in DirAccess.get_directories_at(dir):
+        if not sub.begins_with("."):             # skips .godot/ and other hidden folders
+            found.append_array(_find(dir.path_join(sub), ext))
+    return found
 ```
 
-## Pitfalls
+Shaders embedded in a `.tscn` (`[sub_resource type="Shader"]`) are not files; cover them
+by smoke-running that scene (`--scene res://... --quit-after 10`) and grepping the same way.
 
-- **3.x → 4.x renames.** `SCREEN_TEXTURE` is removed — declare
-  `uniform sampler2D x : hint_screen_texture;` and sample with `SCREEN_UV`. Color hints
-  `hint_color`/`hint_albedo`→`source_color`; `hint_white`/`hint_black`→
-  `hint_default_white`/`hint_default_black`; `hint_range` stays. Depth/normal use `hint_depth_texture` / `hint_normal_roughness_texture`.
-- **Wrong output variable.** In `canvas_item` write `COLOR`; in `spatial` write `ALBEDO`
-  (and `EMISSION`, `ALPHA`, `ROUGHNESS`, `METALLIC`). In a spatial `fragment()`, `COLOR` is
-  the read-only vertex color, so assigning to it fails to compile.
+## Gotchas
+
+- **3.x → 4.x renames.** `SCREEN_TEXTURE` and `DEPTH_TEXTURE` are removed; declare
+  `uniform sampler2D x : hint_screen_texture;` (or `hint_depth_texture`) and sample with
+  `SCREEN_UV`. Forward+ also offers `hint_normal_roughness_texture`. `hint_color`/`hint_albedo`
+  → `source_color`; `hint_white`/`hint_black` → `hint_default_white`/`hint_default_black`.
+  In `canvas_item` `vertex()`, 3.x's `MODELVIEW_MATRIX` is now `MODEL_MATRIX` /
+  `CANVAS_MATRIX` / `SCREEN_MATRIX`.
+- **Wrong output variable.** In a spatial `fragment()`, `COLOR` is the read-only vertex
+  color, so assigning to it is a compile error; write `ALBEDO`.
 - **Color uniforms without `source_color`** are treated as raw linear values and look
-  wrong (washed/dark) because Godot won't sRGB-convert them.
+  washed out or dark.
 - **Object drawn in the wrong order, casts no shadow, or skips SSAO (3D)** → the spatial
   shader reads or writes `ALPHA`, which moves the whole material to the transparent
-  pipeline even if the value is always `1.0`. Don't touch `ALPHA` in opaque shaders; for
-  hard cut-outs also set `ALPHA_SCISSOR_THRESHOLD` (alpha-scissor stays in the opaque pass).
-- **Sampling outside [0,1] UV** without `repeat_enable` clamps. Add `: repeat_enable` to
-  the sampler uniform for tiling/scroll.
-- **Effect jumps once an hour** → `TIME` (seconds since start, affected by `time_scale`, not
-  by pausing) wraps every `rendering/limits/time/time_rollover_secs` (3600 by default).
-  Pick periods that divide the rollover, or feed your own time through a uniform.
-- **`discard` is costly** on some hardware and breaks early-Z; prefer setting `ALPHA`/
-  `COLOR.a` when you can.
+  pipeline even if the value is always `1.0`. For hard cut-outs set
+  `ALPHA_SCISSOR_THRESHOLD`, which stays in the opaque pass.
+- **Sampling outside [0,1] UV clamps** unless the sampler uniform has `repeat_enable` (or,
+  for `TEXTURE`, the node's `texture_repeat` is on).
+- **Effect jumps once an hour** → `TIME` wraps at `rendering/limits/time/time_rollover_secs`
+  (3600 by default). Pick periods that divide the rollover, or feed your own time uniform.
+- **`load()` alone does not compile a shader.** The `Shader` creates its GPU-side object on
+  first use, which is why Pattern 4 calls `get_shader_uniform_list()`.
+- **`discard` breaks early depth testing** and costs more on some GPUs; prefer alpha where
+  the blend mode allows.
 
 ## References
 
-- For built-in variables per shader type, render modes, `varying`, custom `light()`,
-  `vertex()` displacement, and the visual shader graph, read
-  `references/shading-language.md`.
+- Read `references/shading-language.md` when you need the built-ins per shader type,
+  render-mode names, sampler filter/repeat qualifiers, `varying`, `vertex()`
+  displacement, a custom `light()` function, 2D normal maps, or performance rules.
 
 ## Related skills
 
-- `shader-programming` — engine-agnostic shader concepts (GLSL/HLSL).
-- `godot-3d-essentials` — materials, environment, and where spatial shaders live.
-- `godot-ui-control` — applying shaders to UI for effects.
+- `shader-programming` for the effect technique (dissolve, outline, fresnel, vignette).
+- `godot-3d-essentials` for materials, environment and where spatial shaders live.
+- `godot-ui-control` for applying shaders to UI.
+- `godot-gdscript-headless-testing` to run Pattern 4 in CI.
+
+## Version notes
+
+Last verified: 2026-11-11 against Godot 4.7.2-stable (released 2026-08-18).
+
+- The headless (dummy) renderer compiles shaders with the engine's shader compiler and
+  prints `SHADER ERROR:` lines; a `Shader` resource compiles lazily on first use.
+- The render modes and built-ins listed in the reference exist in 4.7.2's
+  `shader_types.cpp`.
+
+Sources: [dummy material_storage.cpp @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/servers/rendering/dummy/storage/material_storage.cpp),
+[shader.cpp @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/scene/resources/shader.cpp),
+[shader_types.cpp @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/servers/rendering/shader_types.cpp),
+[Shading language](https://docs.godotengine.org/en/stable/tutorials/shaders/shader_reference/shading_language.html),
+[Upgrading from Godot 3 to 4](https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.html).

@@ -47,7 +47,7 @@ Adapting it:
   licence inventory.
 - For macOS, sign/notarize the final bundle on a Mac, use the correct store
   entitlements, staple and verify the extracted archive. See
-  [Publishing/platforms](publishing-and-platforms.md).
+  the publishing-and-platforms reference.
 - Store uploads need the actual store tooling and credentials, within the
   user's requested publication scope; do not add upload jobs by default.
 

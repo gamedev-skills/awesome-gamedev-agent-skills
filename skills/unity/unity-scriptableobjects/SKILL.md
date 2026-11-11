@@ -1,83 +1,77 @@
 ---
 name: unity-scriptableobjects
 description: >
-  Architect Unity 6.3 LTS data and decoupling with ScriptableObjects: config/data assets, shared
-  runtime variables, event channels, and runtime sets/registries. Use when designing
-  data-driven systems, replacing singletons/managers, creating .asset data with
-  CreateAssetMenu, or when the user mentions ScriptableObject, SO architecture, or data assets.
+  Unity 6.3 LTS data and decoupling with ScriptableObjects: CreateAssetMenu config assets, shared
+  runtime variables, event channels and .asset files made from code. Use for replacing singletons,
+  data-driven items or cards, or values that persist after leaving Play mode. Not for saving
+  progress (`save-systems`) or Godot Resources (`godot-resources`).
 ---
 
 # Unity ScriptableObject Architecture
 
-Use `ScriptableObject` assets to store shared data and decouple systems in Unity 6.3 LTS —
-configuration, event channels, and registries that live as project assets instead of being
-hard-wired into scenes or singletons. Targets **Unity 6.3 LTS (6000.3)**.
+Use `ScriptableObject` assets in Unity 6.3 LTS (6000.3) for shared data and for decoupling
+systems: configuration, event channels and registries that live as project assets instead of
+scene singletons. An SO asset is a YAML file you can read and check without the Editor.
 
 ## When to use
 
-- Use when you need designer-editable config (weapon stats, level data), to share one value
-  between unrelated systems, to decouple senders from listeners via event channels, or to
-  build a runtime registry of active objects — without a `static`/singleton manager.
-- Use when the project has `*.asset` data files backed by `: ScriptableObject` classes.
+- Designer-editable config (weapon stats, level data), one value shared by unrelated
+  systems, senders and listeners that should not reference each other, a live registry of
+  active objects without scene scans.
+- The project has `*.asset` files backed by `: ScriptableObject` classes.
 
-**When _not_ to use:** per-instance runtime state that differs per GameObject (that belongs on
-a MonoBehaviour) — a ScriptableObject asset is _shared_ by everyone who references it. Saving
-player progress to disk → `save-systems`. Plain DTOs that never need to be an asset can just be
-`[System.Serializable]` classes.
+**When not to use:** state that differs per GameObject belongs on a MonoBehaviour, since an SO
+asset is shared by everyone who references it; saving progress → `save-systems`; plain data
+that never needs to be an asset can be a `[System.Serializable]` class.
 
-## Core workflow
+## Workflow
 
-1. **Define the class** deriving from `ScriptableObject` and tag it with `[CreateAssetMenu]` so
-   designers can create instances from the Assets menu.
-2. **Create one or more `.asset` instances** in the Project window; each is a shared, named
-   piece of data referenced by `[SerializeField]` fields.
-3. **Reference, don't copy.** MonoBehaviours hold a reference to the asset; they all see the
-   same data, so changing the asset changes every consumer.
-4. **For decoupling**, model _signals_ and _shared variables_ as ScriptableObjects: a
-   "FloatVariable" the HUD reads and the player writes; an "event channel" the player raises
-   and many systems listen to. Neither side references the other.
-5. **Reset runtime mutations** in `OnEnable` if the asset is mutated during play, because edits
-   made in the Editor at runtime persist on the asset (a frequent source of "my values
-   changed after I played").
-6. **Verify** by inspecting the asset values during Play mode and confirming consumers react.
+1. **Define the class** deriving from `ScriptableObject`, in a file with the same name, with
+   `[CreateAssetMenu]` so designers can create instances.
+2. **Create the assets.** Designers use the Assets > Create menu. From code, use an editor
+   script (pattern 3) so Unity writes the `.asset` and its `.meta` with a valid GUID. Do not
+   hand-write a new `.asset` file: the `m_Script` GUID must match the script's `.meta`.
+3. **Reference, do not copy.** MonoBehaviours hold a `[SerializeField]` reference; every
+   consumer sees the same data.
+4. **Keep mutable runtime state out of serialized fields** (`[System.NonSerialized]`) and
+   reset it when Play mode starts (pattern 2), because Play-mode edits to an asset persist in
+   the Editor.
+5. **Make sure builds include the asset.** Only assets referenced from a scene in the build,
+   from another included asset, from a `Resources` folder or from Addressables ship in the
+   player.
+6. **Verify** with the checks below.
 
 ## Patterns
 
-### 1. Config/data asset
+### 1. Config asset
 
 ```csharp
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "WeaponData", menuName = "Game/Weapon Data", order = 0)]
+[CreateAssetMenu(fileName = "WeaponData", menuName = "Game/Weapon Data")]
 public class WeaponData : ScriptableObject
 {
     public string displayName = "Pistol";
-    public int    damage = 10;
-    public float  fireRate = 0.25f;
+    public int damage = 10;
+    public float fireRate = 0.25f;
     public GameObject projectilePrefab;
 }
 ```
 
-```csharp
-public class Weapon : MonoBehaviour
-{
-    [SerializeField] private WeaponData data;   // assign the shared asset in the Inspector
-    private void Fire() => Debug.Log($"{data.displayName} for {data.damage}");
-}
-```
-
-### 2. Shared runtime variable (decouples producer from consumer)
+### 2. Shared runtime variable that resets on Play
 
 ```csharp
+using UnityEngine;
+
 [CreateAssetMenu(menuName = "Game/Float Variable")]
 public class FloatVariable : ScriptableObject
 {
     [SerializeField] private float initialValue;
-    [System.NonSerialized] public float runtimeValue;   // not saved to the asset
+    [System.NonSerialized] public float runtimeValue;   // never saved to the asset
 
     private void OnEnable()
     {
-        runtimeValue = initialValue;                    // reset when the asset loads
+        runtimeValue = initialValue;
 #if UNITY_EDITOR
         // With Reload Domain off, OnEnable does not run again on Play, so also reset there.
         UnityEditor.EditorApplication.playModeStateChanged -= ResetOnPlay;
@@ -94,50 +88,96 @@ public class FloatVariable : ScriptableObject
     }
 #endif
 }
-// Player writes playerHealth.runtimeValue; the HUD reads it — neither references the other.
 ```
 
-### 3. Creating an instance at runtime (not an asset on disk)
+### 3. Create assets from editor code
+
+Put this in an `Editor` folder. Run it from the menu, from the Unity CLI with
+`unity command script eval --code 'WeaponAssets.CreateDefaults();'`, or in batch mode with
+`-executeMethod WeaponAssets.CreateDefaults`.
 
 ```csharp
-// For transient SO data you build in code (e.g. a generated config).
-var temp = ScriptableObject.CreateInstance<WeaponData>();
-temp.damage = 25;
-// ...use temp...  Destroy(temp);   // clean up runtime-created instances
+using UnityEditor;
+using UnityEngine;
+
+public static class WeaponAssets
+{
+    [MenuItem("Tools/Create Default Weapons")]
+    public static void CreateDefaults()
+    {
+        if (!AssetDatabase.IsValidFolder("Assets/Data"))
+            AssetDatabase.CreateFolder("Assets", "Data");
+
+        var pistol = ScriptableObject.CreateInstance<WeaponData>();
+        pistol.displayName = "Pistol";
+        pistol.damage = 10;
+        AssetDatabase.CreateAsset(pistol, "Assets/Data/Pistol.asset");   // writes .asset and .meta
+        AssetDatabase.SaveAssets();
+    }
+}
 ```
 
-## Pitfalls
+To change an existing asset from editor code, load it with
+`AssetDatabase.LoadAssetAtPath<WeaponData>(path)`, set the fields, call
+`EditorUtility.SetDirty(asset)` and then `AssetDatabase.SaveAssets()`; without `SetDirty` the
+change is lost on the next reload.
 
-- **Editing an SO at runtime persists in the Editor** — values you change during Play stay
-  changed on the asset after you stop. Keep mutable runtime state in `[NonSerialized]` fields
-  reset in `OnEnable`, or it will surprise you. (In a _build_, asset edits do not persist
-  across launches.)
-- **Disabled Domain Reload skips your `OnEnable` reset** — with **Enter Play Mode Options**
-  enabled and **Reload Domain** off (a Unity 6.3 LTS fast-iteration setting), already-loaded SOs are
-  _not_ re-created when you press Play, so `OnEnable` never fires and `runtimeValue` keeps its
-  value from the previous session (non-serialized fields keep their Play-mode values). Also
-  reset on `EditorApplication.playModeStateChanged` (pattern 2), or from a static
+## Verify
+
+- **No Editor needed:** an SO asset is YAML. Each `.asset` has a `MonoBehaviour:` document
+  with `m_Script: {fileID: 11500000, guid: ..., type: 3}`, `m_Name`, and one line per
+  serialized field (`damage: 10`). Grep the values, and run `unity-csharp-scripting`'s
+  `check_unity_project.py` to confirm every `m_Script` GUID resolves to a script.
+- **Unity CLI with a ready Editor:** read the loaded value back:
+  `unity command script eval --code 'return AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/Data/Pistol.asset").damage;'`
+- **Tests:** an EditMode test can load the asset with `AssetDatabase.LoadAssetAtPath` and
+  assert its values, or exercise an event channel with `ScriptableObject.CreateInstance`
+  (setup in `unity-csharp-scripting`).
+- **Play-mode reset:** ask the user to enter and leave Play mode twice and report whether the
+  values shown on the asset in the Inspector changed.
+
+## Gotchas
+
+- **Values changed after leaving Play mode.** Play-mode edits to an SO asset persist in the
+  Editor (not across launches of a build). Keep mutable state in `[NonSerialized]` fields and
+  reset it.
+- **The `OnEnable` reset stopped working.** With Enter Play Mode Options on and Reload Domain
+  off, loaded SOs are not recreated on Play, so `OnEnable` does not run. Also reset on
+  `EditorApplication.playModeStateChanged` (pattern 2) or from a static
   `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]` method.
-- **Expecting per-object state** — every reference points to the _same_ asset. If two enemies
-  need different current HP, store HP on the MonoBehaviour, not the shared SO.
-- **No frame lifecycle** — ScriptableObjects have `OnEnable`/`OnDisable`/`OnDestroy` but no
-  `Update`. Don't expect per-frame callbacks.
-- **Using SOs as a save file** — they're authoring assets, not runtime persistence; write
-  progress with `save-systems` instead.
-- **Leaking `CreateInstance` objects** — runtime-created instances are not garbage-collected
-  like plain C# objects; `Destroy` them when done.
+- **Renaming a field wipes the data in every asset.** Add
+  `[UnityEngine.Serialization.FormerlySerializedAs("oldName")]` when you rename.
+- **"The associated script can not be loaded" on an asset.** The class name differs from the
+  file name, the script has a compile error, or the script's `.meta` GUID changed.
+- **Expecting per-object state.** Two enemies referencing one SO share its values. Keep
+  current HP on the MonoBehaviour.
+- **Missing in a build, fine in the Editor.** Nothing included in the build references the
+  asset, so it was stripped. Reference it from a scene or a referenced asset, or load it
+  through `Resources` or Addressables.
+- **No `Update`.** SOs get `OnEnable`, `OnDisable`, `OnDestroy` and `OnValidate`, not frame
+  callbacks.
+- **Leaking `CreateInstance` objects.** Runtime-created instances are Unity objects; `Destroy`
+  them when done.
 
 ## References
 
-- For the **event-channel** pattern (a `GameEvent` SO + listeners, type-safe payloads) and
-  **runtime sets/registries** (a shared list of active enemies), read
-  `references/event-channels.md`.
-- Primary docs: Unity Manual "ScriptableObject" (`/Manual/class-ScriptableObject.html`) and
-  "Enter Play mode with domain reload disabled" (`/Manual/domain-reloading.html`), plus
-  `ScriptReference/ScriptableObject`, `ScriptReference/CreateAssetMenuAttribute`.
+- Read `references/event-channels.md` when adding an event channel (a `GameEvent` SO with
+  listeners, typed payloads) or a runtime set that replaces `FindObjectsByType` scans.
 
 ## Related skills
 
-- `unity-csharp-scripting` — the MonoBehaviours that consume these assets.
-- `save-systems` — persisting state to disk (what SOs are _not_ for).
-- `card-game` / `rpg` / `survival-crafting` — genres that lean on SO-driven data.
+- `unity-csharp-scripting`: the MonoBehaviours that use these assets, tests and the `.meta`
+  checker.
+- `save-systems`: writing progress to disk.
+- `card-game`, `rpg`, `survival-crafting`: genres built on SO data.
+
+## Version notes
+
+Last verified: 2026-11-11, against Unity 6000.3.28f1.
+
+- Manual: "ScriptableObject" and "Enter Play mode with domain reload disabled"
+  (https://docs.unity.com/en-us/engine/6000.3/manual), Scripting API `ScriptableObject`,
+  `CreateAssetMenuAttribute`, `AssetDatabase.CreateAsset`, `EditorUtility.SetDirty`,
+  `Serialization.FormerlySerializedAsAttribute`.
+- `script eval` is a `com.unity.pipeline` 1.0.0-pre.1 command (pre-release):
+  https://docs.unity3d.com/Packages/com.unity.pipeline@1.0/manual/index.html

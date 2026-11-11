@@ -1,9 +1,9 @@
 # Gameplay systems: tweens, animation, particles, juice, Tiled maps, physics
 
-API baseline: Ebitengine v2.10.5. Advance state in `Update` and render it in
+API baseline: Ebitengine v2.10.6. Advance state in `Update` and render it in
 `Draw`. These snippets illustrate individual systems; validate their inputs and
 test their integration in the actual game. Choose systems based on the
-[game design and quality criteria](design-and-quality.md).
+game design and quality criteria (design-and-quality reference).
 
 Contents: [Tweens and easing](#tweens-and-easing) · [Animation state](#animation-state) · [Particles](#particles) · [Screen shake and hit-stop](#screen-shake-and-hit-stop) · [Tiled maps](#tiled-maps) · [Rigid-body physics (Chipmunk2D)](#rigid-body-physics-chipmunk2d)
 
@@ -66,7 +66,7 @@ use one tween for a 0→1 progress and derive the properties from it.
 
 ## Animation state
 
-`rendering.md` shows cutting frames from a sheet. A per-entity animator switches
+The rendering reference shows cutting frames from a sheet. A per-entity animator switches
 clips without restarting the running one and holds the last frame of one-shot
 clips:
 
@@ -113,8 +113,8 @@ Choose the clip in `Update` from the rules state (`onGround`, `vx`, `hurtTicks`)
 call `Play` every tick, and draw `Frame()` in `Draw`. Mirror for facing with
 `GeoM.Scale(-1, 1)` around the actor's chosen registration pivot: translate that
 pivot to the origin, apply the facing scale, then place the actor in the world.
-Use the sprite centre only when it is the chosen pivot. See
-[Assets and animation](assets-and-animation.md) for frame registration.
+Use the sprite centre only when it is the chosen pivot. The assets-and-animation
+reference covers frame registration.
 
 ## Particles
 
@@ -199,8 +199,8 @@ Emit feedback once from an accepted rules event, not every tick an attack is
 held or every `Draw` while two bodies overlap. Keep visual squash, flashes and
 camera offsets separate from collision state; gameplay knockback is a rules
 effect and belongs in the simulation. Keep UI/input advancing during hit-stop,
-and preserve intended buffered actions. See [Assets and animation](assets-and-animation.md)
-for aligning contact markers, hitboxes and sound.
+and preserve intended buffered actions. The assets-and-animation reference
+covers aligning contact markers, hitboxes and sound.
 
 This applies the importance/decay principle from
 `game-feel`.
@@ -248,11 +248,12 @@ func (j *Juice) Offset(maxPx float64) (float64, float64) {
   `Shake(0.4–0.6)`. Tune by the game's pace and feedback hierarchy; many genres
   need neither hit-stop nor shake.
 - Offer a "reduce screen shake" option that scales `maxPx` to 0
-  (`text-and-ui.md`, accessibility).
+  (text-and-ui reference, accessibility).
 
 ## Tiled maps
 
-For Tiled-based levels, read [the map-loader subset and integration notes](tilemaps.md).
+For Tiled-based levels, read the tilemaps reference (map-loader subset
+and integration notes).
 This is optional; grids, authored Go data and other level formats are valid.
 Keep collision/spawn data in the rules layer instead of querying rendered pixels.
 

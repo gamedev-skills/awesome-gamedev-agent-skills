@@ -9,6 +9,15 @@ This reference is design guidance, not a ready-to-ship netcode implementation.
 A toy relay or same-process determinism test is insufficient evidence for an
 online game. Add executable protocol tests in the actual project.
 
+## Contents
+
+- [Choose the model from latency and trust requirements](#choose-the-model-from-latency-and-trust-requirements)
+- [Fixed simulation and determinism](#fixed-simulation-and-determinism)
+- [Lockstep protocol invariants](#lockstep-protocol-invariants)
+- [Transport and lifecycle](#transport-and-lifecycle)
+- [Private views and session lifecycle](#private-views-and-session-lifecycle)
+- [Verification before claiming online support](#verification-before-claiming-online-support)
+
 ## Choose the model from latency and trust requirements
 
 | Need | Candidate | Main cost |

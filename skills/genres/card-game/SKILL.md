@@ -1,138 +1,161 @@
 ---
 name: card-game
 description: >
-  Build a card game: card data, deck/hand/discard zones, draw/shuffle/reshuffle, a turn structure,
-  costs, and effect resolution. Use for a deckbuilder, TCG/CCG, or roguelike deckbuilder.
+  Designs card games and deckbuilders in any engine: cards as data with one effect interpreter,
+  deck zones, a trigger stack and seeded shuffles. Use for a Slay the Spire- or Balatro-like or a
+  TCG, or cards that duplicate or streaky shuffles. Pair with the engine skill for card data and
+  hand UI (`godot-resources`, `godot-ui-control`, `unity-scriptableobjects`). Not for grid
+  crawlers (`roguelike`).
 ---
 
-# Card Game
+# Card game
 
-A playbook for card games — card data, the deck/hand/discard zones, the turn structure, and
-how card effects resolve. This is a **compositional** skill: it models cards as data and wires
-them to UI. It does not re-teach data assets or UI nodes; it defines the zone model, the draw
-machinery, and the effect-resolution rules that keep a card game correct and bug-free.
+Owns the rules engine of a card game: zones, draw, costs, effect resolution, rewards and
+balance math, including the run structure of a roguelike deckbuilder. Engine skills supply the
+data assets and UI.
 
 ## When to use
 
-- Use when building any game where the core objects are **cards** moving between zones
-  (deck → hand → play → discard): deckbuilder, TCG/CCG, solitaire, roguelike deckbuilder.
-- Use when designing draw/shuffle/reshuffle, turn structure, card costs, or how effects resolve.
+- The core objects are cards moving between zones: deckbuilder, roguelike deckbuilder,
+  TCG/CCG, solitaire, poker-hand scorer, card battler.
+- Designing costs, draw, rewards, triggers, enemy intents or a scoring formula, or fixing
+  cards that duplicate, vanish or resolve in the wrong order.
 
-**When *not* to use:** board/tile state with matching rules → `puzzle`. RPG with an
-incidental card battler → start from `rpg`. For defining cards as assets, use `godot-resources`
-/ `unity-scriptableobjects`; for the hand/drag UI, use `godot-ui-control`.
+**When not to use:** grid dungeon runs (`roguelike`); board games with matching or pushing
+rules (`puzzle`); an RPG with a small card minigame (start in `rpg`).
 
-## Core loop
+## Workflow
 
-**Draw to your hand → spend resources to play cards → effects resolve and change the board →
-end the turn (cleanup/discard) → opponent/next phase → repeat until a win condition.** Depth
-comes from the *combinations* a hand allows; the engine's job is to resolve them unambiguously.
+1. **Name the reference game and fix the frame.** Write the numbers down before any card:
+   deck size, hand size, draw per turn, resource per turn, what happens to the hand at end of
+   turn, copy limits. Reference frames are in the table below.
+2. **Model zones and cards as data.** Every card instance has a unique id and lives in exactly
+   one zone. Card text maps to a list of ops for one interpreter (Pattern 1).
+3. **Pick the resolution model:** a stack (last in resolves first, for response-heavy TCGs) or
+   a queue (first in first, simpler for PvE deckbuilders). Write the order for simultaneous
+   triggers (active player first, then by timestamp).
+4. **Write a power budget** for one resource and price every card against it (below).
+5. **Build the reward loop** (deckbuilders): after each fight offer 3 cards, pick 1 or skip,
+   with rarity weighted by act; give removal at shops or events.
+6. **Check it.** Write and run these as tests and report the results:
+   - 10,000 random legal turns with a bot: after every action each card id appears in exactly
+     one zone and the total count never changes;
+   - shuffle uniformity: shuffle a 4-card deck 24,000 times; each of the 24 orders should
+     land near 1,000 (a chi-square statistic above about 41 at 23 degrees of freedom means
+     bias, p < 0.01);
+   - same seed and same inputs replay to the same final state hash;
+   - a trigger loop (A draws when B is drawn, B when A) stops at the depth cap with a log line;
+   - a greedy bot plays the starter deck for 1,000 turns; print damage and block per turn and
+     size the first enemies from it (about 3-4 turns of starter damage is a common start).
 
-## Must-have systems
+## Reference frames
 
-1. **Card data** — id, name, cost, type, text, and an effect spec (data, not code).
-2. **Zones** — deck (draw pile), hand, play/board, discard, exile/removed; cards live in exactly one.
-3. **Draw + shuffle + reshuffle** — draw from deck to hand; reshuffle discard into deck when empty.
-4. **Turn structure** — phases (untap/draw/main/combat/end) as a state machine.
-5. **Resource system** — mana/energy/actions that gate how much you do per turn.
-6. **Effect resolution** — apply a card's effects in a defined order; handle targets and triggers.
-7. **Win/loss condition** — life total, deck-out, objective.
-8. **UI** — hand layout, drag/drop or tap-to-play, zone counts, targeting affordances.
+| Game | Deck | Hand and draw | Resource | End of turn |
+|------|------|---------------|----------|-------------|
+| Slay the Spire | 10-card starter (Ironclad: 5 Strike, 4 Defend, Bash) | draw 5 | 3 energy | discard hand |
+| Balatro | 52 playing cards | hand size 8, play up to 5 | 4 hands, 3 discards per blind | redraw to 8 |
+| Hearthstone | 30 cards | hand cap 10, extra draws are destroyed | mana 1 to 10, +1 per turn | keep hand |
+| Magic: the Gathering | 60+ constructed, 40+ limited, max 4 copies | 7-card opening hand, draw 1 | lands | discard to 7 |
 
-## Design knobs
+Balatro's run is 8 antes of three blinds (small 1x, big 1.5x, boss mostly 2x the ante's base
+score). Slay the Spire's enemies show their next action (intent), which is what makes a PvE
+card game a planning puzzle rather than a guess. Copy the idea, never the cards.
 
-| Knob | Effect | Notes |
-|------|--------|-------|
-| Starting hand / draw-per-turn | tempo, consistency | More draw = less variance. |
-| Hand size limit | hoarding vs. use | Discard down at end of turn. |
-| Deck size (min) | consistency | Smaller = more reliable combos. |
-| Resource curve | what's playable when | "Mana curve" paces power. |
-| Card rarity / power budget | balance | Stronger cards cost more / are rarer. |
-| Determinism vs. randomness | skill vs. swing | Shuffle + random effects add variance. |
-| Reshuffle rules | deck-out, fatigue | Reshuffle discard, or punish empty deck. |
-| Removal / answers | counterplay | Every threat needs an answer in the pool. |
+## Power budget and deck math
 
-## Patterns
+- **Budget per resource.** Pick a baseline and price everything against it. Slay the Spire's
+  starters set 1 energy = 6 damage (Strike) or 5 block (Defend), and an upgrade adds about
+  half again (Strike+ deals 9). Rares may exceed the budget; zero-cost cards need a drawback
+  or a small effect.
+- **Every added card dilutes the deck.** The chance a specific single card is in a 5-card
+  hand is 5/deck size: 50% in a 10-card deck, 33% at 15, 25% at 20. That is why skipping a
+  reward or removing a Strike is often the strongest pick, and why removal belongs in the
+  reward economy.
+- **Copies in constructed.** A 4-of in a 60-card deck is in the opening 7 about 40% of the
+  time and in the first 10 cards about 53% (hypergeometric). Use the same formula to tune
+  any draw consistency.
+- **Cycle time** is deck size / draw per turn: a 10-card deck drawing 5 sees every card every
+  2 turns. Draw and deck thinning shorten it; that is where infinite combos come from.
+- **Scoring pipelines** (Balatro-style): fix the order and write it down, for example base
+  chips, then added chips, then added mult, then multiplying mult, applied left to right in
+  slot order. Additive and multiplicative stages in the wrong order change scores by orders
+  of magnitude.
 
-### 1. Zones + draw with automatic reshuffle
+## Pattern 1: zones, draw and play
 
 ```python
-# Pseudocode. A card is in exactly one zone at a time; moving = remove here, add there.
-def draw(n):
+# Pseudocode. One zone per card instance; moving = remove from one list, append to another.
+def draw(player, n):
     for _ in range(n):
-        if not deck:
-            if not discard:          # truly empty: deck-out (lose, or take fatigue)
-                on_deck_out(); return
-            deck.extend(discard)     # reshuffle discard into deck
-            discard.clear()
-            shuffle(deck, rng)       # use a seeded RNG (see save-systems for replays)
-        hand.append(deck.pop())
-```
+        if not player.draw_pile:
+            if not player.discard:
+                return on_empty_draw(player)    # deck-out loss, fatigue, or simply stop
+            player.draw_pile = player.discard; player.discard = []
+            shuffle(player.draw_pile, player.rng)            # seeded Fisher-Yates (refs §6)
+        card = player.draw_pile.pop()
+        if len(player.hand) >= HAND_CAP:
+            move(card, to=player.discard); log("burned", card)   # define overdraw explicitly
+        else:
+            player.hand.append(card)
 
-### 2. Card as data + effect resolution
-
-```python
-# Pseudocode. Effects are a data list interpreted by the engine — not bespoke code per card.
-card = {
-    "id": "fireball", "cost": 3, "type": "spell",
-    "effects": [ {"op": "damage", "amount": 6, "target": "chosen_enemy"} ],
-}
-def play(card, caster, chosen_targets):
-    # Validate everything first; a failed check must leave zones and resources untouched.
-    if resources[caster] < card.cost: return False      # can't afford
-    if not targets_legal(card, chosen_targets): return False
-    resources[caster] -= card.cost                      # commit: pay, then move, then resolve
-    move(card, from_zone=hand, to_zone=play_or_discard(card))
-    for fx in card.effects:
-        resolve_effect(fx, caster, chosen_targets)      # one interpreter handles every card
+def play(card, player, targets):
+    if player.energy < cost(card) or not legal(card, targets):
+        return False                                         # nothing changed yet
+    player.energy -= cost(card)
+    move(card, frm=player.hand, to=player.limbo)             # in play while resolving
+    for op in card.ops:
+        push_effect(op, Ctx(player, card, targets))
+    resolve_stack()                                          # refs §2
+    move(card, frm=player.limbo, to=destination(card))       # discard, exhaust, board
     return True
 ```
 
-### 3. Turn structure as a phase machine
+Holding the card in a "limbo" zone while it resolves keeps a draw effect from reshuffling the
+card that is being played back into the draw pile.
 
-```python
-# Pseudocode. Fixed phases keep timing windows (triggers, priority) unambiguous.
-PHASES = ["untap", "draw", "main", "combat", "end"]
-def take_turn(player):
-    for phase in PHASES:
-        enter_phase(player, phase)        # fire "on_phase" triggers here
-        if phase == "draw":   draw(1)
-        if phase == "main":   await player_plays_cards()
-        if phase == "combat": resolve_combat()
-        if phase == "end":    discard_to_hand_limit(player); clear_temporary_effects()
-```
+## Gotchas
 
-## Pitfalls / failure modes
-
-- **A card existing in two zones at once** → duplication/loss bugs. Enforce "exactly one zone";
-  move = remove-then-add, and assert no card appears twice.
-- **Forgetting to reshuffle** → draws silently fail or crash on empty deck. Reshuffle discard,
-  or define deck-out/fatigue explicitly (Pattern 1).
-- **One function per card** → unmaintainable and untestable. Make effects **data** interpreted
-  by a small set of operations (Pattern 2).
-- **Ambiguous effect order / simultaneous triggers** → nondeterministic outcomes. Resolve in a
-  defined order (a queue or stack); document LIFO vs. FIFO (refs).
-- **Unseeded shuffle in a game that needs replays/undo** → can't reproduce. Use a seeded RNG
-  instance (not the engine's global one) and save its state with the run; see refs §6 for the
-  per-engine calls.
-- **Off-by-one in the shuffle's random index** → some orders never occur (a biased deck). Engine
-  ranges differ: Godot `randi_range(a, b)` and Phaser `RND.between(a, b)` include `b`; Unity
-  `Random.Range(int, int)` excludes it.
-- **No hand limit / no answers** → degenerate hoarding or unbeatable threats. Add a hand cap and
-  ensure removal exists for every threat archetype.
-- **Targeting state leaks** → a cancelled play leaves the board mid-targeting. Make play
-  atomic: validate cost + targets first, then commit.
-
-## Composition (build it from these skills)
-
-- **Card content:** `godot-resources` / `unity-scriptableobjects` — define each card as a data asset.
-- **UI:** `game-ui-ux` for layout, scaling, and focus navigation; `godot-ui-control` for hand layout, drag/drop, zone counts, and targeting prompts.
-- **Persistence/replays:** `save-systems` for collection, run state (roguelike deckbuilder), and seeded replays.
-- **Opponent AI:** `game-ai` for an AI that evaluates playable cards and picks targets.
-- **Animation/feedback:** the engine animation skill for card movement; `audio-design` for cues.
-- **Scripting:** `godot-gdscript` / `unity-csharp-scripting` for the effect interpreter.
+- **A card in two zones, or gone** → move done as add-then-remove, or removing by value when two
+  copies exist. Give every instance an id and assert the invariant after each action.
+- **Draw effect shuffles the played card back in** → the card went to discard before its
+  effects resolved. Resolve from a limbo zone (Pattern 1).
+- **Triggers loop forever** → A triggers B triggers A. Cap resolution depth (for example 100
+  pushes per action), stop with a log line, and add a test for the known loop.
+- **Order changes between runs** → triggers collected from a hash map or unordered set. Sort
+  by a fixed key (controller, then timestamp) before pushing.
+- **Biased shuffle** → sort with a random comparator, or swap with any index instead of
+  `0..i`. Use Fisher-Yates with an inclusive upper bound and check the engine's range
+  convention (refs §6).
+- **Replays and undo drift** → shuffle uses the engine's global RNG, which particles and AI
+  also consume. Give the deck its own seeded generator and save its state.
+- **"The shuffle is streaky"** → players misread true randomness. A shuffled deck is already a
+  bag randomiser; resist hidden pity rules in deck draws, and add visible tools instead
+  (scry, mulligan, retain).
+- **Cancelled targeting leaves the board half-changed** → paid before validating. Validate
+  cost and targets first, then commit (Pattern 1).
+- **Starter deck dies to the first fight or trivialises act 1** → enemy HP set by feel. Size it
+  from the bot's measured damage per turn (Workflow step 6).
 
 ## References
 
-- For the effect queue/stack, keywords/triggers, targeting, deckbuilder vs. constructed
-  archetypes, and shuffle fairness, read `references/effect-resolution.md`.
+- `references/effect-resolution.md`: read when writing the op interpreter, the stack or queue,
+  triggers and keywords, targeting and fizzle rules, deckbuilder versus constructed structure,
+  shuffle code and per-engine RNG calls, or cost curves.
+
+Related: `godot-resources` or `unity-scriptableobjects` (card data assets), `game-ui-ux` with
+`godot-ui-control` (hand layout, drag and targeting UI), `save-systems` (run and collection
+saves), `game-ai` (opponent choice), `game-feel` (card hover, play and hit feedback).
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Slay the Spire Ironclad starter deck and 2-turn cycle time:
+  https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Ironclad and
+  https://sts2.untapped.gg/en/articles/core-deckbuilding-concepts-in-slay-the-spire
+  (the same 10-card starter in the first game and in Slay the Spire 2).
+- Balatro blinds and antes: https://balatrowiki.org/w/Blinds_and_Antes.
+- Hearthstone hand cap and overdraw: https://hearthstone.wiki.gg/wiki/Hand.
+- Magic deck limits: Comprehensive Rules section 100.2 (https://magic.wizards.com/en/rules).
+- Hypergeometric figures computed with `math.comb` (60 cards, 4 copies: 39.9% in 7, 52.8% in 10).
+- Per-engine RNG calls in the reference were checked for Godot 4.7, Unity 6.3 and Phaser 4.

@@ -37,9 +37,20 @@ A skill is ready to merge when all of the following are true:
       no leading/trailing hyphen, and equals the folder name; `name` and `description`
       are the only committed frontmatter fields.
 - [ ] **Description is a trigger.** `description` is non-empty, ≤1024 chars, and states
-      both *what the skill does* and *when to use it*.
+      both *what the skill does* and *when to use it*: engine and job first, the words users
+      type, and a `Not for ...` clause naming the neighbouring skill.
 - [ ] **Lean body.** `SKILL.md` is under ~500 lines; deeper material is pushed into
-      `references/`.
+      `references/`. It skips what a strong model already knows.
+- [ ] **Gotchas.** One `## Gotchas` heading with the real traps (symptom → cause → fix).
+- [ ] **Runnable final check.** The workflow ends with something the agent can run (script,
+      headless run, test, build log, grep). Steps only a person can do say "ask the user to
+      ... and report ...".
+- [ ] **References say when to read them.** Files over 100 lines start with a contents list,
+      and no reference links to another reference.
+- [ ] **Dated version notes.** Facts that go stale sit in `## Version notes` with
+      "Last verified YYYY-MM-DD".
+- [ ] **Evals.** A new skill adds 3 should and 1 near-miss prompt to `evals/triggers.json`
+      ([format](evals/README.md)).
 - [ ] **Progressive disclosure.** Name + description are enough to decide relevance; the
       body is loaded on demand.
 - [ ] **Correct, version-pinned code.** Examples are tested/idiomatic and name the
@@ -48,7 +59,10 @@ A skill is ready to merge when all of the following are true:
 - [ ] **Links resolve.** Any `references/` links in the skill point at real files.
 - [ ] **Resources verified.** Scripts have `--help`, fail safely, and were exercised;
       templates/JSON parse; any `agents/openai.yaml` names the skill in its default prompt.
-- [ ] **Validator passes** (see below).
+      Python project checkers live in `scripts/` with the shared checker shape; checks that
+      run inside the engine (such as a `.gd` file run with `godot --headless --script`) live
+      in `assets/` and run in place ([details](docs/SKILL-FORMAT.md#scripts)).
+- [ ] **Validator passes** with no new warnings (see below).
 - [ ] **No growth/marketing language** anywhere in committed files.
 
 ## Validator
@@ -61,7 +75,19 @@ OpenAI UI metadata, JSON assets, router coverage, catalog counts, and plugin man
 python scripts/validate-skills.py
 ```
 
-It exits non-zero and prints a report if anything fails.
+It exits non-zero and prints a report if anything fails. It also prints `WARNING` lines for
+the writing rules (missing `Not for` clause or `## Gotchas` heading, long references without a
+contents list, references linking to references). Warnings do not fail CI, but new and changed
+skills should have none; `--strict` turns them into errors.
+
+Check the trigger eval file the same way:
+
+```bash
+python scripts/run-trigger-evals.py --check --allow-missing
+```
+
+To see whether your description gets picked, score it with a judge command you already have,
+such as `claude -p` or `codex exec -`; see [`evals/README.md`](evals/README.md).
 
 If you have Claude Code installed, `claude plugin validate .` additionally checks
 `.claude-plugin/marketplace.json` against Claude Code's own marketplace schema (JSON syntax,
@@ -87,7 +113,10 @@ generator's `.gamedev-skills-site` marker. Use a new or empty directory for `--o
 the repository, its ancestors, filesystem roots, and symlink outputs are rejected.
 Everything inside a marked output directory is disposable when you use `--clean`.
 
-CI runs the validator, the tests and both site steps on every pull request.
+CI runs the validator, the eval check, the tests and both site steps on every pull request.
+
+Background reading: Anthropic's
+[skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
 
 ## Updating the router when you add a skill
 

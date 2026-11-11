@@ -1,34 +1,18 @@
 ---
 name: roblox-simulator-economy
 description: >
-  Design, balance, and implement the economy of a Roblox simulator, tycoon, clicker, or idle game
-  in Luau: upgrade cost curves, buy max, income per second, rebirth/prestige requirements and
-  multipliers, offline earnings, big-number display (1.5K, 3.4M, 2.0Qa), server-authoritative
-  purchases, repairing tampered or old save data, and odds disclosure for paid random items such
-  as eggs, crates, and spins. Includes a Lune pacing calculator. Use when choosing or checking
-  baseCost/costGrowth/rebirth numbers, writing upgrade/currency/rebirth/offline code, or when
-  progress stalls, a rebirth takes far longer than the last, numbers display as 1000K, offline
-  earnings pay too much, or players gain currency they did not earn.
+  Roblox simulator, tycoon and idle-game economies in Luau: upgrade cost curves, income per
+  second, rebirth pacing, big-number formatting and paid-egg odds, with a Lune calculator. Use for
+  baseCost or rebirth numbers or unearned currency. Not for DataStores (`roblox-datastores`),
+  remote limits (`roblox-networking`), shop layout (`roblox-ui`) or wave economies
+  (`tower-defense`).
 ---
 
 # Roblox simulator economy
 
 Choose the economy's numbers with a pacing table before writing gameplay code, then implement them
-so the server owns every amount. Code targets Luau on Roblox's rolling platform APIs; the bundled
-scripts are pure Luau and were run with **Lune 0.11.0**, outside Studio.
-
-## When to use
-
-- Picking or reviewing `baseCost`, `costGrowth`, rebirth requirement and multiplier, or offline
-  cap and efficiency values for a simulator, tycoon, clicker, or idle game.
-- Writing upgrade, buy-max, currency, rebirth, or offline-earnings code in Luau.
-- Displaying large numbers, or values above about `1e15` that lose precision.
-- Adding eggs, crates, or spins bought with Robux, or with currency that can be bought with Robux.
-
-**When not to use:** DataStore reads, writes, session locking and retries → `roblox-datastores`.
-Remote protocol design and rate limiting in depth → `roblox-networking`. Shop and HUD layout →
-`roblox-ui` + `game-ui-ux`. A wave-defense economy → `tower-defense`. Engine-neutral save format
-questions → `save-systems`.
+so the server owns every amount. The bundled scripts are pure Luau and run outside Studio with
+Lune (install it from `https://github.com/lune-org/lune/releases`; `lune --version` to check).
 
 ## Workflow
 
@@ -42,13 +26,16 @@ questions → `save-systems`.
    `lune run scripts/balance.luau economy.json`. Read the `wait` and `vs prev` columns and tune
    until they match the targets below. `--help` lists every field and its allowed range; a
    missing file, invalid JSON, or out-of-range field prints an error and exits 1.
-4. **Implement on the server** with the patterns below and
-   [references/server-patterns.md](references/server-patterns.md). Copy
+4. **Implement on the server** with the patterns below; read
+   [references/server-patterns.md](references/server-patterns.md) for the full handlers. Copy
    `scripts/economy_math.luau` unchanged into a ModuleScript so the maths you tested is the maths
    that runs.
-5. **Verify.** `lune run scripts/test_economy_math.luau` (exits 1 on failure) for the maths; a
-   Studio playtest with Server & Clients for purchases, rebirth, leaving and rejoining, and
-   invalid remote arguments.
+5. **Verify.** Run `lune run scripts/test_economy_math.luau` (exits 1 on failure) after any change
+   to the maths module, and re-run the calculator on the final config. In Studio, with the MCP
+   server connected, start play and fire the purchase handlers from `execute_luau` on the `Server`
+   datamodel with valid ids, unknown ids, `0/0`, `math.huge` and negative values, then read
+   `get_console_output` and the wallet. Purchases from two players, rebirth, and leave-and-rejoin
+   need Server & Clients: ask the user to run them and report balances before and after.
 
 ## Formulas
 
@@ -61,8 +48,8 @@ questions → `save-systems`.
 | Rebirth multiplier | `1 + k * multiplierPerRebirth` | Additive grows slowly; multiplicative (`q ^ k`) grows exponentially |
 | Offline income | `floor(min(away, maxHours * 3600) * rate * efficiency)` | Away time of 0 or less (clock went back) pays 0 |
 
-Derivations, the rebirth wait-ratio formula, and a worked example:
-[references/formulas.md](references/formulas.md).
+Read [references/formulas.md](references/formulas.md) when you need a derivation, want to solve
+for a parameter instead of trying values, or must explain the calculator's output.
 
 ## Pacing targets (starting points, not rules)
 
@@ -130,25 +117,22 @@ Dc, Ud, Dd, Td, Qad, Qid, Sxd, Spd, Ocd, Nod, Vg (`1e63`), then scientific notat
 
 ## Paid random items (eggs, crates, spins)
 
-Roblox's [paid random items guidelines](https://create.roblox.com/docs/production/monetization/paid-random-items)
-apply when a random item is bought with Robux, directly or through in-game currency bought with
-Robux. Per that page:
-
-- Show every possible outcome and its actual numerical odds, as percentages that sum to exactly
-  100%, before purchase (long decimals may be rounded, with a note that the shown total may not be
-  exactly 100%).
-- Probability modifiers such as luck boosts and pity systems are covered: explain their effect
-  numerically before purchase, and update the shown odds live while a boost is active.
-- If the full list does not fit, open it from a control labelled "Info" or "Details" that is
-  visible before purchase; an "(i)" icon without a word is not enough.
-- `PolicyService:GetPolicyInfoForPlayerAsync()` returns `ArePaidRandomItemsRestricted`; for those
-  players, apply one of the treatments the page lists.
+Roblox's paid random items policy applies when a random item is bought with Robux, directly or
+through in-game currency bought with Robux. The current rules are summarized under Version notes;
+re-read the policy page before shipping. The implementation rule does not change: build the odds
+panel and the roll from one list.
 
 Build the odds panel with `EconomyMath.oddsPercent(outcomes)` and roll on the server with
 `EconomyMath.pickWeighted(outcomes, rng:NextNumber())` from the **same** list (after applying any
-boost), so shown and actual odds cannot drift.
+boost), so shown and actual odds cannot drift. Check `PolicyService:GetPolicyInfoForPlayerAsync()` before
+the spend and apply a restricted-player treatment when `ArePaidRandomItemsRestricted` is true.
 
-## Pitfalls
+For live tuning of prices and rewards without a server restart, and for funnel and currency
+analytics, Studio's built-in `rbx-configs-experimentation` and `rbx-instrument-analytics` skills
+(through the Studio MCP `skill` tool) cover ConfigService and AnalyticsService; this skill supplies
+the numbers.
+
+## Gotchas
 
 - **Rebirth 6 takes weeks** → `requirementGrowth` far above the multiplier's growth; read the
   `vs prev` column and lower `requirementGrowth` or switch to a multiplicative multiplier.
@@ -168,17 +152,25 @@ boost), so shown and actual odds cannot drift.
   `formatNumber`.
 - **A save fails or loads as garbage** → NaN or infinity reached the wallet; sanitize before save
   and on load.
+- **Odds panel wrong after a one-per-player pet is owned** → outcomes a player can no longer get
+  must leave the shown and rolled list; rebuild both from the same filtered list.
 
 ## Resources
 
-- `scripts/balance.luau` — pacing calculator: per-level price, total, income and wait; per-rebirth
-  requirement, multiplier, wait and ratio; offline maximum. Run with `--help` first.
-- `scripts/economy_math.luau` — the formulas, `trySpend`, sanitizers, odds and `formatNumber` as
-  pure Luau; runs in Lune and in a Roblox ModuleScript.
-- `scripts/test_economy_math.luau` — tests for every function (`lune run`, exits 1 on failure).
-- [references/formulas.md](references/formulas.md) — derivations, rebirth ratio, worked example.
-- [references/server-patterns.md](references/server-patterns.md) — config layout, income tick,
-  buy max, rebirth, load repair with offline income, and paid random item rolls.
+Script paths are relative to the skill directory.
+
+- `scripts/balance.luau`: run it (`--help` first) whenever you choose or change economy numbers.
+  Prints per-level price, total, income and wait; per-rebirth requirement, multiplier, wait and
+  ratio; offline maximum.
+- `scripts/economy_math.luau`: copy it unchanged into a ModuleScript; read it only to look up a
+  function's arguments. Formulas, `trySpend`, sanitizers, odds and `formatNumber`.
+- `scripts/test_economy_math.luau`: run it after any change to the maths module (exits 1 on
+  failure).
+- [references/formulas.md](references/formulas.md): read when you need a derivation or the
+  rebirth wait-ratio formula.
+- [references/server-patterns.md](references/server-patterns.md): read when you implement the
+  handlers: config layout, income tick, buy max, rebirth, load repair with offline income, and
+  paid random item rolls.
 
 ## Related skills
 
@@ -188,11 +180,26 @@ boost), so shown and actual odds cannot drift.
 - `roblox-ui` — shop, upgrade, and odds panels.
 - `roblox-studio-workflow` — Server & Clients playtests.
 
-## Primary references
+## Version notes
 
-- `https://create.roblox.com/docs/production/monetization/paid-random-items`
-- `https://create.roblox.com/docs/scripting/events/remote`
-- `https://create.roblox.com/docs/scripting/security/client-server-boundary`
-- `https://create.roblox.com/docs/reference/engine/classes/PolicyService`
-- `https://create.roblox.com/docs/reference/engine/datatypes/Random`
-- `https://lune-org.github.io/docs`
+Last verified: 2026-11-11.
+
+- Scripts and tests pass under Lune 0.11.1 (13 tests); the worked example in
+  `references/formulas.md` was produced with 0.11.0 and matches 0.11.1 output.
+- Paid random items policy, as summarized from the Creator Hub page:
+  - Show every outcome and its actual odds as percentages summing to exactly 100% before purchase.
+    Long decimals may be rounded with a note that the shown total may not equal 100%.
+  - If the list does not fit, open it from a control labelled "Info" or "Details" that is visible
+    before purchase; an "(i)" icon alone is not enough.
+  - Luck boosts, pity systems and other probability modifiers count: explain their effect
+    numerically before purchase and show the boosted odds while active.
+  - When a player can get an outcome only once, update the remaining odds for that player.
+  - `ArePaidRandomItemsRestricted`: give those players a listed treatment (free earnable path,
+    fixed disclosed order, direct purchase at expected value, hide, block with a message, or move
+    them away). `IsPaidItemTradingAllowed`: when false, those players must not trade paid outcomes.
+
+Sources: `https://create.roblox.com/docs/production/monetization/paid-random-items`,
+`https://create.roblox.com/docs/reference/engine/classes/PolicyService`,
+`https://create.roblox.com/docs/reference/engine/datatypes/Random`,
+`https://create.roblox.com/docs/assistant/skills`,
+`https://github.com/lune-org/lune/releases` (0.11.1, 2026-10-21).

@@ -1,8 +1,16 @@
 # Audio
 
 Ebitengine v2.10, package `github.com/hajimehoshi/ebiten/v2/audio` with the
-`wav`, `vorbis` and `mp3` decoders. API baseline: v2.10.5. Snippets require the
+`wav`, `vorbis` and `mp3` decoders. API baseline: v2.10.6. Snippets require the
 project's imports and error handling around their callers.
+
+## Contents
+
+- [Rules](#rules)
+- [Effects and music](#effects-and-music)
+- [Browsers and mobile](#browsers-and-mobile)
+- [Machines without a sound device](#machines-without-a-sound-device)
+- [Designing the sounds](#designing-the-sounds)
 
 ## Rules
 
@@ -139,7 +147,7 @@ func playResampled(ctx *audio.Context, wavData []byte) (*audio.Player, error) {
   rather than at load. When embedding in a page, give the iframe
   `allow="autoplay"`.
 - On mobile, audio pauses with the app when the host calls `suspendGame()`; see
-  `project-and-builds.md`.
+  the project-and-builds reference.
 
 ## Machines without a sound device
 
@@ -164,7 +172,7 @@ virtual-device setup.
 
 This reference covers playback. For what the sounds should be (layering,
 variation, mixing against music), use the game's brief and
-[quality criteria](design-and-quality.md). Procedurally generated
+quality criteria (design-and-quality reference). Procedurally generated
 PCM can be played directly: build little-endian float32 stereo bytes and pass
 them to `NewPlayerF32FromBytes`, as the starter's `sound.go` does. Match attack,
 material, pitch, duration and space to the event; a broadband transient helps
@@ -172,5 +180,5 @@ many contacts, but sustained ambience and soft UI feedback need different
 envelopes. Check clipping, repeated playback, music masking and the loop join
 by ear when playback is available; mark unlistened audio explicitly.
 
-Source contracts: [players and lifecycle](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/audio/audio.go)
-and [loop lengths and seam blending](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/audio/loop.go).
+Source contracts: [players and lifecycle](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/audio/audio.go)
+and [loop lengths and seam blending](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/audio/loop.go).

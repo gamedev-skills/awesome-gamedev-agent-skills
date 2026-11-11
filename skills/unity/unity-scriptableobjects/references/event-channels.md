@@ -4,6 +4,13 @@ Depth for `unity-scriptableobjects`: two decoupling patterns that are the main r
 adopt SO architecture. Verified against the Unity Manual ScriptableObject docs; the design is
 original.
 
+## Contents
+
+- Event channel (publisher/subscriber with no direct references)
+- Typed payloads
+- Runtime set / registry
+- Gotchas
+
 ## Event channel (publisher/subscriber with no direct references)
 
 A raiser (e.g. the player dying) and listeners (UI, audio, spawner) both reference a shared

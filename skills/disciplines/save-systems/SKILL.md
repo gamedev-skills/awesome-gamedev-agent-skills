@@ -1,71 +1,62 @@
 ---
 name: save-systems
 description: >
-  Design save/load for game state — choosing what to serialize, file formats,
-  save slots, atomic crash-safe writes, schema versioning and migration, and
-  autosave. Engine-neutral. Use when the user mentions save system, save/load,
-  game state persistence, save slots, autosave, save file corruption, or
-  migrating old saves to a new version.
+  Engine-neutral save and load with Godot and Python code: what to serialize, slots and autosave,
+  atomic writes and versioned migration. Use for save/load or a continue button, or saves that
+  corrupt after a crash or break after a patch. Not for Roblox DataStores (`roblox-datastores`),
+  data assets (`godot-resources`, `unity-scriptableobjects`) or genre save screens (`rpg`,
+  `visual-novel`).
 ---
 
 # Save systems
 
-A save file is a **serialized snapshot of game state** that survives restarts.
-The hard parts aren't writing bytes — they're choosing *what* to save, writing it
-so a crash mid-save can't corrupt it, and reading *old* saves after you ship a
-patch. Get those three right and the rest is plumbing.
+A save file is a serialized snapshot of game state that must survive crashes, restarts and
+patches. The hard parts are choosing what to save, writing it so a crash mid-save cannot
+destroy it, and reading old saves after an update. This skill owns the file: format, writes,
+versioning, slots and location. Genre skills decide what goes in it.
 
 ## When to use
 
-- Use to persist progress: player stats, inventory, world flags, settings,
-  positions — across sessions and game updates.
-- Use to design save slots, quicksave/autosave, and crash-safe writes.
-- Use when old save files break after a content/code change (versioning &
-  migration).
+- Persisting progress: stats, inventory ids, world flags, settings, positions, seeds.
+- Save slots, quicksave, autosave, crash-safe writes, backups.
+- Old saves failing after a code or content change.
 
-**When *not* to use:** for Roblox cloud persistence specifics, use
-`roblox-datastores`. For the data model the save serializes (resources/SOs), use
-`godot-resources` / `unity-scriptableobjects`. For Godot's `FileAccess`/
-`ResourceSaver` and `user://` paths, defer to the Godot engine skill while
-applying the patterns here.
+**Not this skill:** Roblox cloud persistence (`roblox-datastores`), the data model itself
+(`godot-resources`, `unity-scriptableobjects`), rebinding data shape (`input-systems`), save
+screens and rollback in a visual novel (`visual-novel`).
 
 ## Core workflow
 
-1. **Decide what state is authoritative.** Save the *data* (hp, position, seed,
-   unlocked flags), not engine objects or scene nodes. You will reconstruct
-   objects from data on load — never serialize live node references.
-2. **Define a versioned schema.** Every save embeds a `version` integer. This is
-   the single most important field for a game you intend to patch.
-3. **Pick a format.** JSON/text for readability and debuggability; a binary
-   format for size/speed or mild tamper-resistance. Start with JSON.
-4. **Write atomically.** Serialize to a temp file, flush, then rename over the
-   real file. A crash leaves either the old save or the new one — never a
-   half-written one.
-5. **Load defensively.** Read version → migrate up to current → validate →
-   instantiate. Keep a backup of the last good save and fall back on parse error.
-6. **Autosave on safe boundaries** (level change, checkpoint), throttled, and to a
-   separate slot so it can't clobber a manual save.
-7. **Verify**: save, fully quit, relaunch, load — and confirm by inspection that
-   state matches. Test loading a save from the previous version.
+1. **Find what exists.** Grep for the current save code (`FileAccess`, `ConfigFile`,
+   `ResourceSaver`, `PlayerPrefs`, `SaveGameToSlot`, `persistentDataPath`) and any shipped
+   saves. If players already have saves, every change below needs a migration.
+2. **Save data, not objects.** Ids, numbers, flags and the RNG seed; rebuild nodes and objects
+   from that data on load. Live references and node paths do not survive a refactor.
+3. **Stamp an integer `version`** in every save from the first release.
+4. **Start with JSON** (readable, diffable, easy to migrate); move to binary only for size or
+   speed you have measured.
+5. **Write atomically**: temp file, keep the previous save as `.bak`, rename into place.
+6. **Load defensively**: parse, read version, refuse newer saves, migrate older ones step by
+   step, validate, then apply. Fall back to the backup on failure and tell the player.
+7. **Autosave at safe boundaries** (checkpoint, level change), throttled, into its own slot.
+8. **Run the checks** below, then ask the user for the quit-and-relaunch test.
 
 ## Patterns
 
-### 1. Serialize state as plain data (not engine objects)
+### 1. State as plain data
 
 ```gdscript
-# Build a dictionary of pure data. Each savable object reports its own state.
 func capture_state() -> Dictionary:
     return {
-        "version": SAVE_VERSION,                 # ALWAYS stamp the schema version
+        "version": SAVE_VERSION,
         "player": { "hp": player.hp, "pos": [player.position.x, player.position.y] },
         "inventory": player.inventory.to_array(),  # ids + counts, not Item nodes
-        "flags": world.flags,                    # e.g. {"met_guard": true}
-        "seed": world.seed,                      # regenerate procedural content
+        "flags": world.flags,
+        "seed": world.seed,                        # regenerate procedural content
     }
 
-# On load, RECONSTRUCT objects from the data — do not expect live references back.
-func apply_state(data: Dictionary) -> void:
-    player.hp = data["player"]["hp"]
+func apply_state(data: Dictionary) -> void:        # rebuild from data; no live references
+    player.hp = int(data["player"]["hp"])
     player.position = Vector2(data["player"]["pos"][0], data["player"]["pos"][1])
     player.inventory.from_array(data["inventory"])
     world.flags = data["flags"]
@@ -99,13 +90,12 @@ func load_save(path: String) -> Dictionary:      # empty = nothing loadable
 # truncated, unloadable save and destroys the player's progress.
 ```
 
-A crash now leaves the old save, the new one, or (between the two renames) only
-the `.bak` — which the loader tries next. Two limits to know: `rename()` replaces
-the target atomically on POSIX (same volume), but Godot's Windows `rename_absolute`
-deletes the target and then moves, so that platform relies on the `.bak` too; and
-neither `flush()` nor `close()` calls `fsync`, so a power cut right after a save
-can still lose the newest file. Check the returned `Error` and tell the player
-when a save fails instead of carrying on.
+A crash leaves the old save, the new one, or (between the two renames) only the `.bak`, which
+the loader tries next. `rename()` replaces the target atomically on POSIX within one volume, but
+Godot's Windows `rename_absolute` deletes the target and then moves, so Windows relies on the
+`.bak` as well. Neither `flush()` nor `close()` calls `fsync`, so a power cut right after a save
+can still lose the newest file. Check every returned `Error` and tell the player when a save
+fails.
 
 ### 3. Versioned load with migration
 
@@ -134,7 +124,9 @@ def migrate_2_to_3(d):
 MIGRATIONS = {1: migrate_1_to_2, 2: migrate_2_to_3}
 ```
 
-### 4. Save slots + throttled autosave
+Keep every migration forever; deleting one strands every save of that version.
+
+### 4. Slots and throttled autosave
 
 ```gdscript
 const SLOT_PATH := "user://save_%d.json"      # manual slots 0..N
@@ -145,47 +137,101 @@ func autosave_if_due(dt: float) -> void:
     _autosave_cooldown -= dt
     if _autosave_cooldown <= 0.0:
         save_atomic(AUTOSAVE_PATH, capture_state())
-        _autosave_cooldown = 60.0             # throttle: at most once a minute
-# Trigger an immediate autosave on checkpoints/level transitions, not mid-combat.
+        _autosave_cooldown = 60.0             # at most once a minute; also save on checkpoints
 ```
 
-## Pitfalls
+### 5. Round-trip and corruption test (headless)
 
-- **Serializing engine objects/node paths** ties saves to scene structure;
-  renaming a node breaks every old save. Save data, rebuild objects on load.
-- **No version field.** The day you ship a patch, every existing save is a
-  guessing game. Stamp `version` from version 1.
-- **In-place writes** corrupt saves on crash/power loss. Always temp-write then
-  rename; keep a `.bak`.
-- **Trusting the file blindly.** Saves get truncated, hand-edited, or
-  cloud-synced stale. Validate on load and fall back to backup on failure.
-- **Floats and locale.** Text serializers can drop precision or use comma
-  decimal separators in some locales. Use a locale-invariant serializer.
-- **Godot JSON turns every number into a float**: `version` 3 loads as `3.0`,
-  so `migrations.has(data["version"])` is false and integers above 2^53 (64-bit
-  IDs, big seeds) lose digits. Convert with `int()` on load, store IDs as
-  strings, or wrap the state in `JSON.from_native()` / `JSON.to_native()`, which
-  round-trip `int`, `Vector2` and other engine types exactly.
-- **Loading objects from save files.** Godot `str_to_var`/`get_var` with objects
-  allowed, a `ConfigFile` that stores objects, or `ResourceLoader` on a `.tres`
-  the player can swap will instantiate an object with a script attached, and that
-  script runs during the load. Saves get shared online; keep them plain data.
-- **Autosave clobbering manual saves**, or firing mid-action and saving an
-  inconsistent state. Use a dedicated autosave slot and save on safe boundaries.
-- **Storing secrets or trusting client saves in multiplayer.** A local save is
-  player-controlled; never treat it as authoritative for online state. For cloud,
-  handle the device's data limits and conflicts (`roblox-datastores`).
+```gdscript
+# tools/save_roundtrip_test.gd: godot --headless --path . --script res://tools/save_roundtrip_test.gd
+extends SceneTree
+
+const PATH := "user://test_save.json"
+
+func _initialize() -> void:
+    var saver = load("res://save.gd").new()      # the game's save_atomic / load_save
+    var ok := true
+    var first := {"version": 3, "player": {"hp": 7, "pos": [1.5, -2.0]}, "flags": {"met_guard": true}}
+    var second := first.duplicate(true)
+    second["player"]["hp"] = 4
+    ok = ok and saver.save_atomic(PATH, first) == OK
+    ok = ok and saver.save_atomic(PATH, second) == OK  # first is now the .bak
+    var loaded: Dictionary = saver.load_save(PATH)
+    # Compare fields, not whole Dictionaries: JSON turned hp 4 into 4.0, and 4 != 4.0 there.
+    ok = ok and loaded.get("version") is int and loaded["player"]["hp"] == 4
+    ok = ok and loaded["player"]["pos"] == [1.5, -2.0] and loaded["flags"] == second["flags"]
+    var f := FileAccess.open(PATH, FileAccess.WRITE)   # simulate a truncated primary
+    f.store_string("{\"version\": 3, \"pla")
+    f.close()
+    ok = ok and saver.load_save(PATH)["player"]["hp"] == 7          # fell back to .bak
+    for p in [PATH, PATH + ".bak", PATH + ".tmp"]:
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
+    print("SAVE_ROUNDTRIP ", "ok" if ok else "FAIL")
+    quit(0 if ok else 1)
+```
+
+Point `res://save.gd` at the game's own save script. The truncated file makes Godot print
+`Parse JSON failed`; that line is expected here, and the test passes only if the `.bak` loads.
+
+## Check it
+
+1. Run the round-trip test: it must print `SAVE_ROUNDTRIP ok`.
+2. Keep one real save per shipped version in a fixtures folder and load each through the
+   migration chain in a test after every schema change.
+3. Load a save stamped with a newer version and confirm it is refused with a message, not
+   half-loaded.
+4. Grep the save path for engine objects (`Node`, `Resource`, `var_to_str`, `store_var` with
+   objects allowed); there should be none.
+5. Ask the user to save mid-level, quit the game fully, relaunch, load, and report anything that
+   differs (position, inventory, flags, quest state). For Steam Cloud, ask them to repeat it on a
+   second machine and report whether the save arrived.
+
+## Gotchas
+
+- **No version field.** The first patch turns every existing save into guesswork.
+- **Serializing engine objects or node paths** ties saves to scene structure; a rename breaks
+  every old save.
+- **In-place writes** corrupt saves on a crash or power loss. Write a temp file, keep a `.bak`.
+- **Godot JSON turns every number into a float**: `version` 3 loads as `3.0`, so
+  `MIGRATIONS.has(data["version"])` is false, whole-Dictionary `==` against the original fails,
+  and integers above 2^53 (64-bit ids, big seeds) lose digits. Convert with `int()`, store big ids
+  as strings, or wrap the state with `JSON.from_native()` / `JSON.to_native()`.
+- **`JSON.parse_string` on a corrupt file** logs an engine error and returns `null`. Use a
+  `JSON` instance and `parse()` when you need the error line and message for the player or log.
+- **Loading objects from save files.** Godot `str_to_var` or `get_var` with objects allowed, a
+  `ConfigFile` holding objects, or `ResourceLoader` on a `.tres` the player can swap will create
+  an object whose script runs during the load. Saves get shared online; keep them plain data.
+- **Floats and locale.** Hand-built text formats can write comma decimals in some locales. Use
+  the engine's JSON or another locale-invariant serializer.
+- **Autosave clobbering a manual save**, or firing mid-combat and saving an inconsistent state.
+  Use a dedicated slot and safe boundaries.
+- **Saving next to the executable**: often read-only, and replaced by updates. Use the engine's
+  per-user folder (see the reference).
+- **Trusting client saves online.** A local save is player-controlled; never use it as the
+  authority for multiplayer or economy state.
 
 ## References
 
-- `references/versioning-and-migration.md` — schema evolution strategies, the
-  migration chain, backups/rollback, format trade-offs (JSON vs binary), a
-  load-time validation checklist, and where saves live per engine plus Steam
-  Cloud setup.
+- `references/versioning-and-migration.md`: read when evolving a schema (additive, rename and
+  removal migrations), keeping a save corpus, rotating backups, choosing JSON vs binary,
+  writing load-time validation, finding where saves live per engine, or setting up Steam Cloud.
 
 ## Related skills
 
-- `roblox-datastores` — cloud persistence, request limits, session locking.
-- `godot-resources`, `unity-scriptableobjects` — the data model you serialize.
-- `procedural-gen` — store the seed to regenerate worlds instead of saving them.
-- `rpg`, `survival-crafting`, `visual-novel` — genres that compose this skill.
+- `roblox-datastores`: cloud persistence, request limits, session locking.
+- `godot-resources`, `unity-scriptableobjects`: the data model you serialize.
+- `procedural-gen`: saving the seed and generator version instead of the world.
+- `rpg`, `survival-crafting`, `visual-novel`: what each genre puts in the save.
+- `steam-publish`: the Steamworks app admin pages where Steam Cloud is configured.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7: `FileAccess.store_string` returns `bool`; `JSON.from_native`/`to_native` exist;
+  Windows `DirAccess.rename` deletes the target before moving
+  (`drivers/windows/dir_access_windows.cpp`). The round-trip test above ran on 4.7.2 headless.
+- Steam Cloud: files sync after the game exits and before the next launch; byte and file quotas
+  must be set before it works; Cross-Platform is the recommended OS setting for Auto-Cloud roots;
+  Dynamic Cloud Sync can change files mid-session
+  (https://partner.steamgames.com/doc/features/cloud).

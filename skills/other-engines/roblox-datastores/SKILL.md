@@ -1,53 +1,51 @@
 ---
 name: roblox-datastores
 description: >
-  Persist player data in Roblox with DataStoreService: GetDataStore, GetAsync/
-  SetAsync/UpdateAsync/IncrementAsync wrapped in pcall, load-on-join and
-  save-on-leave plus BindToClose, retries, and OrderedDataStore leaderboards. Use
-  when saving or loading persistent data in a Roblox experience — when the user
-  mentions DataStore, DataStoreService, GetAsync, SetAsync, UpdateAsync, save player
-  data, or leaderboards. For general Luau scripting use roblox-luau.
+  Roblox DataStoreService persistence: load on join, save on leave and BindToClose, UpdateAsync vs
+  SetAsync, session locking and OrderedDataStore leaderboards. Use for lost player data, items
+  duplicating after teleport, or "too many requests" errors. Not for engine-neutral saves
+  (`save-systems`), Luau basics (`roblox-luau`) or economy numbers (`roblox-simulator-economy`).
 ---
 
 # Roblox DataStores
 
-Persist data across sessions in Roblox with `DataStoreService`: loading on join,
-saving on leave and shutdown, safe updates, retries, and ordered stores for
-leaderboards. Server-side only.
+Persist data across sessions without losing or duplicating it. All DataStore calls are network
+requests from server `Script`s; they can fail, be throttled, and race with another server writing
+the same key.
 
-## When to use
+## Workflow
 
-- Use to save/load player progress (coins, inventory, levels), build persistent
-  leaderboards, or fix data loss, overwrites, and throttling.
-- Use when server code calls `DataStoreService`, `GetDataStore`, `GetAsync`,
-  `SetAsync`, `UpdateAsync`, or `GetOrderedDataStore`.
+1. **Find the existing persistence layer.** Search for `DataStoreService`, `GetDataStore`, and any
+   profile or session library before writing new code. If the project already uses one, extend it;
+   two systems writing the same key is the most common cause of rollbacks.
+2. **Use a test place for Studio work.** Studio reads and writes the same live data as players.
+   In a separate published test place, turn on File → Experience Settings → Security → *Enable
+   Studio Access to API Services*; without it, requests fail with `StudioAccessToApisNotAllowed`.
+3. **Key by `UserId`**, never by name: `"Player_" .. player.UserId`.
+4. **Guard every call with `pcall`.** On a failed *load*, mark the session as not loaded and refuse
+   to save, so defaults never overwrite real data.
+5. **Load on `PlayerAdded`, save on `PlayerRemoving` and in `game:BindToClose`**, plus a periodic
+   save (every 60-120 s), never on every value change.
+6. **Write with `UpdateAsync` and session ownership.** `UpdateAsync` reads the latest value before
+   writing; session ownership (in `references/sessions-and-limits.md`) stops a stale server from
+   writing an old snapshot over newer progress.
+7. **Use `OrderedDataStore` only for numeric rankings** (leaderboards).
+8. **Check before reporting.** Run the static check below and fix every hit. Then, with the Studio
+   MCP server connected and API access on in a test place, play, change a value, stop, play again,
+   and read it back with an uncached read from `execute_luau` on the `Server` datamodel. Without
+   MCP, ask the user to do join, change, leave, rejoin in the test place and report the value seen
+   after rejoining and any Output warnings. Rate-limit behavior needs Team Create, not Run mode.
 
-**When *not* to use:** general scripting, services, remotes, the client/server
-split → `roblox-luau`. High-frequency temporary state (matchmaking, per-round) →
-memory stores (a different service). Engine-agnostic persistence theory →
-`save-systems`.
-
-## Core workflow
-
-1. **Enable Studio access once.** In a published place, File → Experience Settings →
-   Security → *Enable Studio Access to API Services* (use a separate test place; Studio
-   hits the same live data as players). DataStores work only from server `Script`s,
-   never `LocalScript`s.
-2. **Get a store, then read/write by key.** `DataStoreService:GetDataStore("Name")`;
-   key per player is usually `"Player_" .. player.UserId`.
-3. **Wrap every call in `pcall`.** `GetAsync`/`SetAsync`/`UpdateAsync` are network
-   calls that can fail; an unguarded failure errors the thread and risks data loss.
-4. **Load on `PlayerAdded`, save on `PlayerRemoving`, and also `BindToClose`.** A
-   leaving player and a shutting-down server both need a final save.
-5. **Prefer `UpdateAsync` for read-modify-write** (multi-server safe) over `SetAsync`
-   (blind overwrite). On a failed load, do **not** overwrite with defaults — abort
-   the save so you don't wipe good data.
-6. **Use `OrderedDataStore` for ranked data** (leaderboards) via `GetSortedAsync`.
-   Test by joining, changing data, rejoining, and confirming it persisted.
+```bash
+# Every DataStore call should sit inside pcall; this lists the lines to inspect by hand.
+rg -n ":(GetAsync|SetAsync|UpdateAsync|IncrementAsync|RemoveAsync|GetSortedAsync)\(" src
+rg -n "BindToClose" src        # expect at least one save-everyone handler
+rg -n ":SetAsync\(" src        # each one on a player profile key needs a reason
+```
 
 ## Patterns
 
-### 1. Load on join (pcall-guarded)
+### Load on join
 
 ```lua
 local DataStoreService = game:GetService("DataStoreService")
@@ -61,73 +59,59 @@ Players.PlayerAdded:Connect(function(player)
     local ok, data = pcall(function()
         return store:GetAsync(key)
     end)
-
     if not ok then
-        -- Load FAILED (network). Do not treat as a new player; flag so we never save
-        -- over their real data with defaults.
-        warn("Load failed for", player.Name, data)
+        warn("Load failed for", player.UserId, data)  -- network failure, not a new player
         player:SetAttribute("DataLoaded", false)
         return
     end
-
     player:SetAttribute("DataLoaded", true)
-    local profile = data or DEFAULT          -- nil == genuinely new player
-    applyToLeaderstats(player, profile)
+    applyToLeaderstats(player, data or table.clone(DEFAULT))  -- nil means a genuinely new player
 end)
 ```
 
-### 2. Snapshot save with UpdateAsync (requires session ownership)
+### Save with UpdateAsync (session ownership still required)
 
-The load/save snippets illustrate the API, not a complete multi-server profile system.
-`UpdateAsync` alone does not protect a stale in-memory snapshot: this callback ignores
-`old`, so a second session can overwrite newer progress. Before using this load/save pair
-in production, implement session ownership on load and verify it inside every save callback
-(or use an appropriate profile library). Read `references/sessions-and-limits.md` first.
+This callback ignores `old`, so on its own it can overwrite newer progress from another server.
+Before shipping, add the session check from `references/sessions-and-limits.md` inside the
+callback, or use a vetted profile library.
 
 ```lua
--- UpdateAsync reads the latest value, then writes what the callback returns.
--- The callback MUST NOT yield (no task.wait, no further Async calls inside it), and it
--- can run more than once if another server writes the key first, so keep it pure.
 local function savePlayer(player)
-    -- Save only after a confirmed load. `~= true` also covers a player who leaves while
-    -- GetAsync is still in flight (attribute still nil), which `== false` would miss.
+    -- `~= true` also covers a player who left while GetAsync was still in flight.
     if player:GetAttribute("DataLoaded") ~= true then return end
     local key = "Player_" .. player.UserId
-    local newData = gatherDataFor(player)    -- a plain table of serializable values
+    local newData = gatherDataFor(player)    -- plain, JSON-serializable table
 
     local ok, err = pcall(function()
         store:UpdateAsync(key, function(old)
-            -- Snapshot-only example: production code must verify session ownership here.
-            -- Return nil if this session no longer owns the key.
+            -- Must not yield and may run more than once. Return nil to cancel the write
+            -- when this session no longer owns the key.
             return newData
         end)
     end)
-    if not ok then warn("Save failed for", player.Name, err) end
+    if not ok then warn("Save failed for", player.UserId, err) end
 end
 ```
 
-### 3. Save on leave AND on shutdown
+### Save on leave and on shutdown
 
 ```lua
 Players.PlayerRemoving:Connect(savePlayer)
 
--- BindToClose runs when the server shuts down; save everyone still in.
--- The server waits at most 30 seconds for it, so save in parallel and yield until done.
 game:BindToClose(function()
     local players = Players:GetPlayers()
     local remaining = #players
-    if remaining == 0 then return end
     for _, player in players do
         task.spawn(function()
             savePlayer(player)
             remaining -= 1
         end)
     end
-    while remaining > 0 do task.wait() end
+    while remaining > 0 do task.wait() end  -- the server waits at most 30 s in total
 end)
 ```
 
-### 4. Retry with backoff (transient failures)
+### Retry only what is safe to repeat
 
 ```lua
 local function withRetry(fn, attempts)
@@ -135,84 +119,91 @@ local function withRetry(fn, attempts)
     for i = 1, attempts do
         local ok, result = pcall(fn)
         if ok then return true, result end
-        if i < attempts then task.wait(2 ^ i) end   -- 2s, 4s, ... backoff
+        if i < attempts then task.wait(2 ^ i) end
     end
     return false
 end
-
-local ok, data = withRetry(function() return store:GetAsync(key) end)
 ```
 
-Retry only operations that are safe to repeat. A failed write is not proof the write did
-not happen: the server may simply have missed the response. Re-running an `UpdateAsync`
-that writes the full saved state is harmless; re-running `IncrementAsync` can add twice.
-When the outcome matters, confirm it with an uncached read (`DataStoreGetOptions` with
-`UseCache = false`) before retrying.
+A failed write does not prove the write did not happen; the server may only have missed the
+response. Re-running an `UpdateAsync` that writes the full state is harmless; re-running
+`IncrementAsync` can add twice. When the outcome matters, confirm with an uncached read
+(`DataStoreGetOptions` with `UseCache = false`) before retrying.
 
-### 5. Increment a counter
-
-```lua
--- IncrementAsync is a convenience for integer read-modify-write (still wrap it).
-local ok, newTotal = pcall(function()
-    return store:IncrementAsync("Visits_" .. player.UserId, 1)
-end)
-```
-
-### 6. Leaderboard with OrderedDataStore
+### Leaderboard with OrderedDataStore
 
 ```lua
-local boards = DataStoreService:GetOrderedDataStore("Coins")
+local board = DataStoreService:GetOrderedDataStore("Coins")
+pcall(function() board:SetAsync("Player_" .. player.UserId, coins) end)  -- on change, throttled
 
--- Write a player's score (call when it changes, not every frame).
-pcall(function() boards:SetAsync("Player_" .. player.UserId, coins) end)
-
--- Read the top 10, descending.
 local ok, pages = pcall(function()
-    return boards:GetSortedAsync(false, 10)   -- ascending=false → highest first
+    return board:GetSortedAsync(false, 10)   -- false = descending, highest first
 end)
 if ok then
-    for rank, entry in ipairs(pages:GetCurrentPage()) do
-        print(rank, entry.key, entry.value)   -- entry.value is the number
+    for rank, entry in pages:GetCurrentPage() do
+        print(rank, entry.key, entry.value)
     end
 end
 ```
 
-## Pitfalls
+Values must be integers. For a few specific players (friends, a party), `BatchGetAsync(keys)`
+reads up to 100 keys in one request instead of paging the whole board.
 
-- **Unhandled failure wipes progress** → always `pcall` Async calls; on a failed
-  *load*, mark the session and refuse to *save* so defaults never overwrite real data.
-- **`SetAsync` race between servers** → two servers writing the same key can clobber
-  each other. Use `UpdateAsync` for read-modify-write so each write sees the latest.
-- **Yielding inside the `UpdateAsync` callback** → the callback can't call
-  `task.wait` or other Async functions; compute the new value beforehand and return it.
-- **Side effects inside the `UpdateAsync` callback** → Roblox re-runs the callback when
-  another server changed the key between read and write, so granting items, firing
-  remotes, or incrementing counters there can happen twice. Act after the call returns.
-- **Saving a player who left mid-load** → `PlayerRemoving` can fire while `GetAsync` is
-  still yielding. Gate saves on "load succeeded", not on "load did not fail".
-- **No `BindToClose` save** → players in the server at shutdown lose unsaved progress;
-  add `game:BindToClose` and wait for saves to finish within its budget.
-- **Throttling / "too many requests"** → respect per-key and per-minute limits; don't
-  save on every value change. Batch and save on a timer / on leave. `GetAsync` is
-  cached for about four seconds, so immediate re-reads may be stale. Studio Run mode
-  uses its own lower static limits; Roblox recommends testing rate limits in Team Create.
-- **Storing non-serializable values** → only JSON-serializable data persists: numbers,
-  strings, booleans, and tables with string/number keys. `Instance`s, `Vector3`,
-  `CFrame`, and functions do not — serialize them to plain tables first.
-- **Testing without API access** → DataStore requests in Studio error (writes report
-  `StudioAccessToApisNotAllowed`) until *Enable Studio Access to API Services* is on (and
-  they don't work from a `LocalScript`).
-- **`DataStoreKeyInfo` is nil for ordered stores** → `OrderedDataStore` doesn't
-  support versioning/metadata; use a regular `DataStore` when you need those.
+## Gotchas
 
-## References
+- **Defaults saved over real data.** A failed load treated as "new player" wipes progress on the
+  next save. Gate saves on "load succeeded", not on "load did not fail".
+- **`SetAsync` races between servers.** During a teleport or fast rejoin two servers can hold the
+  same player; the last blind write wins. Use `UpdateAsync` with session ownership.
+- **Yields or side effects inside the `UpdateAsync` callback.** The callback cannot yield, and
+  Roblox re-runs it when another server changed the key first, so granting items, firing remotes
+  or incrementing counters inside it can happen twice. Act after the call returns.
+- **No `BindToClose` save.** Players in the server at shutdown lose everything since the last
+  periodic save.
+- **Saving on every change.** Throttling queues requests and then drops them with 301-306 errors.
+  Coalesce changes and save on a timer and on leave.
+- **Stale reads.** `GetAsync` caches a key for about four seconds after the first read, so an
+  immediate re-read after a write may return the old value.
+- **Non-serializable values.** Only JSON-like data persists: numbers, strings, booleans, and tables
+  with string or sequential number keys. Convert `Vector3`, `CFrame`, `Color3` and Instances to
+  plain tables first.
+- **Metadata and UserIds cleared on write.** Once a key has metadata or UserIds, every write must
+  supply them again or they are removed.
+- **`DataStoreKeyInfo` is nil for ordered stores.** They have no versioning or metadata; use a
+  regular `DataStore` when you need those.
+- **Temporary cross-server state.** Matchmaking queues and per-round data belong in
+  `MemoryStoreService`, not DataStores.
 
-- For session locking (preventing duplicate data across servers), versioning/
-  metadata with `DataStoreSetOptions`, ordered-store pagination
-  (`AdvanceToNextPageAsync`), the key error codes and request limits, and
-  Right-to-be-Forgotten compliance, read `references/sessions-and-limits.md`.
+## Resources
+
+- Read `references/sessions-and-limits.md` before shipping save code or when debugging rollbacks,
+  duplication, or throttling: session locking, versioning and metadata, pagination, request
+  budgets, storage limits, Right to be Forgotten, and Open Cloud.
 
 ## Related skills
 
-- `roblox-luau` — services, instances, events, and the server/client model.
-- `save-systems` — engine-agnostic serialization, slots, and migration.
+- `roblox-luau`: services, events, and the server/client model.
+- `roblox-simulator-economy`: repairing loaded values and offline earnings.
+- `save-systems`: engine-neutral serialization, slots, and migration.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Since 2026-07-29, in-game and Open Cloud requests share one per-experience budget per request
+  type: 300 per minute plus a per-CCU multiplier (reads 40, writes 20, lists 2 for standard and
+  ordered stores). `UpdateAsync` spends from both read and write. Per-server limits still apply.
+- Storage limit per experience: 500 MB + 1 MB per lifetime user, measured on the compressed latest
+  version of each key.
+- Per key: about 25 MB per minute of reads and 4 MB per minute of writes. Value size: 4,194,304
+  characters. Key, store and scope names: 50 characters.
+- `BindToClose` handlers get 30 seconds in total. Studio Run mode uses its own lower static
+  limits; test rate limits in Team Create.
+- Automated Right to be Forgotten processing for data stores was in beta during 2026; check its
+  status before relying on it.
+
+Sources: `https://create.roblox.com/docs/cloud-services/data-stores`,
+`https://create.roblox.com/docs/cloud-services/data-stores/error-codes-and-limits`,
+`https://create.roblox.com/docs/reference/engine/classes/GlobalDataStore`,
+`https://create.roblox.com/docs/reference/engine/classes/DataModel` (BindToClose),
+`https://devforum.roblox.com/t/unifying-data-stores-open-cloud-and-game-apis-and-increasing-storage-limits/4739240`.

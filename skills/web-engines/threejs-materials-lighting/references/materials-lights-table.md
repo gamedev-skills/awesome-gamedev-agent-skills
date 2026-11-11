@@ -2,6 +2,13 @@
 
 Lookup tables and detail behind the materials & lighting skill.
 
+Contents:
+
+- Material cheat-sheet and PBR intuition
+- Light types, starting intensities, shadow camera by light type
+- Transparency & sorting
+- IBL without an HDR file: PMREM + RoomEnvironment, tone mapping, `OutputPass`
+
 ## Material cheat-sheet
 
 | Material | Lit? | Use for | Key params |

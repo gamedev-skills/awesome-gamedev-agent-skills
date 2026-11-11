@@ -1,141 +1,129 @@
 ---
 name: rpg
 description: >
-  Build an RPG: stats and leveling, inventory and equipment, quests, branching dialogue, save/load,
-  and combat. Use for an RPG/JRPG, or designing stat, inventory, quest, or combat systems.
+  Designs RPG progression and combat numbers in any engine: stats with a modifier stack, XP
+  curves, damage formulas, items and equipment (slots, rarity, affixes) and quests. Use for a JRPG
+  or Diablo-style looter, or stats wrong after unequipping. Pair with `save-systems` to save
+  characters and inventory. Not for crafting and carry weight (`survival-crafting`) or dialogue
+  (`dialogue-systems`).
 ---
 
 # RPG
 
-A playbook for role-playing games — stats and progression, inventory/equipment, quests,
-dialogue, and combat. This is a **compositional** skill: it ties data-driven content,
-dialogue, and saving together. It does not re-teach those primitives; it defines the systems
-that make growth and choice feel meaningful, and points to the skills that implement each.
+Owns the numbers that make a character grow: stats, levels, damage, items and quests. Design by
+target outcomes (minutes per level, hits to kill), then derive formulas and tables from them,
+and check the tables with a script before anyone plays.
 
-These systems also apply to custom/proprietary engines. Keep the project's engine and bind
-the concepts below to its documented data, events, UI, and save interfaces. Inspect local
-source/SDK examples before choosing APIs; the router's custom-engine fallback guides that
-mapping. Godot/Unity bindings below are examples, not prerequisites.
+Works with any engine, including custom ones: bind the data shapes below to the project's
+content format and save interface after reading its existing items and stats.
 
 ## When to use
 
-- Use when building an RPG/JRPG/action-RPG: the player has **stats that grow**, an
-  **inventory**, **quests**, **dialogue**, and persistent progress.
-- Use when designing a leveling curve, a damage formula, an inventory/equipment model, or a
-  quest state machine.
+- Character progression, combat math, item and equipment systems, loot rarity, quest tracking.
+- Symptoms: buff or gear removal leaves the wrong stats, defense stacking makes enemies
+  immune, damage numbers explode late, players out-level content, loot is all "+1%".
 
-**When *not* to use:** permadeath dungeon runs with no persistent character → `roguelike`.
-Pure conversation/branching story → `visual-novel`. Open-world needs/crafting/base-building →
-`survival-crafting`. For the dialogue engine itself, use `dialogue-systems`.
+**When not to use:** gathering, crafting recipes, stack limits, weight and spoilage
+(`survival-crafting`); conversation trees and barks (`dialogue-systems`); save file format and
+migration (`save-systems`); permadeath runs (`roguelike`).
 
-## Core loop
+## Workflow
 
-**Explore → encounter (fight / talk / solve) → earn rewards (XP, loot, story) → grow
-(level up, gear up, unlock) → take on harder content.** The fantasy is *getting stronger and
-shaping who your character is*; every system should feed that growth-and-choice loop.
+1. **Read what exists:** stat names, item data, enemy tables, the content format (resources,
+   ScriptableObjects, JSON). Keep the project's names.
+2. **Set pacing targets** and get the user to confirm them: level cap, total hours to cap,
+   and minutes per level at a few points. Starting point: about 3-5 minutes per level for the
+   first five levels, rising to 30-60 minutes near the cap.
+3. **Derive the XP table** from those minutes: `xp_to_next(L) = expected_xp_per_minute(L) *
+   minutes_for_level(L)`, where XP per minute comes from the enemies and quests at that
+   level. A bare formula such as `100 * L^2` is a fine first fill, but tune against minutes.
+4. **Pick one damage family** (below) and set hit targets at equal level: a normal enemy dies
+   in 2-4 player hits, the player survives 5-8 normal hits, a boss takes 25-60 hits.
+5. **Build stats as base plus a modifier stack** (Pattern 1); items push modifiers.
+6. **Define item rarity and affixes** with item level tied to the source's level.
+7. **Check it.** Write a balance script or test that prints one row per level (player HP,
+   damage, hits to kill a same-level enemy, hits to survive, minutes to next level) and fails
+   when a row leaves the targets. Add a test that equips and unequips every item and asserts
+   derived stats return exactly to their old values. Run both and report the table's outliers.
 
-## Must-have systems
+## Formulas that hold up
 
-1. **Stats + leveling** — base attributes, derived combat stats, XP curve, level-up gains.
-2. **Inventory + equipment** — data-defined items, stacking, slots, stat modifiers.
-3. **Combat** — turn-based or action; damage formula, status effects, win/loss.
-4. **Quests** — objectives, state machine (available→active→complete→turned-in), rewards.
-5. **Dialogue** — branching lines, conditions on game state, choices that matter.
-6. **Save/load** — persist character, inventory, quest progress, world flags, with versioning.
-7. **Economy + progression gating** — gold/shops; gate power behind level/quest/region.
-8. **UI** — HUD, inventory, quest log, dialogue box, character sheet.
+| Choice | Default | Why |
+|--------|---------|-----|
+| Damage vs defense | ratio: `dmg * K / (K + def)`, K = the defense that should halve damage | each defense point adds the same effective HP (1/K of HP), so defense never makes anyone immune; League of Legends uses K = 100 |
+| Subtractive alternative | `max(1, atk - def)` | crisp at small numbers, but stacking defense quickly zeroes damage |
+| Resist caps | percentage resists capped (Path of Exile: 75% by default) | stacked percentages reach 100% otherwise |
+| Variance | ±10% | wider makes hits-to-kill unpredictable |
+| Crit | 5% base chance, 1.5-2x damage | crit builds need room to grow |
+| Type multipliers | 0.5 / 1 / 2 | clear tells; stack dual types multiplicatively (0.25-4) |
+| XP curve | cubic total XP (Pokemon "Medium Fast": total XP to reach level n is n^3) or a minutes-based table | early levels fast, late ones long |
+| Rarity weights | common 60, uncommon 25, rare 10, epic 4, legendary 1 | with a pity counter for the top tier if drops gate progress |
+| Item level | the level of the monster or chest that dropped it | keeps loot useful while levelling |
 
-## Design knobs
+Round once at the end of the damage formula. Sum percentage modifiers of the same kind
+(+20% and +30% = +50%); multiply only across deliberately separate layers.
 
-| Knob | Effect | Notes |
-|------|--------|-------|
-| XP curve shape | pacing of power | Fast early, slow late (see refs). |
-| Stat→derived scaling | build diversity | One attribute shouldn't dominate. |
-| Damage formula | tactical feel | Subtractive vs. ratio mitigation (refs). |
-| Random variance / crit | swinginess | ±10% and ~1.5× crit are safe defaults. |
-| Drop rates / economy | reward cadence | Avoid trivializing shops with loot. |
-| Power gating | difficulty gating | Level/region/quest locks. |
-| Reversible modifiers | buff/gear correctness | Layer mods; never edit base stats. |
-| Choice consequence | role-play weight | Quest/dialogue flags should branch outcomes. |
-
-## Patterns
-
-### 1. Derived stats from base attributes (recompute, never store as truth)
-
-```python
-# Pseudocode. Base attributes are the only "truth"; combat stats are derived each time.
-def derive(base, mods):
-    s = apply_modifiers(base, mods)          # base + flat adds + percent, then clamp
-    return {
-        "max_hp":  20 + s["VIT"] * 8,
-        "attack":  s["STR"] * 2,
-        "defense": s["VIT"] + s["AGI"] * 0.5,
-    }
-# Equipping pushes a modifier; unequipping pops it. HP/attack recompute automatically.
-```
-
-### 2. XP curve + level-up
+## Pattern 1: base stats plus a modifier stack
 
 ```python
-# Pseudocode. Quadratic curve: fast early levels, long late ones.
-def xp_to_next(level, base=100): return base * level * level
+# Pseudocode. Base attributes are the only stored truth; derived stats are recomputed.
+def stat(actor, name):
+    flat = sum(m.value for m in actor.mods if m.stat == name and m.kind == "flat")
+    pct  = sum(m.value for m in actor.mods if m.stat == name and m.kind == "pct")
+    more = product(1 + m.value for m in actor.mods if m.stat == name and m.kind == "more")
+    return clamp((actor.base[name] + flat) * (1 + pct) * more, *LIMITS[name])
 
-def gain_xp(actor, amount):
-    actor.xp += amount
-    while actor.xp >= xp_to_next(actor.level):
-        actor.xp -= xp_to_next(actor.level)
-        actor.level += 1
-        actor.base["STR"] += 2; actor.base["VIT"] += 2   # grant gains / skill points
-        on_level_up(actor)                                # heal, unlock, notify
+def equip(actor, item):
+    for m in item.mods:
+        actor.mods.append(Mod(m.stat, m.kind, m.value, source=item.instance_id))
+
+def unequip(actor, item):
+    actor.mods = [m for m in actor.mods if m.source != item.instance_id]   # exactly that item
 ```
 
-### 3. Quest objective update driven by game events
+When max HP changes, decide whether current HP keeps its value or its ratio, and apply the
+same rule everywhere; otherwise swapping gear becomes a free heal.
 
-```python
-# Pseudocode. Game events advance matching objectives; completion grants rewards.
-def on_event(kind, data):
-    for q in active_quests:
-        if q.state != "active": continue
-        for obj in q.objectives:
-            if obj.event == kind and matches(obj, data) and not obj.done:
-                obj.count = min(obj.count + 1, obj.needed)
-                if obj.count >= obj.needed: obj.done = True
-        if all(o.done for o in q.objectives):
-            q.state = "complete"                # turn-in grants xp/gold/items once
-```
+## Gotchas
 
-## Pitfalls / failure modes
-
-- **Editing base stats for buffs/gear** → values drift and corrupt on save/reload. Keep a
-  modifier layer; push/pop it (Pattern 1).
-- **Storing derived stats as truth** → desync after a stat change. Recompute from base.
-- **Runaway XP/damage numbers** → either an exponential curve with no cap or a subtractive
-  formula at huge values. Pick a curve and a formula family deliberately (refs).
-- **Stacked buffs explode** → percent modifiers multiplied together. Sum percents within a layer
-  unless a rule says otherwise (refs §1).
-- **Content as code** → every item/quest hardcoded. Define items, enemies, and quests as
-  **data** using the project's content schema/loader (`godot-resources` /
-  `unity-scriptableobjects` are catalog examples).
-- **Save format with no version field** → old saves break on update. Add a `version` and a
-  migration path from day one (see `save-systems`).
-- **Choices without consequences** → dialogue branches that reconverge immediately feel hollow.
-  Set flags that actually change later quests/world state.
-- **Quest progress not persisted** → reloading loses mid-quest state. Save quest state, not
-  just completion.
-
-## Composition (build it from these skills)
-
-- **Dialogue:** `dialogue-systems` (Yarn Spinner / Ink) — branching lines, conditions, variables.
-- **Persistence:** `save-systems` — character, inventory, quest flags, world state, versioning.
-- **Content data:** the engine's content schema/loader — items, enemies, quests, skills as assets;
-  `godot-resources` / `unity-scriptableobjects` when using those engines.
-- **Combat AI:** `game-ai` for enemy behavior; for turn order reuse the scheduler idea in `roguelike`.
-- **UI:** `game-ui-ux` for HUD/menu layout, resolution scaling, and controller/keyboard nav;
-  the project's UI API for inventory, quest log, character sheet, and dialogue box
-  (`godot-ui-control` when using Godot).
-- **World:** `level-design` plus your engine's tilemap/3D skill (`godot-tilemap`, `godot-3d-essentials`).
+- **Stats wrong after a buff ends or gear comes off** → the buff edited base stats, or the
+  modifier was removed by value instead of by source. Remove by source id (Pattern 1).
+- **Unequip and re-equip heals to full** → current HP reset to the new max. Keep absolute HP
+  (clamped) or the ratio, one rule for all cases.
+- **Enemies become immune** → subtractive formula or uncapped percentage resists. Use the
+  ratio formula or cap resists.
+- **Late-game numbers explode** → exponential XP or damage growth with multiplicative
+  modifiers stacking. Sum modifiers within a layer; check the per-level table.
+- **Players out-level everything, or grind** → XP only from kills. Give quest XP sized to the
+  minutes target so the critical path keeps the player near the content's level.
+- **Progression feels pointless** → enemies scaled fully to the player's level. Scale within
+  regional bands, or scale only part of the stats, so growth is visible.
+- **Loot feels flat** → affix rolls with tiny ranges or too many affix types per item. Fewer,
+  larger affixes per rarity tier read better.
+- **Quest breaks on reload** → only "completed" is saved. Save quest state and objective
+  counters (`save-systems`).
+- **Displayed numbers disagree with combat** → UI rounds differently from the formula. Format
+  from the same rounded value the combat code uses.
 
 ## References
 
-- For stat/damage formulas, leveling curves, turn-vs-action combat timelines, inventory/equipment
-  data shapes, and the quest state model, read `references/stats-combat-quests.md`.
+- `references/stats-combat-quests.md`: read when writing the stat block and modifier layers,
+  the two damage families in code, XP curve variants, turn-based versus ATB timelines, item and
+  equipment data shapes, or the quest state model.
+
+Related: `dialogue-systems` (conversations gated on quest state), `save-systems`,
+`godot-resources` or `unity-scriptableobjects` (content as data), `game-ai` (enemy behaviour),
+`roguelike` Pattern 1 (energy scheduler, the base of CTB and ATB turn order), `game-ui-ux`
+(inventory and character screens).
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- League of Legends armor multiplier 100 / (100 + armor) and linear effective HP:
+  https://wiki.leagueoflegends.com/en-us/Armor.
+- Pokemon experience groups (Medium Fast = n^3, 1,000,000 XP at level 100):
+  https://bulbapedia.bulbagarden.net/wiki/Experience.
+- Path of Exile default maximum resistance 75%: https://www.poewiki.net/wiki/Resistance.
+- Pacing minutes, hits-to-kill bands and rarity weights are design starting points, not
+  measured from a specific game.

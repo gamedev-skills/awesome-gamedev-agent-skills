@@ -1,54 +1,53 @@
 ---
 name: game-jam
 description: >
-  Plan and ship a game under a jam deadline: lock scope to the clock, schedule the hours,
-  cut features, and submit on time. Use for a game jam (Ludum Dare, GMTK Jam, Global Game
-  Jam), a 48-hour or weekend build, or scoping and submitting a jam entry.
+  Plans and ships a game jam entry against a fixed deadline: reads the jam rules, scopes to the
+  clock, keeps a cut list and checks the build before submitting. Use for Ludum Dare, GMTK, Global
+  Game Jam or any itch.io jam, a 48-hour game, or "we're behind, what do we cut". Not for untimed
+  experiments (`prototype-fast`) or upload commands (`itch-publish`).
 ---
 
 # Game Jam
 
-Turn a theme and a fixed deadline into a finished, submitted game. This is a planning and
-scope-control playbook, not engine code: the win condition is *something submitted and
-playable*, not *the game you imagined*.
+Turn a theme and a fixed deadline into a submitted, playable game. The win condition is a
+build that is attached to the jam before it closes, not the game first imagined. The agent
+keeps the plan in a file, builds the smallest loop first, cuts on schedule, and runs the build
+checks itself; the user decides the concept, plays the build and presses submit.
 
 ## When to use
 
-- Use when entering a timed jam (Ludum Dare, GMTK Jam, Global Game Jam, a weekend jam),
-  scoping a 48-hour build, or deciding what to cut to hit a deadline.
-- Use when the user asks "what can I actually build in a weekend" or "how do I submit to
-  this jam".
+- Entering a timed jam, scoping a 48- to 96-hour or one-week build, deciding what to cut to hit
+  a deadline, or getting a jam entry submitted.
 
-**When *not* to use:** building the *core loop* in engine code (use the engine skill —
-`godot-2d-movement`, `phaser-core`, etc. — or a genre skill like `platformer`); throwaway
-experiments with no deadline (use `prototype-fast`); shipping a commercial release (use
-`steam-publish` / `itch-publish`).
+**Not for:** the core loop's engine code (engine skills such as `godot-2d-movement` or
+`phaser-core`, or genre skills such as `platformer`); experiments with no deadline
+(`prototype-fast`); a commercial release (`steam-publish`, `itch-publish`).
 
-## Core workflow
+## Workflow
 
-1. **Read the rules before the theme drops.** Confirm the jam's *length*, *theme reveal
-   time*, *submission deadline (with timezone)*, whether teams/pre-made assets/engines are
-   allowed, its *generative AI* policy, which platforms the build must run on (often Windows
-   or browser), *where* you submit (an itch.io jam page, or the jam's own site), whether
-   uploads lock once the deadline passes, and whether ratings require you to rate other
-   entries. Missing one of these disqualifies an otherwise-finished game.
-2. **Prep the boring parts in advance** (allowed by most jams): empty project that builds
-   and exports, input + a title/end screen stub, an export pipeline you've run once, and a
-   font/SFX source you're licensed to use. Day-one time is too precious to spend here.
-3. **Theme → one sentence.** Brainstorm 10 ideas in 15 minutes, then commit to **one**
-   expressible as: *"You [verb] to [goal] while [constraint]."* If you can't say it in one
-   sentence, it's too big.
-4. **Scope to the clock, not the idea.** Use the budget table below. Pick **one** core
-   mechanic and **one** "hook". Everything else is a stretch goal.
-5. **Build the vertical slice first.** Get a 30-second playable loop (start → play → lose/win
-   → restart) running early. A complete tiny loop beats a half-built big one.
-6. **Reserve the last ~20% of the clock for shipping**, not features. Export, test the build
-   on a clean path, capture screenshots, write the page. Builds always break at hour 47.
-7. **Submit early, update if time remains.** Upload a working build *well before* the
-   deadline; you can usually replace the file until submissions close. After that, many jams
-   lock uploads for the whole rating period or allow only declared bug fixes, so the build
-   you have at the deadline is the one people rate. A submitted mediocre game scores; an
-   unsubmitted great one does not.
+1. **Get the rules before the theme drops.** Ask the user for the jam page URL and read it (or
+   ask them to paste the rules). Record in `JAM.md` at the project root: length, theme reveal
+   time, submission deadline in UTC and the user's local time, team and asset rules, the
+   generative-AI rule, required platforms, where the entry is submitted, whether uploads lock
+   during rating, and whether rating others matters. Each of these has disqualified finished
+   games. Recurring jams' current rules are summarised in Version notes; the live page wins.
+2. **Prep what the rules allow in advance:** an empty project that exports, input and a
+   title/end screen stub, an export command that has run once, and licensed font and SFX
+   sources. Day-one hours are too precious for this.
+3. **Theme to one sentence.** Offer about ten ideas quickly, then help the user commit to one
+   that fits *"You [verb] to [goal] while [constraint]."* If it does not fit one sentence, it is
+   too big. Write it in `JAM.md`.
+4. **Scope to the clock.** Use the budget table (Pattern 1): one core mechanic, one hook,
+   everything else on a stretch list in `JAM.md`.
+5. **Build the vertical slice first:** start, play, win or lose, restart, with primitives. A
+   complete tiny loop beats a half-built big one.
+6. **Check in against the timeline** (Pattern 2) at each block boundary. When the loop is late,
+   cut from the stretch list using the triage rules (Pattern 3) and log the cut in `JAM.md`.
+7. **Reserve the last ~20% of the clock for shipping:** export, run the Verify checks, capture
+   screenshots, write the page. Builds tend to break in the last hours.
+8. **Submit early, then update while allowed.** Upload a working build well before the
+   deadline. After the deadline many jams lock uploads or allow only declared bug fixes, so
+   the build attached at the deadline is the one people rate.
 
 ## Patterns
 
@@ -64,93 +63,112 @@ Audio         | 3-5 SFX + 1 loop       | SFX + 1-2 tracks      | adaptive music
 SHIP BUFFER   | last 8-10 h            | last 12-16 h          | last full day
 ```
 
-### 2. The 48-hour timeline (concrete blocks)
+### 2. The 48-hour timeline
 
 ```text
-H0-2    Ideate -> lock ONE-sentence concept -> name the core mechanic + win/lose.
-H2-8    Core loop in code with primitives (boxes/circles). Make it playable, no art.
-H8-12   Sleep. (Tired code is tomorrow's bug list.)
-H12-24  Content: 1 level/encounter, tune difficulty, add the "hook" feature.
-H24-30  Sleep + playtest with one other person; cut anything not landing.
-H30-38  Art + audio pass. Juice: screenshake, hit-stop, tween, particles, SFX.
-H38-44  Bug-fix freeze: no new features. Fix only crashes + soft-locks.
-H44-48  EXPORT, test the build clean, screenshots, write page, SUBMIT (by ~H46).
+H0-2    Lock the one-sentence concept; name the core mechanic and win/lose.
+H2-8    Core loop with primitives. Playable, no art.
+H8-12   Sleep. Tired code is tomorrow's bug list.
+H12-24  One level or encounter, tune difficulty, add the hook.
+H24-30  Sleep; the user plays the build (and ideally one other person); cut what isn't landing.
+H30-38  Art and audio pass, then juice (see `game-feel`).
+H38-44  Feature freeze: fix only crashes and soft-locks.
+H44-48  Export, Verify, screenshots, page, SUBMIT by about H46.
 ```
 
-### 3. Feature triage — decide fast, decide out loud
+### 3. Feature triage
 
 ```text
-For every feature ask, in order:
-  1. Does the core loop work WITHOUT it?   -> if yes, it's a stretch goal, not MVP.
-  2. Can a player tell it's missing?       -> if no, cut it.
-  3. Is it < 30 min of work?               -> if no, defer past the ship buffer.
-Default answer under deadline pressure is CUT. You can always add in a post-jam version.
+For every feature, in order:
+  1. Does the core loop work without it?  -> yes: stretch goal, not MVP.
+  2. Would a player notice it missing?    -> no: cut it.
+  3. Is it under 30 minutes of work?      -> no: defer past the ship buffer.
+Under deadline pressure the default is CUT; it can return in a post-jam version.
 ```
 
-### 4. Pre-submission build check (run on a clean copy, not your dev folder)
+### 4. `JAM.md` skeleton
 
 ```text
-[ ] Build runs from an extracted zip on a path with NO engine/IDE installed.
-[ ] Controls are shown on-screen or on the page (jurors won't read your mind).
-[ ] No dev console errors; no soft-lock; restart works.
-[ ] Web build (if any) is set to the platform's playable-in-browser mode.
-[ ] Page has: 1-line pitch, controls, screenshots, credits + asset licenses.
-[ ] File uploaded and the submission is actually attached to the JAM, not just the page.
+Jam: <name + URL>     Deadline: <UTC> / <local>     Upload lock: yes/no
+Rules: team | assets | AI | platforms | submit where
+Concept: You <verb> to <goal> while <constraint>.
+MVP: <core mechanic>, <hook>, start/play/end/restart
+Stretch (in cut order): ...
+Cut log: <hour> cut <feature> because <reason>
 ```
 
-### 5. Format rules of the big recurring jams (re-check the current event page)
+## Verify
 
-```text
-Ludum Dare   Two categories. COMPO: solo, 48 h, all art/music/sound made during the
-             event, source code must be shared. JAM: 72 h, solo or team, any base code;
-             third-party or old assets are fine but opt out of Graphics/Audio voting.
-             One extra "submission hour" for packaging; after it, only declared bug
-             fixes and ports, no new features. Entries live on ldjam.com and link to
-             builds you host elsewhere (for example on itch.io). Rating others raises
-             your entry's visibility ("Coolness").
-GMTK Jam     Hosted on itch.io, solo or team, runs about four days. Must be playable
-             on Windows or in a browser with keyboard/mouse. Generative AI art and
-             audio get the entry disqualified. Uploads lock during the rating period;
-             linking to a "fixed" build elsewhere is also grounds for disqualification.
-Global Game  Run at local sites; each site picks its own 48 h window inside a 7-day
-Jam          period, and the submission deadline is local time. Submit on
-             globalgamejam.org with source code and all original assets before the jam
-             ends; GGJ projects are released open source under a Creative Commons
-             license, so plan any commercial follow-up with that in mind.
-```
+Run these before submitting, on the exported build, not the editor:
 
-## Pitfalls
+1. **Export from the command line** with the engine skill's export path (for example
+   `godot-export` or `unity-build-pipeline`) and confirm it exits 0.
+2. **Clean-path test.** Zip the export, unzip it into a new temporary folder outside the
+   project, and launch it there (or, for a web build, serve that folder on `127.0.0.1` and load
+   it in a headless browser). Missing assets and wrong working directories show up only here.
+   Read the log or browser console for errors.
+3. **Package check.** List the zip: the executable or `index.html` at the top level, no
+   project files, editor folders or debug symbols. For itch.io, run the `butler push
+   --dry-run` check from `itch-publish`.
+4. **Rules check.** Re-read the rules block in `JAM.md` against the build: platforms, controls
+   (keyboard and mouse if required), credits and asset licences on the page, AI rule.
+5. **Ask the user** to play the extracted build through once, start to restart, and report
+   any soft-lock; then to submit and confirm the entry appears on the jam's entries page.
+   Uploading to a game page alone does not enter it.
 
-- **Scope creep is the #1 jam killer.** If the core loop isn't playable by the first third
-  of the clock, cut features now, not later.
-- **No ship buffer.** Exporting, zipping, and writing the page reliably takes 1-3 hours and
-  always surfaces a build bug. Treat the deadline as ~2 hours earlier than it is.
-- **Submitting to the page but not the jam.** On itch.io a jam entry is a separate
-  *submission* linked from the jam page — uploading the game alone does not enter it.
-- **Fixing the build after the deadline.** Where uploads lock for rating, the locked build is
-  what gets rated; posting a link to a newer build can disqualify the entry. Where fixes are
-  allowed (Ludum Dare), fix only bugs, add no features, and list the changes on the entry.
-- **Untested export.** "Works in the editor" is not "works in the build." Test the exported
-  artifact on a clean path; missing assets and wrong working directories are classic.
-- **Unlicensed assets.** Music/fonts/sprites pulled from the web can violate jam rules and
-  break later distribution. Use assets you're licensed for and list them in the credits.
-  Check the jam's generative AI rule too: some jams disqualify AI-made art or audio.
-- **Polishing before the loop is fun.** Juice multiplies fun; it can't create it. Get the
-  loop right with placeholders first.
+## Gotchas
+
+- **Scope creep.** If the loop is not playable by the first third of the clock, cut now.
+- **No ship buffer.** Exporting, zipping and writing the page takes 1 to 3 hours and usually
+  surfaces a build bug. Treat the deadline as two hours earlier than it is.
+- **Submitted to the page, not the jam.** On itch.io a jam entry is a separate submission from
+  the jam page.
+- **Fixing after the deadline.** Where uploads lock, the locked build is rated, and linking a
+  "fixed" build elsewhere can disqualify the entry. Where fixes are allowed (Ludum Dare),
+  fix bugs only and list the changes.
+- **Untested export.** "Works in the editor" is not "works in the build."
+- **Unlicensed or AI-made assets.** Web-scraped music, fonts or sprites can break jam rules and
+  later distribution; credit every asset. AI rules differ sharply between jams: some
+  disqualify AI art or audio, others only ask you to opt out of rating categories.
+- **Polishing before the loop is fun.** Juice multiplies fun; it cannot create it.
+- **Deadline time zone.** Jams state deadlines in one zone; GGJ sites use local time. Store
+  both in `JAM.md`.
 
 ## References
 
-- For the throwaway-vs-keep prototyping mindset and greyboxing technique, read the
-  `prototype-fast` skill.
-- For the actual upload mechanics (project page, channels, `butler push`), read
-  `itch-publish`.
-- Primary sources for Pattern 5: the Ludum Dare rules (`ldjam.com/events/ludum-dare/rules`),
-  the current GMTK Game Jam page on itch.io, and `globalgamejam.org` ("What is a game jam?"
-  and "Upload your game!"). Rules change between events; read the live page.
+- `prototype-fast`: read for greyboxing and the throwaway-vs-keep call before committing jam
+  hours to a mechanic.
+- `itch-publish`: read for the page, channels and `butler push` when the jam runs on itch.io.
 
 ## Related skills
 
-- `prototype-fast` — validate a mechanic quickly before committing jam hours to it.
-- `itch-publish` — create the page and upload the build (most jams are hosted on itch.io).
-- Engine cores (`phaser-core`, `love2d-core`, `godot-gdscript`, …) and genre skills
-  (`platformer`, `roguelike`, …) — build the actual loop the jam scopes around.
+- Engine cores (`phaser-core`, `love2d-core`, `godot-gdscript`, ...) and genre skills
+  (`platformer`, `roguelike`, ...) build the loop the jam scopes around.
+
+## Version notes
+
+Last verified: 2026-11-11. Rules change between editions; read the live page for the edition
+being entered.
+
+- **Ludum Dare:** Compo is solo, 48 hours, all content made during the event, source code
+  included. Jam is 72 hours, solo or team, any base code; third-party or older assets mean
+  opting out of the matching categories. Each event ends with one Submission Hour for
+  packaging; porting can follow. AI tools are allowed, but entries opt out of any category
+  where a generator did most (about 90%) of the work. Entries live on ldjam.com and link to
+  builds hosted elsewhere. The organiser has announced October 2028 as the last scheduled
+  event.
+- **GMTK Game Jam 2026** (itch.io, July 22 to 26, 2026): solo or team; must run on Windows or
+  in a browser with keyboard or mouse; generative AI for art or audio, in the game or on the
+  page, disqualifies the entry. Uploads lock for the five-day rating period, and linking to
+  another build disqualifies. The web uploader takes files up to 1 GB; larger builds go
+  through butler.
+- **Global Game Jam 2027:** jam week January 25 to 31, 2027; sites run their own 48-hour window
+  and deadline in local time. Teams choose their own licence and must upload an executable or
+  a browser link; the policies page no longer requires source code, but the older "Upload your
+  game" page still asks for it, so check your site's rules. No restriction on AI tools beyond
+  the existing copyright and IP policies.
+- Sources: [Ludum Dare rules](https://ldjam.com/events/ludum-dare/rules),
+  [Ludum Dare AI FAQ](https://ludumdare.com/resources/questions/can-i-use-ai),
+  [Ludum Dare end date (Game Developer)](https://www.gamedeveloper.com/production/ludum-dare-will-officially-end-in-october-2028),
+  [GMTK Game Jam 2026](https://itch.io/jam/gmtk-jam-2026),
+  [GGJ policies](https://globalgamejam.org/policies), [GGJ upload guide](https://globalgamejam.org/upload-your-game), [GGJ](https://globalgamejam.org/).

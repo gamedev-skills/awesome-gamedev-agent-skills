@@ -1,173 +1,212 @@
 ---
 name: procedural-gen
 description: >
-  Generate game content procedurally — seeded deterministic RNG, value/Perlin/
-  Simplex noise for terrain and heightmaps, grid dungeon generation (rooms +
-  corridors, BSP, random walk, wave function collapse), and weighted loot/drop
-  tables. Engine-neutral algorithms. Use when the user mentions procedural
-  generation, perlin/simplex noise, random seed, dungeon generator, WFC,
-  heightmap/terrain, or loot tables.
+  Engine-neutral procedural generation in Python with Godot and Unity mappings: seeded RNG,
+  dungeon layouts, wave function collapse, noise terrain and loot tables. Use for a dungeon
+  generator, WFC or Perlin terrain, or seeds that give different maps. Not for roguelike run
+  structure (`roguelike`), deckbuilders (`card-game`) or painting tiles (`godot-tilemap`,
+  `unity-tilemap-2d`).
 ---
 
 # Procedural generation
 
-Generate levels, terrain, and loot from compact rules and a seed. The throughline
-of good procgen is **determinism**: a single seed reproduces the same world, so
-bugs are repeatable and players can share seeds. This skill owns the core
-algorithms — noise, seeded RNG, dungeon layout, weighted tables; genres like
-`roguelike` and `survival-crafting` consume it.
+Generate levels, terrain and drops from rules and a seed. The property that matters most is
+**determinism**: one seed reproduces one world, so bugs replay and players can share seeds.
+This skill owns the algorithms and their validation; genre skills such as `roguelike` and
+`survival-crafting` decide what to generate and when.
 
 ## When to use
 
-- Use to generate maps, dungeons, terrain heightmaps, item drops, or any content
-  you do not want to author by hand.
-- Use when results must be **reproducible from a seed** (debugging, daily
-  challenges, shareable worlds).
-- Use to pick weighted random outcomes (loot rarity, spawn tables).
+- Map, dungeon, cave, terrain or item-drop generators, in any engine.
+- Results that must reproduce from a seed (debugging, daily challenges, shareable worlds).
+- Validating generated content: reachable rooms, a safe spawn, a path to the exit, no key behind
+  its own lock.
 
-**When *not* to use:** for the engine's tile API to *paint* the result, use
-`godot-tilemap` or `unity-tilemap-2d`. For routing AI through the generated map,
-use `game-ai`. For carefully hand-paced levels, use `level-design` — procgen and
-authored design are complementary, not interchangeable.
+**Not this skill:** run structure, permadeath and meta-progression (`roguelike`), deck and card
+pools (`card-game`), drawing tiles (`godot-tilemap`, `unity-tilemap-2d`), pathfinding over the
+result (`game-ai`), hand-paced levels (`level-design`).
 
 ## Core workflow
 
-1. **Own your randomness.** Create one seeded RNG instance and pass it
-   everywhere. Never call the global/static random in generation code — it makes
-   results irreproducible and order-dependent.
-2. **Pick the technique for the content.** Continuous terrain/heightmaps → noise.
-   Discrete rooms/corridors → space partitioning or agent-based carving.
-   Outcomes with rarities → weighted tables.
-3. **Generate into a plain data grid/array first**, decoupled from rendering.
-   Generation fills `int[][]` or a dict; a separate pass draws it.
-4. **Validate before shipping the result to the player.** Is every room
-   reachable? Is the spawn safe? Is there a path to the exit? Reject or repair
-   layouts that fail; do not hand the player a broken map.
-5. **Tune with the seed fixed** so each parameter change is visible in isolation,
-   then sweep seeds to check the distribution, not just one lucky map.
+1. **Own the randomness.** Create one seeded RNG and pass it to every function that makes a
+   choice. Global random calls make results depend on call order and on other systems.
+2. **Pick the technique for the content.** Continuous terrain: noise. Rooms and corridors: BSP
+   or placement plus a spanning tree. Caves: random walk or cellular automata. Tile adjacency
+   rules: WFC. Rarities: weighted tables.
+3. **Generate into plain data** (a grid of ints, a list of rooms), separate from rendering, so it
+   can be tested without the engine.
+4. **Validate every result**: flood-fill connectivity from the spawn, spawn safety, a path to the
+   exit, key order. Reject and regenerate with a derived seed, or repair.
+5. **Tune with the seed fixed** so each parameter change is visible, then sweep many seeds to
+   check the distribution and the failure rate.
+6. **Run the seed sweep** (Pattern 4) and report its numbers.
 
 ## Patterns
 
-### 1. Seeded, deterministic RNG (the foundation)
+### 1. Seeded RNG
 
 ```python
 import random
-rng = random.Random(seed)        # a dedicated instance — NOT the global random.*
-room_count = rng.randint(5, 12)  # same seed -> same sequence, every run
-# RIGHT: thread `rng` through every function that makes a choice.
-# WRONG: calling random.randint(...) (global state) — order-dependent, unseedable.
+rng = random.Random(seed)        # a dedicated instance, never the module-level random.*
+room_count = rng.randint(5, 12)
+sub = random.Random(rng.getrandbits(64))   # derive a child stream per system or per chunk
 ```
 
-Engine equivalents: Godot 4.7 `var rng := RandomNumberGenerator.new(); rng.seed = s`
-(save `rng.state` to resume a sequence mid-way); Unity 6.3
-`new Unity.Mathematics.Random(seed)` (a `uint`, must be non-zero) or
-`new System.Random(seed)`. Avoid `UnityEngine.Random.InitState` for generation:
-it seeds the one global generator that every other script also draws from.
-Store the seed in the save file so a world can be regenerated.
+Engine equivalents: Godot 4.7 `var rng := RandomNumberGenerator.new(); rng.seed = s` (save
+`rng.state` to resume mid-sequence); Unity `new Unity.Mathematics.Random(seed)` (a non-zero
+`uint`) or `new System.Random(seed)`. Avoid `UnityEngine.Random.InitState` for generation: it
+seeds the one global generator every other script also draws from. Derive child seeds per
+system (layout, loot, decoration) so adding a decoration roll does not reshuffle the layout.
 
-### 2. Fractal (fBm) noise for heightmaps
+### 2. A PRNG whose sequence you own
 
 ```python
-# Sum several octaves: each higher octave has higher frequency, lower amplitude.
-def fbm(noise, x, y, octaves=5, lacunarity=2.0, gain=0.5):
-    total, amp, freq, norm = 0.0, 1.0, 1.0, 0.0
-    for _ in range(octaves):
-        total += amp * noise(x * freq, y * freq)   # noise() returns ~0..1
-        norm  += amp                                # track total amplitude
-        amp   *= gain                               # each octave contributes less
-        freq  *= lacunarity                         # ...at a higher frequency
-    return total / norm                             # normalize back into 0..1
+class SplitMix64:
+    """Tiny PRNG whose sequence you own: same seed, same numbers, on every version."""
+    MASK = (1 << 64) - 1
 
-# Redistribute to carve flat valleys / sharpen peaks: higher exp -> more lowland.
-elevation = pow(fbm(noise, nx, ny), 2.2)
+    def __init__(self, seed: int):
+        self.state = seed & self.MASK
+
+    def next_u64(self) -> int:
+        self.state = (self.state + 0x9E3779B97F4A7C15) & self.MASK
+        z = self.state
+        z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & self.MASK
+        z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & self.MASK
+        return z ^ (z >> 31)
+
+    def below(self, n: int) -> int:            # 0 <= result < n, without modulo bias
+        limit = self.MASK - (self.MASK + 1) % n
+        while (x := self.next_u64()) > limit:
+            pass
+        return x % n
+
+# Pin the first outputs in a test so a refactor cannot change every shared seed.
+rng = SplitMix64(0)
+assert [rng.next_u64() for _ in range(3)] == [
+    0xE220A8397B1DCDAF, 0x6E789E6AA1B965F4, 0x06C45D188009454F]
 ```
 
-Use a real noise library (`FastNoiseLite`, `opensimplex`,
-`Unity.Mathematics.noise`, or `Mathf.PerlinNoise`) — do not implement gradient
-noise yourself. Seed **elevation and moisture with different seeds** so a
-biome lookup over both fields isn't perfectly correlated. Full biome lookup and
-island shaping are in `references/noise.md`.
+Use it when seeds must survive engine, runtime or library updates (daily challenges, seed-only
+saves, cross-platform shared seeds). Port the same arithmetic to C# with `ulong` or to GDScript
+with care: GDScript `int` is a signed 64-bit value, so mask shifts and compare as unsigned.
 
-### 3. Weighted loot table (rarity-correct selection)
+### 3. Weighted drop table
 
 ```python
-# Roll proportional to weight: common drops far more often than legendary.
-def weighted_pick(rng, table):           # table: list of (item, weight)
+def weighted_pick(rng, table):           # table: list of (item, weight); weights are relative
     total = sum(w for _, w in table)
-    roll = rng.uniform(0, total)          # a point on the cumulative line
+    roll = rng.uniform(0, total)
     upto = 0.0
     for item, w in table:
         upto += w
-        if roll < upto:                   # first bucket the roll falls into
+        if roll < upto:
             return item
     return next(i for i, w in reversed(table) if w > 0)  # roll == total (float edge)
-
-loot = weighted_pick(rng, [("common", 70), ("rare", 25), ("legendary", 5)])
 ```
 
-Weights need not sum to 100 — they are relative, and a weight of 0 never drops.
-Built-ins do the same job: Python `rng.choices(items, weights)`, Godot
-`rng.rand_weighted(PackedFloat32Array(weights))` (returns an index). To prevent
-bad streaks, use a "pity"/bag system (see `references/dungeon-generation.md`
-notes on distributions).
+Built-ins do the same: Python `rng.choices(items, weights)`, Godot
+`rng.rand_weighted(PackedFloat32Array(weights))` (returns an index). Pure rolls produce streaks;
+for a guaranteed rate use a bag or pity timer (`references/dungeon-generation.md`).
 
-### 4. Rooms-and-corridors dungeon (sketch)
+### 4. Seed sweep (determinism, connectivity, distribution)
 
 ```python
-# 1. Place non-overlapping rooms; 2. connect them; 3. carve into the grid.
-rooms = []
-for _ in range(attempts):
-    r = Rect(rng.randint(1, W-w-1), rng.randint(1, H-h-1), w, h)
-    if not any(r.intersects(o.expand(1)) for o in rooms):  # keep a 1-tile gap
-        rooms.append(r)
-for a, b in zip(rooms, rooms[1:]):       # connect each room to the next
-    carve_l_corridor(grid, a.center, b.center, rng)   # horizontal then vertical
+import hashlib, json, random, statistics
+
+def sweep(generate, seeds=range(200), spawn=None):
+    """generate(rng) -> grid (0 wall, 1 floor, solid border). Prints and returns a report."""
+    bad, ratios, digests = [], [], set()
+    for seed in seeds:
+        grid = generate(random.Random(seed))
+        if grid != generate(random.Random(seed)):
+            bad.append((seed, "not deterministic"))
+            continue
+        floor = [(x, y) for y, row in enumerate(grid) for x, v in enumerate(row) if v]
+        if not floor:
+            bad.append((seed, "no floor"))
+            continue
+        start = spawn(grid) if spawn else floor[0]
+        if len(reachable_floor(grid, start)) != len(floor):   # from dungeon-generation.md
+            bad.append((seed, "unreachable floor"))
+        ratios.append(len(floor) / (len(grid) * len(grid[0])))
+        digests.add(hashlib.sha1(json.dumps(grid).encode()).hexdigest())
+    report = {"seeds": len(seeds), "failure_count": len(bad), "failures": bad[:10],
+              "distinct_maps": len(digests),
+              "floor_ratio": (min(ratios), statistics.median(ratios), max(ratios)) if ratios else None}
+    print(report)
+    return report
+
+# report = sweep(lambda rng: drunkard(40, 30, rng)); raise SystemExit(report["failure_count"] > 0)
 ```
 
-The complete generator (BSP partitioning, L-corridors, reachability check, and
-random-walk caves) is in `references/dungeon-generation.md`.
+Run it twice in separate processes and compare the digests too: that catches hash-randomized
+set order and other per-process state that a same-process rerun cannot see. Add the checks your
+game needs (spawn not in a hazard, exit reachable, key before its door) as more `bad.append`
+lines.
 
-## Pitfalls
+## Check it
 
-- **Using the global RNG** inside generation makes worlds unreproducible and
-  breaks the moment call order changes. Always pass a seeded instance.
-- **Correlated noise fields**: sampling elevation and moisture from the *same*
-  seed/offset produces biomes that line up in bands. Offset or reseed each field.
-- **Octave artifacts**: adding octaves without renormalizing pushes values out of
-  `0..1`; divide by the summed amplitude (and beware library output ranges — some
-  return `-1..1`, some `0..1`).
-- **No connectivity check**: rooms or caves can end up isolated. Flood-fill from
-  the spawn and discard/reconnect unreachable regions before play.
-- **Unbounded placement loops**: "keep trying until N rooms fit" can spin forever
-  on a small grid. Cap attempts and accept fewer rooms.
-- **Seeding once globally, then relying on frame timing**: any non-deterministic
-  input (time, physics, hash randomization) leaking into generation destroys
-  reproducibility. A common hidden one: `rng.choice(list(some_set))` over
-  strings in Python, whose set order changes per process. Sort first.
-- **Seeds that stop matching after an update.** Library RNGs promise the same
-  sequence only on the same version: Python guarantees only `random()` across
-  versions (not `randint`/`choice`), .NET says `System.Random` may change
-  between major versions, and Godot calls its PCG32 an implementation detail.
-  If shared seeds, daily challenges or seed-only saves must survive updates,
-  ship your own small PRNG (PCG32, xorshift, SplitMix64) with a test that pins
-  its first outputs — or save the generated result instead of the seed.
-- **Flat noise at integer coordinates**: Perlin noise is 0 at every integer
-  lattice point, so sampling raw `noise(x, y)` (e.g. `Mathf.PerlinNoise`) at
-  whole tile coordinates returns the same value everywhere. Scale by a
-  non-integer frequency (`x / width * f`); libraries with a frequency setting,
-  such as FastNoiseLite, apply it for you.
+1. Run the seed sweep over at least 200 seeds: zero failures, and `distinct_maps` close to the
+   seed count (a low number means the seed is not reaching the generator).
+2. Run it again in a new process (`PYTHONHASHSEED` differs per run by default) and confirm the
+   same digests for the same seeds.
+3. If seeds are shared or saved, pin the first outputs of the PRNG in a test (Pattern 2).
+4. For engine-side generators, port the sweep to a headless test (Godot: follow
+   `godot-gdscript-headless-testing`) and print the same report.
+5. Ask the user to play a handful of named seeds and report any map that felt broken, samey or
+   unfair, with its seed, so you can replay it.
+
+## Gotchas
+
+- **Global RNG inside generation** makes worlds unreproducible the moment call order changes.
+- **Iterating a set or dict of strings** (Python `rng.choice(list(some_set))`) changes order per
+  process because of hash randomization. Sort first.
+- **Seeds that stop matching after an update.** Python guarantees only `random()` across
+  versions (not `randint` or `choice`), .NET says `System.Random` may change between major
+  versions, and Godot calls its PCG32 an implementation detail. Ship your own PRNG (Pattern 2)
+  or save the generated result instead of the seed.
+- **One stream for everything**: adding one decoration roll reshuffles every later room. Derive
+  per-system child seeds.
+- **Correlated noise fields**: elevation and moisture from the same seed and offset make biomes
+  line up in bands. Reseed or offset each field.
+- **Octave sums out of range**: divide by the summed amplitude, and know the library's range
+  (FastNoiseLite and `noise.snoise` are about -1..1, `Mathf.PerlinNoise` about 0..1).
+- **Flat noise at integer coordinates**: Perlin noise is 0 at every lattice point, so raw
+  `noise(x, y)` at whole tile coordinates is constant. Scale by a non-integer frequency;
+  FastNoiseLite applies its `frequency` (default 0.01) for you.
+- **No connectivity check**: isolated rooms and caves. Flood-fill from the spawn and reject or
+  reconnect, and re-check after smoothing passes, which can split regions.
+- **Unbounded placement loops** ("keep trying until N rooms fit") can spin forever on a small
+  grid. Cap attempts and accept fewer rooms.
+- **WFC contradictions on every run** usually mean asymmetric adjacency rules: if B may sit east
+  of A, A must be allowed west of B.
 
 ## References
 
-- `references/noise.md` — octaves/lacunarity/gain, redistribution, island
-  shaping, two-axis biome lookup, blue-noise object scatter.
-- `references/dungeon-generation.md` — BSP, rooms+corridors, random-walk caves,
-  cellular-automata smoothing, wave function collapse, connectivity validation,
-  distribution/pity tables.
+- `references/dungeon-generation.md`: read when implementing rooms and corridors, BSP,
+  drunkard's walk or cellular caves, wave function collapse, the `reachable_floor` flood fill,
+  or bag and pity distributions. Its Python is tested by the repo.
+- `references/noise.md`: read when building terrain or biomes: frequency, octaves,
+  redistribution, ridges and terraces, two-field biome lookup, island shaping, scatter
+  placement, and seamless wraparound.
 
 ## Related skills
 
-- `godot-tilemap`, `unity-tilemap-2d` — paint the generated grid into the engine.
-- `game-ai` — pathfinding over the generated graph.
-- `level-design` — pacing and hand-authored structure that procgen complements.
-- `roguelike`, `survival-crafting` — genres that compose this skill.
+- `roguelike`, `survival-crafting`: genres that decide what to generate and when.
+- `level-design`: authored pacing that generation complements, and the key-order check.
+- `godot-tilemap`, `unity-tilemap-2d`: painting the grid; `game-ai`: pathfinding over it.
+- `save-systems`: storing the seed and generator version, or the generated result.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Python `random`: only `random()` is guaranteed to repeat across versions for a given seed
+  (https://docs.python.org/3/library/random.html#notes-on-reproducibility).
+- .NET `System.Random`: the algorithm may change between major versions
+  (https://learn.microsoft.com/en-us/dotnet/api/system.random).
+- Godot 4.7 `RandomNumberGenerator`: PCG32 today, documented as an implementation detail;
+  `rand_weighted` exists; `FastNoiseLite.frequency` defaults to 0.01
+  (https://github.com/godotengine/godot/blob/4.7-stable/doc/classes/RandomNumberGenerator.xml).
+- The seed sweep and SplitMix64 outputs were run on Python 3.12.

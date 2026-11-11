@@ -1,20 +1,18 @@
 ---
 name: defold-core
 description: >
-  Build and debug the core of a Defold game in Lua: game.project settings, collections, game
-  objects and components, script lifecycle and self state, go.property, input focus and
-  bindings, URLs and message passing, factories, collection factories and collection
-  proxies, plus building and smoke-running with Bob. Use when a project has game.project or
-  .collection, .go, .script, .gui_script or .input_binding files, or the request mentions
-  Defold, msg.post, on_message, on_input, acquire_input_focus, factory.create, collection
-  proxy, bob.jar, or a Defold build error.
+  Builds and debugs Defold 1.14 games in Lua: collections, game objects, input focus, msg.post
+  messaging, factories, collection proxies and Bob builds. Use for .collection or .script files,
+  on_input never firing, a proxy that never loads, or "could not be found when dispatching
+  message". Not for LÖVE (`love2d-core`), HUD rules (`game-ui-ux`) or physics feel
+  (`physics-tuning`).
 ---
 
 # Defold Core
 
 Structure, wire and verify a Defold game: editor resource files, the Lua script lifecycle,
 addressing and messages, runtime spawning and world loading, and a Bob build-and-run check.
-Examples target **Defold 1.14.0**; they were built with Bob 1.14.0 and run on the 1.14.0
+Examples target **Defold 1.14.1**; they were built with Bob 1.14.1 and run on the 1.14.1
 headless engine. An existing project keeps its Defold version (see [Version](#version)).
 
 ## When to use
@@ -51,8 +49,9 @@ handled by the related skills below.
    (`references/build-and-run.md`) and read the log: `ERROR:SCRIPT:` lines are Lua runtime
    errors, `ERROR:GAMEOBJECT:` lines bad addresses or socket clashes. Require a line your
    test prints when it finishes; the exit code alone proves nothing. The headless engine has
-   no keyboard or mouse, so check input changes in the editor or a desktop build, and say
-   what you could not verify.
+   no keyboard, mouse or screen, so for input, rendering or layout changes ask the user to
+   run the game (editor **Project ▸ Build**, or the desktop bundle from the reference) and
+   report what they see, and say what you could not verify.
 
 ## Patterns
 
@@ -145,7 +144,9 @@ boolean, hash, `msg.url`, `vmath.vector3`/`vector4`, `vmath.quat`, resources suc
 gamepad, touch and text triggers). Every component that acquired focus sits on an input
 stack; the last to acquire is on top and gets input first, and returning `true` from
 `on_input` stops it there, which is how pause menus block gameplay input. Key actions report
-`pressed` and `released`; track held keys yourself as above.
+`pressed` and `released`; track held keys yourself as above. Since 1.14.1, `action.source`
+is a hash (`mouse`, `touch`, `keyboard`, `gamepad`, `text` or `accelerometer`), which tells a
+real mouse click from one simulated by touch.
 
 ### Addressing and messages
 
@@ -216,7 +217,7 @@ project is built with (CI often pins a release sha1), and `library.defold_min_ve
 project is a library. `java -jar bob.jar --version` prints the version and sha1. Keep that
 version; do not migrate unless asked.
 
-## Pitfalls
+## Gotchas
 
 - **Bob: `the bootstrap.main_collection '/main/main.collectio' can't be found`** → the
   setting lacks the compiled suffix and Bob stripped the last letter. Write
@@ -237,6 +238,11 @@ version; do not migrate unless asked.
 - **`module 'modules.util' not found` at run time although Bob succeeded** → a `require` used
   slashes (`require "modules/util"`). Use the dotted path from the project root,
   `require "modules.util"` for `/modules/util.lua`.
+- **An HTML5 build shows a black screen or shader errors only on old WebGL 1 devices, after
+  moving to 1.14.1** → 1.14.1 stopped compiling GLES 2.0 / WebGL 1 shaders by default. Set
+  `[shader] exclude_gles_sm100 = 0` in `game.project` if the game must still run there.
+- **Bob fails at once with `UnsupportedClassVersionError … class file version 69.0`** →
+  Bob 1.14.x needs Java 25; an older JDK is on the `PATH`.
 - **`tostring(id)` prints `hash: [<unknown:…>]`** → hashes keep their source text only in
   debug builds. Compare hashes, never their strings.
 - **A second engine logs `Failed to initialize Remotery`, or a test run never ends** → the
@@ -245,13 +251,15 @@ version; do not migrate unless asked.
 
 ## References
 
-- `references/file-formats.md` — verified minimal `game.project`, `.collection`, `.go`,
-  `.atlas`, `.input_binding` and script files, and how to trace build errors back to a
-  source file; read before writing editor files by hand.
-- `references/build-and-run.md` — JDK 25 and `bob.jar`, Bob commands, platforms and
-  variants, a headless smoke test with timeout and log checks, and pointers for GUI,
-  sprites, tilemaps and collision objects.
-- `scripts/check_defold_project.py` — read-only reference checker; `--help` lists every check.
+- Read `references/file-formats.md` before writing or repairing editor files by hand, or
+  when a Bob error names a generated file: verified minimal `game.project`, `.collection`,
+  `.go`, `.atlas`, `.input_binding` and script files, and how to trace errors to a source.
+- Read `references/build-and-run.md` when you build, bundle or smoke-test: Java and
+  `bob.jar` downloads, Bob commands, platforms and variants, the headless smoke test with
+  timeout and log checks, ports, and manual pointers for GUI, sprites, tilemaps and
+  collision objects.
+- Run `scripts/check_defold_project.py` after editing resource files (workflow step 3);
+  `--help` lists every check.
 
 ## Related skills
 
@@ -263,3 +271,24 @@ version; do not migrate unless asked.
 - `game-feel` — juice built from `go.animate` and timers.
 - `platformer`, `level-design` — genre and layout guidance that binds to this skill.
 - `love2d-core` — the other Lua engine in this catalog, for LÖVE projects.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Defold 1.14.1 became the stable release on 2026-11-10 (sha1
+  `ee283d4dad9fa451dd6399d83602e1dc25133681`); 1.14.0 was released on 2026-10-12.
+- 1.14.1 changes that touch this skill: GLES 2.0 / WebGL 1 shaders are excluded by default
+  (`[shader] exclude_gles_sm100` now defaults to 1), `action.source` in `on_input`, and the
+  debug and headless engines print an OpenAPI URL for their engine service at startup.
+- Bob 1.14.1 needs OpenJDK 25 (its classes are version 69).
+- The example project in the references (player, factory, collection factory, proxy-loaded
+  level), the smoke bundle and the quoted build and runtime errors were rebuilt with Bob
+  1.14.1 and run on the 1.14.1 `dmengine_headless` with Temurin 25.0.5 on Linux x86_64.
+  `action.source` was not run (the headless engine has no input); it comes from the
+  release notes.
+- Sources: [stable info.json](https://d.defold.com/stable/info.json),
+  [1.14.1 release](https://github.com/defold/defold/releases/tag/1.14.1),
+  [1.14.1 release notes (beta post)](https://forum.defold.com/t/defold-1-14-1-beta/83389),
+  [GLES 2.0 default change (PR #13543)](https://github.com/defold/defold/pull/13543),
+  [Bob manual](https://defold.com/manuals/bob/).

@@ -1,7 +1,20 @@
 # Rendering
 
-API baseline: Ebitengine v2.10.5. Snippets illustrate individual patterns; add the
+API baseline: Ebitengine v2.10.6. Snippets illustrate individual patterns; add the
 imports, initialization and validation required by the project.
+
+## Contents
+
+- [Images are GPU resources](#images-are-gpu-resources)
+- [Transforms](#transforms)
+- [Sprite sheets and animation](#sprite-sheets-and-animation)
+- [Colour and blending](#colour-and-blending)
+- [Shapes](#shapes)
+- [Camera](#camera)
+- [Tilemaps](#tilemaps)
+- [Layers and offscreens](#layers-and-offscreens)
+- [Screen size, scaling and HiDPI](#screen-size-scaling-and-hidpi)
+- [Performance checklist](#performance-checklist)
 
 ## Images are GPU resources
 
@@ -198,7 +211,7 @@ under smooth UI). Create it once; recreate it only when its size must change.
 | Fixed-size design that scales smoothly | a fixed size, e.g. 1280×720 | letterboxed; `FilterLinear` for art |
 | UI that uses all the space | the outside size | layout code must handle any size |
 
-Start with the default final-screen renderer. In v2.10.5 it uses nearest
+Start with the default final-screen renderer. In v2.10.6 it uses nearest
 sampling at integer scales, `FilterPixelated` for fractional enlargement, and
 linear filtering for shrinking. This preserves the engine's matching input
 transform. Test the actual window sizes and device scale factors you support.
@@ -254,10 +267,10 @@ culling silently stop gameplay. These are conditional applications of
 rather than requirements to add pooling, LOD or an ECS before measuring.
 For engine-neutral profiling and budgeting, pair this with `performance-optimization`.
 
-For art-set/sprite registration checks, see [Assets and animation](assets-and-animation.md).
+For art-set/sprite registration checks, see the assets-and-animation reference.
 For Kage, consult the pinned engine's shader documentation or its
 `writing-kage-shaders` skill when available.
 
-Source contracts: [default final-screen renderer](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/gameforui.go),
-[input coordinate conversion](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/internal/ui/context.go),
+Source contracts: [default final-screen renderer](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/gameforui.go),
+[input coordinate conversion](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/internal/ui/context.go),
 and [performance guidance](https://ebitengine.org/en/documents/performancetips.html).

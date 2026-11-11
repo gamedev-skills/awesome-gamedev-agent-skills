@@ -4,6 +4,12 @@ Depth for `unreal-behavior-trees`: writing a custom Behavior Tree task node in C
 against the Behavior Trees documentation and the `UBTTaskNode` API. Requires the `AIModule`
 dependency in `*.Build.cs`.
 
+Contents:
+- Instant task (returns immediately)
+- Latent task (finishes over time, per-AI node memory, `AbortTask`)
+- Reading and writing typed Blackboard values
+- Notes: node names, owner access, key selectors, custom services and decorators
+
 ## Instant task (returns immediately)
 
 ```cpp

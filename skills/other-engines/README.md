@@ -1,6 +1,6 @@
 # Other engine skills
 
-Twelve Agent Skills for Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.0, and Roblox. Roblox
+Twelve Agent Skills for Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.1, and Roblox. Roblox
 coverage includes Luau, persistence, UI, networking, characters, physics, Studio workflow, and
 simulator economy balancing.
 

@@ -1,8 +1,9 @@
 # Discipline skills
 
-Cross-engine Agent Skills organized by game-development discipline — for example
-art direction and asset production, gameplay programming, physics, AI, audio,
-shaders/graphics, UI/UX, tools, and performance optimization.
+Cross-engine Agent Skills organized by game-development discipline: art direction
+and asset production, AI and behavior trees, procedural generation, dialogue,
+saves, audio, shaders, physics tuning, level design, input, game feel, cameras,
+HUD and menu design, and performance.
 
 Each subdirectory is one skill: a folder containing a `SKILL.md` (and optional
 `references/`, `scripts/`, `assets/`, and `agents/`). Folder name must equal the

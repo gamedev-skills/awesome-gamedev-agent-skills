@@ -1,135 +1,145 @@
 ---
 name: godot-gdscript
 description: >
-  Write idiomatic GDScript for Godot 4.7: static typing, the node lifecycle
-  (_ready/_process/_physics_process), @export/@onready/@tool annotations,
-  signals, and await for asynchronous flow. Use when editing .gd scripts in a
-  Godot project (project.godot), writing or debugging GDScript, or porting 3.x
-  GDScript to 4.x (function signatures, yield to await, export to @export).
+  GDScript 2.0 for Godot 4.7: static typing, @export and @onready, await and coroutines, and
+  porting 3.x code. Use for .gd parse errors ("Cannot infer the type"), a coroutine that never
+  resumes, a null @onready variable or upgrade breakage. Not for signals (`godot-signals-groups`),
+  scenes (`godot-nodes-scenes`), C# (`godot-csharp`) or CI tests
+  (`godot-gdscript-headless-testing`).
 ---
 
 # Godot GDScript (4.x)
 
-Write correct, statically typed GDScript and use the node lifecycle and signal
-system the way the engine intends. Targets **Godot 4.7** (GDScript 2.0).
+Write typed GDScript that parses on the project's Godot version and behaves the way the
+engine schedules it, then prove every script compiles. Targets **Godot 4.7**; read
+`config/features` in `project.godot` and keep an older project on its own version.
 
-## When to use
+## Workflow
 
-- Use when writing or fixing `.gd` files: declaring variables, functions, classes,
-  using `@export`/`@onready`, connecting signals, or awaiting coroutines/signals.
-- Use when porting Godot 3.x scripts to 4.x and the script no longer parses.
-
-**When *not* to use:** scene/node structure and instancing questions →
-`godot-nodes-scenes`; signal *architecture*/decoupling patterns →
-`godot-signals-groups`; using C# instead of GDScript → `godot-csharp`.
-
-## Core workflow
-
-1. **Type everything you can.** GDScript 2.0 supports static types
-   (`var hp: int = 10`, `func add(a: int, b: int) -> int:`). Types catch errors at
-   parse time and speed up the VM. Use `:=` for inferred types.
-2. **Use the lifecycle callbacks for their purpose:** `_ready()` once when the node
-   and its children enter the tree; `_process(delta)` every rendered frame;
-   `_physics_process(delta)` on the fixed physics tick (use it for movement/physics).
-3. **Grab node references with `@onready`**, not in `_init()` — children do not exist
-   until the node enters the tree.
-4. **Expose tunables with `@export`** so designers edit them in the Inspector.
-5. **React to events with signals + `await`**, not polling, where it reads cleanly.
-6. **Run and read errors.** The Debugger panel prints typed errors with line numbers;
-   fix the first error first (later ones are often cascades).
+1. **Match the project's version and settings.** Check `config/features` and any
+   `debug/gdscript/warnings/*` entries in `project.godot`: a warning set to Error (2) fails the
+   parse, and `inference_on_variant` is an error by default.
+2. **Type by default.** Annotate members, parameters and returns; use `:=` only when the
+   right side has a static type (see Gotchas). Typed code catches mistakes at parse time and
+   runs faster.
+3. **Put code in the right callback.** `_init()`: no tree, no children. `_ready()`: after
+   the children, only the first time the node enters the tree (`request_ready()` re-arms
+   it). `_physics_process()`: movement and physics. `_process()`: visuals and UI.
+4. **Write coroutines defensively.** Anything after `await` may run frames later, or never.
+5. **Verify before you finish** (paths are relative to this skill's folder):
+   - On a fresh checkout, import first: `godot --headless --path <project> --import`.
+   - Run `godot --headless --path <project> --script <this skill>/assets/check_scripts_compile.gd`.
+     It loads every `.gd` with autoloads and `class_name` types registered; exit 1 lists each
+     `BROKEN` file under the engine's parse error and line. Fix the first error in a file
+     first; later ones are often follow-ons.
+   - Run the main scene briefly and read the log, because Godot exits 0 after runtime errors:
+     `godot --headless --path <project> --quit-after 300 > run.log 2>&1`, then
+     `grep -nE "SCRIPT ERROR|^ERROR:" run.log`.
+   - For behaviour, write a test with `godot-gdscript-headless-testing`. If
+     `godot-nodes-scenes` is installed,
+     `python3 ../godot-nodes-scenes/scripts/check_godot_project.py <project>` catches broken
+     `preload()`/`load()` paths.
 
 ## Patterns
 
-### 1. A typed script with lifecycle, @export, and @onready
+### 1. A typed node script
 
 ```gdscript
+class_name Spinner
 extends Node2D
-class_name Spinner            # registers a global type usable in other scripts
 
-@export var speed: float = 90.0          # editable in the Inspector (degrees/sec)
-@export_range(0, 10, 0.5) var wobble := 2.0
-@onready var sprite: Sprite2D = $Sprite2D # resolved when the node enters the tree
+@export var speed_deg: float = 90.0
+@export_range(0.0, 10.0, 0.5) var wobble := 2.0
+@onready var sprite: Sprite2D = $Sprite2D   # resolved just before _ready()
 
 func _ready() -> void:
-    # Runs once, after children are ready. Safe to touch $Sprite2D here.
     sprite.modulate = Color.AQUA
 
 func _process(delta: float) -> void:
-    # delta is seconds since last frame; multiply rates by it for FPS independence.
-    rotation_degrees += speed * delta
+    rotation_degrees += speed_deg * delta
 ```
 
-### 2. Signals: declare, emit, connect (4.x Callable syntax)
+### 2. Typing values that come back as Variant
 
 ```gdscript
-extends Node
+var scores: Dictionary[String, int] = {}      # typed dictionary, 4.4+
 
-signal health_changed(current: int, maximum: int)   # typed signal params
+func best(name: String) -> int:
+    var s: int = scores.get(name, 0)          # get() returns Variant: annotate, don't :=
+    return s
 
-var health := 100
-
-func take_damage(amount: int) -> void:
-    health = maxi(health - amount, 0)    # maxi/maxf are typed; max() returns Variant
-    health_changed.emit(health, 100)     # 4.x: emit as a method on the signal
-
-func _ready() -> void:
-    # 4.x: connect with a Callable, not a string method name.
-    health_changed.connect(_on_health_changed)
-
-func _on_health_changed(current: int, maximum: int) -> void:
-    print("HP: %d/%d" % [current, maximum])
+func label_text() -> String:
+    var label := get_node_or_null("UI/Score") as Label   # returns Node: cast to type it
+    return label.text if label else ""
 ```
 
-### 3. await — pause until a timer or signal fires (replaces 3.x yield)
+### 3. A coroutine that survives its node being freed
 
 ```gdscript
-func flash_then_continue() -> void:
+func flash() -> void:
     modulate = Color.RED
-    await get_tree().create_timer(0.2).timeout   # resume after 0.2s
+    await get_tree().create_timer(0.2).timeout
+    if not is_inside_tree():
+        return          # removed while we waited (a freed node never gets here at all)
     modulate = Color.WHITE
-    # await any signal: var result = await some_node.some_signal
 ```
 
-### 4. Lambdas, typed arrays, and safe access
+## Gotchas
 
-```gdscript
-var enemies: Array[Node] = []                    # typed array
-
-func cull_dead() -> void:
-    enemies = enemies.filter(func(e): return e.is_inside_tree())
-
-func get_first_name(d: Dictionary) -> String:
-    return d.get("name", "unknown")              # default avoids missing-key errors
-```
-
-## Pitfalls
-
-- **3.x → 4.x signal API changed.** `emit_signal("x")` still works but prefer
-  `x.emit(...)`; `connect("x", self, "_on_x")` is gone — use `x.connect(_on_x)` with a
-  Callable. `yield(obj, "sig")` is now `await obj.sig`.
-- **`export var` is now `@export var`** (annotation). Likewise `onready`→`@onready`,
-  `tool`→`@tool`, `remote`/`master` RPC keywords → the `@rpc(...)` annotation.
-- **`@onready` and `$NodePath` in `_init()` fail** — the node isn't in the tree yet.
-  Initialize node references in `_ready()` or with `@onready`.
-- **Integer division truncates.** `5 / 2 == 2`. Use `5.0 / 2` or cast to `float`.
-- **`_process` vs `_physics_process`.** Put `move_and_slide()` and physics in
-  `_physics_process(delta)`; using `_process` makes motion frame-rate dependent.
-- **`class_name` must be unique** project-wide and is required to use the type name in
-  other scripts or as an Inspector type.
-- **An override stops parsing after upgrading to 4.7** → since 4.7 an overriding method
-  inherits the parent's typed return, so every path must `return` a value (add
-  `return null` at the end if needed). Also new in 4.7: setting one element of a packed
-  array property (`points[0] = v`) no longer calls that property's setter; reassign the
-  whole array if the setter must run.
+- **`Cannot infer the type of "x" variable because the value doesn't have a set type`** →
+  `:=` got a Variant: an untyped function's return, an untyped `Dictionary`/`Array`
+  subscript, or a member of a value typed as a base class (`get_node("X").position`, since
+  `get_node()` returns `Node`). Write the type (`var p: Vector2 = ...`) or cast with `as`.
+- **`The variable type is being inferred from a Variant value`** → `max()`, `min()`,
+  `clamp()` and `abs()` return Variant, and this warning is an error by default. Use `maxi`,
+  `maxf`, `clampf`, `absf` and friends.
+- **Code after `await` never runs, with no error** → the object that emits the signal was
+  freed first (a `Timer` node, an enemy), or the awaiting node itself was freed. The
+  coroutine is dropped silently, so cleanup and `quit()` after it never happen. Await
+  `SceneTreeTimer`s for delays and check validity after waking (Pattern 3).
+- **`Identifier "X" not declared in the current scope` on a fresh clone or in CI** → the
+  `class_name` cache in `.godot/` does not exist yet. Run `--import` once.
+- **`--check-only` reports `Identifier not found: SomeAutoload`** → `--check-only` parses one
+  file without registering autoloads, so any script that names an autoload fails. Use the
+  bundled compile check instead.
+- **`Not all code paths return a value` after upgrading to 4.7** → an override now inherits
+  the parent method's return type even when it does not declare one. Return on every path.
+- **A setter stopped running after upgrading to 4.7** → assigning one element of a packed
+  array property (`points[0] = v`) no longer calls that property's setter. Reassign the
+  whole array.
+- **`@onready` variable is null** → the node path is wrong, or code ran before `_ready()`
+  (for example from `_init()` or a setter during scene load). Use `%UniqueName` for deep
+  nodes.
+- **`5 / 2 == 2`** → integer division truncates; write `5 / 2.0` or `float(a) / b`.
+- **3.x scripts do not parse** → `export`, `onready`, `tool` and `yield(obj, "sig")` became
+  `@export`, `@onready`, `@tool` and `await obj.sig`; `setget` became `set`/`get` blocks.
+  Signal `connect()` changes are in `godot-signals-groups`.
 
 ## References
 
-- For the full annotation list, advanced typing, and style conventions, read
-  `references/annotations-and-typing.md`.
+- Read `references/annotations-and-typing.md` for every `@export_*` variant, the other
+  annotations (`@tool`, `@icon`, `@rpc`, `@warning_ignore`, `@export_tool_button`,
+  `@export_storage`, `@abstract`), typed collections, and the full lifecycle order.
+- `assets/check_scripts_compile.gd` is the compile check used in step 5.
 
 ## Related skills
 
-- `godot-nodes-scenes` — the scene tree, instancing, and autoloads.
-- `godot-signals-groups` — event-driven architecture with signals and groups.
-- `godot-resources` — data-driven design with custom `Resource` types.
-- `godot-csharp` — the same engine concepts using C#/.NET.
+- `godot-signals-groups`: signals, Callables and groups.
+- `godot-nodes-scenes`: scene trees, instancing, autoloads and node paths.
+- `godot-resources`: custom `Resource` classes with `class_name`.
+- `godot-gdscript-headless-testing`: test runners and CI.
+- `godot-csharp`: the same engine through C#.
+
+## Version notes
+
+Last verified: 2026-11-11 against the Godot 4.7.2 class reference, the 4.7 migration guide
+and a 4.7.2 headless run.
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- Typed dictionaries exist since 4.4; `@abstract` classes and methods since 4.5.
+- 4.7 behaviour changes: override return-type inheritance, and packed-array element writes
+  no longer calling the property setter.
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Upgrading to Godot 4.7](https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.7.html),
+  [Static typing in GDScript](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/static_typing.html),
+  [GDScript warning settings](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/warning_system.html).

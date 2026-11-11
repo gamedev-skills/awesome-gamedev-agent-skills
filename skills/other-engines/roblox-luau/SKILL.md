@@ -1,212 +1,201 @@
 ---
 name: roblox-luau
 description: >
-  Script a Roblox experience in Luau: get services, create and parent Instances,
-  connect events, run server Scripts vs client LocalScripts, and communicate across
-  the client/server boundary with RemoteEvents/RemoteFunctions (server-authoritative).
-  Use when building or debugging Roblox Studio scripts — when the user mentions
-  Roblox, Luau, services, RemoteEvent, Instance.new, PlayerAdded, or client vs
-  server. For saving player data use roblox-datastores.
+  Roblox Luau scripting and code structure: services, Instances, Script vs LocalScript vs
+  ModuleScript, the task library and typed Luau, with selene and luau-lsp checks. Use when a
+  LocalScript does not run, a client gets nil after joining or wait() needs replacing. Not for
+  remotes (`roblox-networking`), saving (`roblox-datastores`) or live-place edits
+  (`roblox-studio-workflow`).
 ---
 
-# Roblox Luau Scripting
+# Roblox Luau scripting
 
-Script a Roblox experience in **Luau**: services, `Instance`s, events, the
-server/client split, and secure cross-boundary communication. Targets the current
-Roblox engine and Studio.
+Write Luau that runs in the right place, cleans up after itself, and passes static checks before
+anyone presses Play. Remote events appear here only as basic mechanics; contract design and
+validation belong to `roblox-networking`.
 
-## When to use
+## Workflow
 
-- Use when writing Roblox scripts: getting services, creating/parenting instances,
-  connecting events, deciding server vs client, or wiring `RemoteEvent`/
-  `RemoteFunction` communication.
-- Use when the project has `Script`/`LocalScript`/`ModuleScript` objects, `.rbxl(x)`
-  places, or a Rojo `*.project.json`, and code calls `game:GetService(...)`.
+1. **Read the project setup first.** Rojo `*.project.json`, `selene.toml`, `.luaurc`, Wally or
+   pesde manifests, and the place's `Workspace.SignalBehavior` and `LuauTypeCheckMode`. Follow the
+   existing module layout and naming instead of inventing a new one.
+2. **Decide where the code runs** (table below). Check `RunContext` on any `Script` before
+   assuming it is server code.
+3. **Get services with `game:GetService("Name")`** at the top of the file, not by indexing `game`.
+4. **Create Instances deliberately.** Set properties, then `Parent` last, so the Instance
+   replicates once in its final state and change handlers do not fire for every property.
+5. **Own every connection.** Store what `:Connect` returns and disconnect it with the object or
+   screen that created it; use `:Once` for one-shot handlers.
+6. **Share code through ModuleScripts.** A module runs once per context (server, and each client
+   separately) and `require` returns the cached result, so module-level state is per context, never
+   shared between server and client.
+7. **Check before reporting.** Run the project's static tools (below). With the Studio MCP server
+   connected, `start_stop_play`, exercise the change with `execute_luau` on the matching datamodel,
+   then read `get_console_output` and report any new error or warning. Without it, ask the user to
+   press Play and paste the Output, from both the server and client views when both sides changed.
 
-**When *not* to use:** persisting data across sessions → `roblox-datastores`.
-Remote protocol architecture, exploit hardening, rate limits, high-frequency replication, and
-multi-client abuse testing → `roblox-networking`. Generic Lua questions unrelated to the Roblox
-API. Engine-agnostic input/save architecture → `input-systems` / `save-systems`.
+### Static checks the agent can run
 
-## Core workflow
+```bash
+selene .                                      # root selene.toml needs std = "roblox"
+rojo sourcemap default.project.json --output sourcemap.json
+luau-lsp analyze --sourcemap=sourcemap.json src   # add Roblox type definitions; see --help
+```
 
-1. **Get services with `game:GetService("Name")`.** Common ones: `Players`,
-   `Workspace`, `ReplicatedStorage` (shared client+server), `ServerScriptService`
-   (server-only code), `ServerStorage`, `RunService`, `UserInputService` (client).
-2. **Know where code runs.** A `Script` runs on the **server**; a `LocalScript`
-   runs on a **client** (in `StarterPlayerScripts`, `StarterGui`, or the player's
-   character). A `Script` whose `RunContext` is `Client` also runs on clients, from
-   `ReplicatedStorage`; check `RunContext` before deciding where a `Script` runs. A
-   `ModuleScript` is shared code you `require`.
-3. **Create instances deliberately.** `local p = Instance.new("Part")`, set its
-   properties, then set `p.Parent` **last** (parenting triggers replication).
-4. **React with events.** `:Connect` to signals like `Players.PlayerAdded`,
-   `part.Touched`, or `RunService.Heartbeat`. Disconnect when done to avoid leaks.
-5. **Cross the client/server boundary with Remotes — and never trust the client.**
-   Clients request via `RemoteEvent:FireServer(...)`; the server validates and
-   applies. The server is authoritative for all game state.
-6. **Test in Studio** with **Test** / **Test Here** / **Server & Clients**; use the
-   Output window and the Client/Server toggle to confirm where code ran.
-7. **Run static checks before Studio when the project already has the tools.** Put
-   `std = "roblox"` in the root `selene.toml`, then run `selene .`.
-   For a Rojo project, write the sourcemap once with
-   `rojo sourcemap default.project.json --output sourcemap.json`, then run
-   `luau-lsp analyze --sourcemap=sourcemap.json src`, passing the Roblox type definitions
-   with `--definitions` (`luau-lsp analyze --help` lists the flags). Studio Script Sync
-   projects may not have a sourcemap.
+Run only the tools the project already uses. Studio Script Sync projects may not have a sourcemap.
+
+## Where code runs
+
+| Container | Runs | Use for |
+|---|---|---|
+| `ServerScriptService` | server `Script`s | authoritative logic; never replicated |
+| `ServerStorage` | not run; server-only storage | assets and data clients must not see |
+| `ReplicatedStorage` | `Script` with `RunContext = Client` runs here on clients | remotes, shared modules and assets |
+| `StarterPlayerScripts` | `LocalScript`, once per player | persistent client systems |
+| `StarterCharacterScripts` | `LocalScript`, once per character | per-character client logic |
+| `StarterGui` | `LocalScript` in UI, cloned to `PlayerGui` | UI behavior |
+
+A `LocalScript` in `Workspace` (outside the player's character) or `ServerScriptService` never runs.
+A `Script` with `RunContext = Client` inside a `Starter*` container runs twice (the original and the
+clone), so keep those in `ReplicatedStorage`.
 
 ## Patterns
 
-### 1. Server Script: react to players joining (leaderstats)
+### Server Script: per-player setup that also covers early joiners
 
 ```lua
--- ServerScriptService/Leaderboard.server.luau  (a Script = runs on the server)
+-- ServerScriptService/Leaderboard.server.luau
 local Players = game:GetService("Players")
 
 local function onPlayerAdded(player: Player)
     local stats = Instance.new("Folder")
-    stats.Name = "leaderstats"          -- this name makes it show on the leaderboard
-
+    stats.Name = "leaderstats"          -- this exact name shows on the default leaderboard
     local coins = Instance.new("IntValue")
     coins.Name = "Coins"
-    coins.Value = 0
     coins.Parent = stats
-
-    stats.Parent = player               -- parent LAST
+    stats.Parent = player               -- parent last
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
+for _, player in Players:GetPlayers() do  -- players who joined before this script connected
+    task.spawn(onPlayerAdded, player)
+end
 ```
 
-### 2. Create and configure an instance
+### Connection owned by its object
 
 ```lua
-local Workspace = game:GetService("Workspace")
-
-local part = Instance.new("Part")
-part.Size = Vector3.new(4, 1, 4)
-part.Position = Vector3.new(0, 10, 0)
-part.Anchored = true                    -- won't fall under gravity
-part.BrickColor = BrickColor.new("Bright blue")
-part.Parent = Workspace                 -- set Parent last so it replicates once, fully
-```
-
-### 3. Connect an event (and disconnect to avoid leaks)
-
-```lua
-local debounce = false
-local connection
-connection = part.Touched:Connect(function(hit: BasePart)
-    local character = hit.Parent
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if not humanoid or debounce then return end
-    debounce = true
-    humanoid.Health -= 10
-    task.wait(1)                        -- task.wait, NOT the deprecated wait()
-    debounce = false
+local touchedOnce: {[Humanoid]: boolean} = {}
+local connection = part.Touched:Connect(function(hit: BasePart)
+    local humanoid = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+    if not humanoid or touchedOnce[humanoid] then return end
+    touchedOnce[humanoid] = true
+    humanoid:TakeDamage(10)
+    task.delay(1, function() touchedOnce[humanoid] = nil end)
 end)
-
--- Later, when the part is removed or the round ends:
--- connection:Disconnect()
+part.Destroying:Once(function() connection:Disconnect() end)
 ```
 
-### 4. Client → server with a RemoteEvent (validate on the server!)
+A single shared `debounce` boolean blocks every other player while one is touching; key it by the
+thing being debounced.
+
+### Basic remote mechanics
 
 ```lua
--- ReplicatedStorage: create a RemoteEvent named "BuyItem" (in Studio or via code).
--- CLIENT (LocalScript): request a purchase. The client can lie — this is only a request.
+-- LocalScript: request only. The client can send anything.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local buyItem = ReplicatedStorage:WaitForChild("BuyItem")  -- wait: may not have replicated yet
-buyButton.MouseButton1Click:Connect(function()
-    buyItem:FireServer("sword")        -- send the item id only; never the price/result
-end)
+local buyItem = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BuyItem")
+buyButton.Activated:Connect(function() buyItem:FireServer("sword") end)
 ```
 
 ```lua
--- SERVER (Script): the ONLY place the transaction is decided.
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local buyItem = ReplicatedStorage:WaitForChild("BuyItem")
+-- Script: the server looks up the price and decides.
 local PRICES = { sword = 100, shield = 75 }
-
-buyItem.OnServerEvent:Connect(function(player: Player, itemId)
-    -- TRUST NOTHING from the client. Validate types and values.
+buyItem.OnServerEvent:Connect(function(player: Player, itemId: unknown)
     if type(itemId) ~= "string" then return end
     local price = PRICES[itemId]
-    if not price then return end                         -- unknown item
-    local coins = player.leaderstats.Coins
-    if coins.Value < price then return end               -- can't afford
-    coins.Value -= price                                 -- server applies the change
+    local coins = player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Coins")
+    if not price or not coins or coins.Value < price then return end
+    coins.Value -= price
     grantItem(player, itemId)
 end)
 ```
 
-### 5. A per-frame loop with RunService
+Rate limits, Instance arguments, yields inside handlers, and multi-client testing: `roblox-networking`.
+
+### Frame loop and shared module
 
 ```lua
 local RunService = game:GetService("RunService")
--- Heartbeat fires every frame AFTER physics; dt is seconds since the last step.
-RunService.Heartbeat:Connect(function(dt)
-    spinner.CFrame *= CFrame.Angles(0, math.rad(90) * dt, 0)  -- 90deg/sec, frame-independent
+RunService.Heartbeat:Connect(function(dt: number)   -- after physics, every frame
+    spinner.CFrame *= CFrame.Angles(0, math.rad(90) * dt, 0)
 end)
 ```
 
-### 6. Shared code in a ModuleScript
-
 ```lua
--- ReplicatedStorage/GameConfig (a ModuleScript) — usable by server and client.
-local GameConfig = {}
-GameConfig.MaxHealth = 100
-function GameConfig.damageFor(weapon: string): number
-    return ({ sword = 25, bow = 15 })[weapon] or 0
-end
+-- ReplicatedStorage/Shared/GameConfig (ModuleScript)
+local GameConfig = table.freeze({
+    MaxHealth = 100,
+    WeaponDamage = table.freeze({ sword = 25, bow = 15 }),
+})
 return GameConfig
 ```
 
-```lua
-local GameConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("GameConfig"))
-print(GameConfig.MaxHealth)
-```
+Freezing shared config turns an accidental write into an immediate error instead of a silent
+per-context divergence.
 
-## Pitfalls
+## Gotchas
 
-- **Trusting the client is an exploit** → clients can send any arguments to a
-  `RemoteEvent`/`RemoteFunction`. Validate every argument's type and range on the
-  server and keep the server authoritative over health, currency, and inventory.
-- **`LocalScript` doesn't run where you put it** → LocalScripts run in
-  `StarterPlayerScripts`, `StarterCharacterScripts`, `StarterGui`, or tools — not in
-  `Workspace` or `ServerScriptService`. Server `Script`s belong in
-  `ServerScriptService`/`Workspace`. A `Script` with `RunContext = Client` placed in a
-  `Starter*` container runs twice (original and copy); keep those in `ReplicatedStorage`.
-- **Deprecated globals** → use `task.wait`/`task.spawn`/`task.delay`, not the old
-  `wait()`/`spawn()`/`delay()` (worse scheduling and throttling).
-- **Parenting first, then setting properties** → set properties first and `Parent`
-  last so the instance replicates once in its final state.
-- **`nil` on the client right after join** → objects stream/replicate over time; use
-  `parent:WaitForChild("Name")` instead of indexing directly on the client.
-- **Connections never disconnected** → long-lived `:Connect` handlers leak and can
-  fire on destroyed objects; store the connection and `:Disconnect()` (or use
-  `Instance:GetAttributeChangedSignal`/`:Once` where appropriate).
-- **Using a RemoteFunction where a RemoteEvent fits** → `RemoteFunction` blocks
-  waiting for a return and a malicious/slow client can stall the server; prefer
-  one-way `RemoteEvent`s unless you genuinely need a reply.
-- **Assuming the old type checker** -> Luau's New Type Solver reached general release
-  (out of Studio Beta) in Nov 2025. `nocheck`/non-strict places get it automatically;
-  strict-mode places opt in with the `UseNewLuauTypeSolver` workspace property, and
-  `LuauTypeCheckMode` sets a place's default checking mode. It runs only at edit time
-  (no runtime cost), so triage type warnings against the solver the place actually has
-  enabled, not older behavior.
+- **Deferred events change ordering.** When `Workspace.SignalBehavior` is `Deferred` (forced by
+  Server Authority, and the planned future default), handlers run at the next resumption point,
+  not inside the call that fired them. Code that sets a property and expects its `Changed` handler
+  to have run on the next line breaks, and a handler may see an Instance that was already
+  destroyed. Read state inside the handler and check `instance.Parent` before using it.
+- **`nil` on the client right after join.** Replication and streaming deliver objects over time.
+  Use `WaitForChild` (with a timeout for optional content) on the client; on the server, objects
+  you created exist immediately.
+- **Legacy globals.** `wait()`, `spawn()` and `delay()` are throttled legacy scheduling; use
+  `task.wait`, `task.spawn`, `task.defer`, `task.delay`.
+- **`type` vs `typeof`.** `type(v)` cannot tell Roblox types apart (an Instance and a CFrame both
+  report `"userdata"`); use `typeof(v)` to get `"Instance"`, `"CFrame"` and so on.
+- **Superseded `Async` methods.** Many engine methods now have `...Async` replacements (for example
+  `Player:LoadCharacterAsync()`, `Humanoid:ApplyDescriptionAsync()`). Check the API page before
+  using an older name in new code.
+- **`BindableEvent` is not a security boundary.** It only works inside one machine (server to
+  server, or client to client) and never replaces a remote.
+- **Type warnings depend on the solver.** Triage them against the solver and mode the place
+  actually uses (`Workspace.UseNewLuauTypeSolver`, `Workspace.LuauTypeCheckMode`, or a
+  `--!strict` / `--!nonstrict` comment), not against older behavior.
 
-## References
+## Resources
 
-- For the full client/server model (replication, `RemoteFunction` vs `RemoteEvent`,
-  `:WaitForChild` timing, `BindableEvent` for same-context messaging, attributes,
-  `CollectionService` tags, and `:Once`/connection cleanup), read
-  `references/client-server.md`.
+- Read `references/client-server.md` when you need the replication timing details,
+  `WaitForChild` behavior, Bindables, Attributes and CollectionService tags, or Studio test modes.
 
 ## Related skills
 
-- `roblox-datastores` — persist player data across sessions (server-only).
-- `roblox-networking` — production remote contracts, server validation, rate limits, replication,
-  streaming, prediction, and multi-client testing.
-- `save-systems` — engine-agnostic persistence concepts.
-- `game-ai` / `input-systems` — portable AI and input patterns to implement in Luau.
+- `roblox-networking`: remote contracts, validation, rate limits, replication, Server Authority.
+- `roblox-datastores`: persistence (server only).
+- `roblox-studio-workflow`: editing an existing place, Studio MCP, and test evidence.
+- `save-systems`, `input-systems`, `game-ai`: engine-neutral patterns to implement in Luau.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Luau's New Type Solver reached general release in November 2025 for nocheck and non-strict
+  scripts. Strict-mode places opt in with `Workspace.UseNewLuauTypeSolver = Enabled`;
+  `Workspace.LuauTypeCheckMode` sets the default mode. The checker runs at edit time only.
+- `SignalBehavior.Default` currently behaves as `Immediate`; Roblox states it will become
+  `Deferred`.
+- `Player:LoadCharacter()` is deprecated in favour of `LoadCharacterAsync()`.
+- Tool versions checked: Rojo 7.7.1, selene 0.32.0, luau-lsp 1.70.1, Luau 0.746.
+- To re-check an API: append `.md` to its Creator Hub URL, or start from
+  `https://create.roblox.com/docs/llms.txt`.
+
+Sources: `https://create.roblox.com/docs/reference/engine/classes/Workspace`,
+`https://create.roblox.com/docs/reference/engine/enums/SignalBehavior`,
+`https://create.roblox.com/docs/scripting/events/deferred`,
+`https://create.roblox.com/docs/reference/engine/classes/Player`,
+`https://devforum.roblox.com/t/general-release-luau%E2%80%99s-new-type-solver/4084991`,
+GitHub releases for rojo-rbx/rojo, Kampfkarren/selene, JohnnyMorganz/luau-lsp, luau-lang/luau.

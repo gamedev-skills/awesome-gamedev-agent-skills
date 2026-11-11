@@ -1,80 +1,65 @@
 ---
 name: godot-gdscript-headless-testing
 description: >
-  Run GDScript test suites from the command line with `godot --headless`, using a
-  SceneTree/MainLoop runner script that exits non-zero on failure so CI can gate
-  merges. Use when a Godot project needs unit tests without opening the editor,
-  when wiring a CI job (GitHub Actions or similar) that must fail the build on a
-  failing `.gd` test, or when a `godot --headless` invocation hangs, opens a
-  window, or exits 0 despite failed assertions.
+  Runs Godot 4.7 GDScript tests with godot --headless and a SceneTree runner that exits non-zero
+  on failure, so CI can gate merges. Owns Godot tests in CI. Use for GitHub Actions jobs or a
+  headless run that hangs or exits 0 despite SCRIPT ERROR lines. Not for export in CI
+  (`godot-export`), GDScript language (`godot-gdscript`) or Unity tests
+  (`unity-csharp-scripting`).
 ---
 
 # Godot GDScript headless testing (4.x)
 
-Run GDScript tests from the command line, without the editor GUI, and get a real
-process exit code CI can act on. Targets **Godot 4.7** headless CLI.
+Run GDScript tests from a terminal or CI and get a process exit code that means something.
+Targets the **Godot 4.7** CLI; `--headless` is built into every 4.x editor binary.
 
-## When to use
-
-- Use when a Godot project has no testing addon installed and needs a fast way to
-  verify GDScript logic (pure functions, resource loading, autoload state) from a
-  terminal or CI pipeline.
-- Use when wiring a CI job that must fail the build when a `.gd` test fails.
-- Use when debugging why a `godot --headless` invocation hangs, opens a window, or
-  exits 0 despite failing assertions.
-
-**When *not* to use:** GDScript syntax or language features themselves →
-`godot-gdscript`; export/build pipeline and platform templates → `godot-export`
-(its own `--headless` use case, producing a binary, not running tests).
+The one rule behind most of this skill: **Godot's exit code only reflects what your runner
+passes to `quit()`.** Script errors, `push_error()` and failed `assert()` calls do not make
+it non-zero, so the runner counts failures itself.
 
 ## Workflow
 
-1. **Confirm the binary resolves headless.** Godot 4.x ships `--headless` built in
-   (no export template needed); run `godot --headless --version` and confirm it
-   prints a version string, not a GUI window.
-2. **On a fresh checkout, import before running tests.** `.godot/` is normally not
-   committed, so a clean checkout has no import cache: `class_name` types fail to
-   resolve (`Identifier "X" not declared in the current scope`) and imported
-   assets fail to load (`No loader found for resource: res://...`). Run
-   `godot --headless --path <project_dir> --import` once first, in CI and locally.
-3. **Write the runner as a `SceneTree` script, not a `Node` scene.** A `SceneTree`
-   script's `_initialize()` runs once before any frame — enough for pure-logic
-   tests and no `.tscn` required to launch.
-4. **Track pass/fail counts yourself and call `quit(<code>)` explicitly. Do not use
-   bare `assert()` to fail a test.** Godot does not turn the process exit code
-   non-zero on `push_error()` by itself — the runner must count failures and call
-   `quit(1)`. Worse, a failed `assert()` inside `_initialize()` (official/debug
-   build) prints `SCRIPT ERROR: Assertion failed` and **stops execution before
-   `quit()` runs**, so the process never exits and CI hangs until its own timeout.
-   Use an `assert_eq()`-style helper that records the failure and keeps going.
-5. **Invoke with `godot --headless --path <project_dir> --script res://<runner>.gd`**
-   and read the **process exit code**, not just stdout, from the shell or CI step.
-   `--script` accepts both a `res://`-relative path and an absolute filesystem
-   path (e.g. a runner outside the project folder); either works.
-6. **Redirect stdout and stderr to files when scripting the invocation from a
-   wrapper shell** (PowerShell, some CI runners). `push_error()` output goes to
-   stderr and can be dropped or reordered when only stdout is captured live.
-7. **Add a step timeout in CI.** Even with the `assert()` pitfall avoided, an
-   `await` that never resolves (Pattern #2) hangs the runner forever; a
-   `timeout-minutes` on the CI step is a backstop CI-side, not a substitute for
-   backing every `await` with a timeout node.
+1. **Check the binary:** `godot --headless --version` prints a version and opens no window.
+2. **Import on every fresh checkout:** `godot --headless --path <project> --import`.
+   `.godot/` is normally not committed, so without it `class_name` types do not resolve
+   (`Identifier "X" not declared in the current scope`) and imported assets fail to load.
+3. **Write the runner as a `SceneTree` script** (Pattern 1). `_initialize()` runs before the
+   first frame and needs no `.tscn`.
+4. **Count failures with a helper and end with `quit(1 if failed > 0 else 0)`.** Do not fail
+   tests with bare `assert()`: in a debug build a failed assert stops `_initialize()` before
+   `quit()`, and the process never exits.
+5. **Run it:** `godot --headless --path <project> --script res://tests/test_runner.gd`
+   (an absolute path to a runner outside the project also works) and read the exit code.
+6. **In CI**, add the import step, a step timeout, and capture stdout and stderr to files
+   (Pattern 3).
+7. **Verify the runner itself before trusting a green run:** break one assertion on purpose
+   and confirm the exit code becomes 1, then put it back. A runner that always exits 0
+   passes CI forever.
+
+For quick smoke checks without a test file, run a scene for a few hundred frames and scan
+the log, since the exit code stays 0 after runtime errors:
+`godot --headless --path <project> --quit-after 300 res://main.tscn > run.log 2>&1`, then
+`grep -nE "SCRIPT ERROR|^ERROR:" run.log` (no match means clean).
 
 ## Patterns
 
 ### 1. Minimal SceneTree test runner with a real exit code
 
 ```gdscript
-# res://test_runner.gd — run with:
-#   godot --headless --path . --script res://test_runner.gd
+# res://tests/test_runner.gd
+# godot --headless --path . --script res://tests/test_runner.gd
 extends SceneTree
 
 var passed := 0
 var failed := 0
 
 func _initialize() -> void:
-    test_add()
+    for t: String in ["test_add", "test_load"]:
+        if call(t) != true:                       # a runtime error returns null, not true
+            failed += 1
+            push_error("FAIL %s: did not finish (runtime error?)" % t)
     print("Results: %d passed, %d failed" % [passed, failed])
-    quit(1 if failed > 0 else 0)   # non-zero exit fails the CI step
+    quit(1 if failed > 0 else 0)
 
 func assert_eq(actual, expected, label: String) -> void:
     if actual == expected:
@@ -83,119 +68,104 @@ func assert_eq(actual, expected, label: String) -> void:
         failed += 1
         push_error("FAIL %s: expected %s, got %s" % [label, expected, actual])
 
-func test_add() -> void:
-    assert_eq(2 + 2, 4, "test_add")
+func test_add() -> bool:
+    assert_eq(2 + 2, 4, "add")
+    return true
+
+func test_load() -> bool:
+    assert_eq(load("res://icon.svg") != null, true, "icon loads")
+    return true
 ```
 
-Verified against Godot 4.7.2: `godot --headless --path . --script
-res://test_runner.gd` prints `Results: N passed, M failed` to stdout, routes
-`push_error` lines to stderr, and returns process exit code `0` when
-`failed == 0`, `1` otherwise.
+Tests return `true` on their last line so a test that dies halfway is still counted:
+a runtime error such as calling a method on `null` aborts only that function, which hands
+its caller `null`. For tests that `await`, use `await call(t)` in the loop.
 
-### 2. Testing something that needs a frame, a timer, or a signal
+### 2. Tests that need a frame, a timer or a signal
 
 ```gdscript
 extends SceneTree
 
-var passed := 0
 var failed := 0
 
 func _initialize() -> void:
     await run_tests()
-    print("Results: %d passed, %d failed" % [passed, failed])
-    quit(1 if failed > 0 else 0)   # track and report failures here too
-
-func assert_eq(actual, expected, label: String) -> void:
-    if actual == expected:
-        passed += 1
-    else:
-        failed += 1
-        push_error("FAIL %s: expected %s, got %s" % [label, expected, actual])
+    print("Results: %d failed" % failed)
+    quit(1 if failed > 0 else 0)
 
 func run_tests() -> void:
-    # `root` is not inside the tree yet during _initialize(): a Timer started now
-    # errors ("not inside the tree") and its `timeout` never fires. Wait one frame.
-    await process_frame
-    var timer_node := Timer.new()
-    timer_node.one_shot = true   # default Timer restarts after timeout
-    root.add_child(timer_node)
-    timer_node.start(0.1)
-    await timer_node.timeout
-    # assertions here can rely on the node having been in the tree for a frame
-    assert_eq(timer_node.is_stopped(), true, "timer_fires_once")
-    timer_node.queue_free()
+    await process_frame                 # root joins the tree on the first frame
+    var timer := Timer.new()
+    timer.one_shot = true
+    root.add_child(timer)
+    timer.start(0.1)
+    await timer.timeout
+    if not timer.is_stopped():
+        failed += 1
+        push_error("FAIL timer_fires_once")
+    timer.queue_free()
 ```
 
-`_initialize()` may `await`, which is what makes this pattern work for anything
-that needs a node to actually enter the tree, a timer to fire, or a signal to
-emit — none of which happen before the engine has processed at least one frame.
-Use the same `passed`/`failed` counter and `assert_eq()` helper as Pattern #1;
-a version of this pattern that always calls `quit(0)` can never fail a build.
+`_initialize()` may `await`. Before the first `process_frame`, `root` is not inside the tree,
+so a `Timer` started there errors ("not inside the tree") and its `timeout` never fires.
 
-### 3. CI step (GitHub Actions) that gates on the exit code
+### 3. CI step (GitHub Actions)
 
 ```yaml
-- name: Import project (populates .godot/ on a fresh checkout)
+- name: Import project (fresh checkout has no .godot/)
   run: godot --headless --path . --import
 - name: Run GDScript tests
   timeout-minutes: 5
-  run: godot --headless --path . --script res://test_runner.gd
+  run: godot --headless --path . --script res://tests/test_runner.gd > test.log 2> test.err
+- name: Show test output
+  if: always()
+  run: cat test.log test.err
 ```
 
-The import step is required on a clean checkout — without it, `class_name` types
-and imported resources fail to resolve. No extra flag is needed for the test
-step itself: the runner already fails the job on a non-zero exit code from
-`run:`; the discipline lives in the runner script's `quit()` call, not in the CI
-configuration. `timeout-minutes` is a backstop against a hung `await` (see
-Pitfalls), not a substitute for backing every `await` with a timeout node.
+The `run:` step fails on a non-zero exit code by itself; the discipline lives in the runner's
+`quit()`. `timeout-minutes` is a backstop for a hung `await`.
 
-## Pitfalls
+## Gotchas
 
-- **Script "does nothing" or opens the editor window** → missing `--headless`, or
-  the script path is wrong. `--script` accepts a `res://`-relative path resolved
-  against `--path <project_dir>`, and also an absolute filesystem path — both work.
-- **`Identifier "X" not declared in the current scope`, or a resource fails to
-  load, only on a fresh checkout** → `.godot/` (the import cache) is normally not
-  committed, so `class_name` types and imported assets aren't resolved yet. Run
-  `godot --headless --path <project_dir> --import` once before the test step.
-- **A failed `assert()` hangs instead of failing the test** → in an official/debug
-  build, a failed `assert()` inside `_initialize()` prints `SCRIPT ERROR:
-  Assertion failed` and stops that function before it reaches `quit()` — the
-  process never exits and CI waits until its own timeout. Use an `assert_eq()`
-  counter (Pattern #1) instead of bare `assert()` in test runners.
-- **Exit code stays 0 despite failed assertions** → the runner never called
-  `quit(1)`, or (Pattern #2) it always calls `quit(0)` regardless of failures.
-  Track failures yourself and call `quit()` explicitly with a code that reflects
-  them; do not rely on `assert()` or `push_error()` alone to change the exit code.
-- **A test that hits a runtime error is silently skipped and the run still exits 0** →
-  an error such as calling a method on `null` prints `SCRIPT ERROR` and aborts only that
-  test function; the runner carries on, nothing was counted as failed, and `quit(0)` runs.
-  Declare tests `-> bool`, end each with `return true`, and count anything else as a
-  failure — an aborted function hands its caller a default value instead (`await call(t)`
-  works the same for tests that `await`):
-
-  ```gdscript
-  for t: String in ["test_add", "test_load"]:
-      if call(t) != true:
-          failed += 1
-          push_error("FAIL %s: did not finish (runtime error?)" % t)
-  ```
-- **`_initialize()` runs before nodes, timers, or signals exist** → logic that
-  needs a frame to have processed must `await` a signal or a timer before
-  asserting; see Pattern #2. `root` itself is not inside the tree yet, so a
-  `Timer` added and started there errors and its `timeout` never fires (the
-  runner hangs) — `await process_frame` first.
-- **Output looks empty or out of order from a wrapper shell** → some shells
-  (PowerShell in particular) can reorder or drop a native process's live
-  stdout/stderr. Redirect both streams to files and read the files after the
-  process exits, instead of trusting the live console.
-- **Runner never terminates** → a `SceneTree` script keeps running until
-  something calls `quit()`. A test that `await`s a signal that never fires hangs
-  the job forever — always back an `await` with a timeout node as a fallback, and
-  set `timeout-minutes` on the CI step as a backstop.
+- **The job hangs until the CI timeout** → a failed bare `assert()` stopped `_initialize()`
+  before `quit()` (prints `SCRIPT ERROR: Assertion failed`); or an `await` waits on a signal
+  that never fires. Use the counter helper, and race long awaits against a timer.
+- **An `await` never returns and nothing errors** → the object that emits the signal, or the
+  node running the coroutine, was freed while waiting; Godot drops the coroutine silently.
+  Await `SceneTreeTimer`s (`create_timer()`), which the tree owns, for delays.
+- **Exit code 0 although checks failed** → the runner never calls `quit(1)`, or a test died
+  on a runtime error and was never counted (see Pattern 1's `call(t) != true` loop).
+- **Exit code 0 although the log shows `SCRIPT ERROR`** → expected: errors never change the
+  exit code. Scan logs of smoke runs with `grep`, as in the workflow.
+- **`--check-only` fails with `Identifier not found: SomeAutoload`** → `--check-only` parses a
+  single script without registering autoloads. Load scripts from a runner instead
+  (`godot-gdscript` ships a compile check that does).
+- **The log grep flags `... still in use at exit` or `... leaked at exit`** → shutdown leak
+  reports for objects the test created and never freed. Free them (or `queue_free()` and
+  wait a frame before `quit()`); they are not test failures, so filter them if you must.
+- **`Identifier "X" not declared` or "No loader found" only in CI** → the import step is
+  missing.
+- **Nothing happens or the editor opens** → `--headless` is missing or the `--script` path is
+  wrong; `res://` paths resolve against `--path`.
+- **`The InputMap action "x" doesn't exist` in a test** → the action is not in
+  `project.godot`; tests that press inputs can add missing actions with
+  `InputMap.add_action()`, but the game needs the real Input Map entry.
+- **Output missing or out of order in PowerShell or some CI shells** → redirect stdout and
+  stderr to files and read them after the process exits, as in Pattern 3.
 
 ## Related skills
 
-- `godot-gdscript` — the language syntax and node lifecycle this pattern's
-  runner script itself uses.
-- `godot-export` — headless CLI export/build, a different `--headless` use case.
+- `godot-gdscript`: language rules, plus a compile check for every script in the project.
+- `godot-2d-movement`, `godot-animation`: ready-made headless tests for controllers and
+  animation states that plug into this runner.
+- `godot-export`: exporting builds in CI, a different `--headless` use.
+
+## Version notes
+
+Last verified: 2026-11-11 with a Godot 4.7.2 headless binary (every behaviour above was
+reproduced) and the 4.7.2 CLI help.
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Command line tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html),
+  [main.cpp @ 4.7.2](https://github.com/godotengine/godot/blob/4.7.2-stable/main/main.cpp).

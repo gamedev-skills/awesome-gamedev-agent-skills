@@ -7,9 +7,17 @@
        alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 79 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**79 game-dev skills for your AI coding agent — install once, and a router loads the
-right skill for whatever you're building.**
+**Make games with your AI coding agent, in the engine you already use.** 79 skills for 12
+engines: say what you're building, and a router loads the right 2 or 3 skills before your agent
+writes code.
 
+```bash
+npx skills add gamedev-skills/awesome-gamedev-agent-skills
+```
+
+[![Latest release](https://img.shields.io/github/v/release/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/releases/latest)
+[![skills.sh installs](https://skills.sh/b/gamedev-skills/awesome-gamedev-agent-skills)](https://skills.sh/gamedev-skills/awesome-gamedev-agent-skills)
+[![Engines checked](https://img.shields.io/badge/engines%20checked-2026--11--11-brightgreen)](docs/VERSION-SUPPORT.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-79%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
@@ -25,9 +33,12 @@ task skills before it writes code.
 - **You don't pick skills.** The router detects your engine and task and loads only what fits.
 - **Art direction, not one-off generations.** The asset workflow locks a visual target, builds
   families, normalizes outputs deterministically, and checks them inside the game.
-- **Built to trust.** Every skill is written from primary docs, version-pinned to a stated
-  engine release, and checked by a [validator](scripts/validate-skills.py). Current baselines and
-  upgrade policy live in [version support](docs/VERSION-SUPPORT.md).
+- **Checked on the real engines.** Every skill is written from official engine docs and pinned to
+  a current release (Godot 4.7.2, Unity 6.3 LTS, Unreal 5.8, Phaser 4.2.1, three.js r187 and
+  more, checked 2026-11-11). Code examples were run or compiled on the real toolchains for 10 of
+  the 12 engines, and in 366 blind test prompts the right skill loaded for 98.7% of the requests
+  that needed one. [Results, method and limits](evals/RESULTS.md) ·
+  [version support](docs/VERSION-SUPPORT.md).
 
 ## Sponsors
 
@@ -85,6 +96,13 @@ Building in only one engine? Install a smaller bundle — `router` plus your eng
 claude plugin install router@awesome-gamedev-agent-skills
 claude plugin install godot@awesome-gamedev-agent-skills    # or: unity · unreal · ebitengine · web-engines · other-engines
 ```
+
+**Install tip.** If your agent already has many skills, install the router and your engine's
+bundle instead of everything. Agents list every skill's description within a size limit, and
+past that limit some descriptions are cut, which makes the right skill harder to pick. In Claude
+Code the limit is 1% of the context window; raise it with the `skillListingBudgetFraction`
+setting (for example `0.02`) or set a character count with the `SLASH_COMMAND_TOOL_CHAR_BUDGET`
+environment variable ([Claude Code skills docs](https://code.claude.com/docs/en/skills)).
 
 Prefer to copy the files by hand, or want the exact per-tool paths? See
 **[`docs/INSTALLATION.md`](docs/INSTALLATION.md)**.
@@ -147,81 +165,81 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 | Skill | Scope |
 |-------|-------|
-| [`godot-gdscript`](skills/godot/godot-gdscript/SKILL.md) | GDScript language: typing, lifecycle, `@export`, signals, idioms |
-| [`godot-nodes-scenes`](skills/godot/godot-nodes-scenes/SKILL.md) | Scene tree, node composition, instancing, autoloads, `PackedScene` |
-| [`godot-signals-groups`](skills/godot/godot-signals-groups/SKILL.md) | Event-driven design with signals + groups |
-| [`godot-2d-movement`](skills/godot/godot-2d-movement/SKILL.md) | `CharacterBody2D` kinematic movement, `move_and_slide`, slopes |
-| [`godot-tilemap`](skills/godot/godot-tilemap/SKILL.md) | `TileMapLayer`/`TileSet`: autotiling, terrain, collision/nav layers |
-| [`godot-physics`](skills/godot/godot-physics/SKILL.md) | Rigid/Area/Static bodies (2D+3D), collision layers, raycasts |
-| [`godot-ui-control`](skills/godot/godot-ui-control/SKILL.md) | `Control` nodes: anchors, containers, themes, focus nav |
-| [`godot-animation`](skills/godot/godot-animation/SKILL.md) | `AnimationPlayer`, `AnimationTree`, `Tween` |
-| [`godot-shaders`](skills/godot/godot-shaders/SKILL.md) | Godot shading language: 2D `canvas_item` + 3D `spatial` shaders |
-| [`godot-3d-essentials`](skills/godot/godot-3d-essentials/SKILL.md) | 3D nodes, cameras, lighting, environment/post, `GridMap` |
-| [`godot-resources`](skills/godot/godot-resources/SKILL.md) | Custom `Resource` classes, `.tres`, data-driven design |
-| [`godot-audio`](skills/godot/godot-audio/SKILL.md) | `AudioStreamPlayer`, buses, effects, sync-to-beat |
-| [`godot-multiplayer`](skills/godot/godot-multiplayer/SKILL.md) | High-level multiplayer: `MultiplayerAPI`, RPCs, spawner/sync |
-| [`godot-export`](skills/godot/godot-export/SKILL.md) | Export presets/templates, platform builds, headless CLI export |
-| [`godot-csharp`](skills/godot/godot-csharp/SKILL.md) | C#/.NET in Godot: bindings, signals as events, GDScript interop |
-| [`godot-gdscript-headless-testing`](skills/godot/godot-gdscript-headless-testing/SKILL.md) | Run GDScript tests via `godot --headless`, exit codes for CI |
+| [`godot-gdscript`](skills/godot/godot-gdscript/SKILL.md) | GDScript 2.0: static typing, `@export`/`@onready`, `await`, porting 3.x code |
+| [`godot-nodes-scenes`](skills/godot/godot-nodes-scenes/SKILL.md) | Scene tree, instancing, autoloads, checker for broken `res://` paths and uids |
+| [`godot-signals-groups`](skills/godot/godot-signals-groups/SKILL.md) | Typed signals, `connect()` with Callables, event buses, groups |
+| [`godot-2d-movement`](skills/godot/godot-2d-movement/SKILL.md) | `CharacterBody2D` platformer and top-down movement, slopes, one-way platforms, headless landing test |
+| [`godot-tilemap`](skills/godot/godot-tilemap/SKILL.md) | `TileMapLayer`/`TileSet`: atlases, data layers, terrain autotiling, runtime `set_cell` |
+| [`godot-physics`](skills/godot/godot-physics/SKILL.md) | Body and Area types (2D+3D), collision layers/masks, raycasts, Jolt |
+| [`godot-ui-control`](skills/godot/godot-ui-control/SKILL.md) | `Control` nodes: anchors, containers, themes, focus, headless layout check |
+| [`godot-animation`](skills/godot/godot-animation/SKILL.md) | `AnimationPlayer`, `AnimationTree` state machines, `AnimatedSprite2D`, `Tween` |
+| [`godot-shaders`](skills/godot/godot-shaders/SKILL.md) | Godot shading language: `canvas_item`, `spatial` and particle shaders, headless compile check |
+| [`godot-3d-essentials`](skills/godot/godot-3d-essentials/SKILL.md) | 3D cameras, lights, `WorldEnvironment`, materials, `GridMap`, headless scene check |
+| [`godot-resources`](skills/godot/godot-resources/SKILL.md) | Custom `Resource` data, `.tres`, shared vs `duplicate_deep()`, threaded loading |
+| [`godot-audio`](skills/godot/godot-audio/SKILL.md) | `AudioStreamPlayer` 2D/3D, buses, volume, looping, playback position for beat sync |
+| [`godot-multiplayer`](skills/godot/godot-multiplayer/SKILL.md) | ENet, `@rpc`, `MultiplayerSpawner`/`MultiplayerSynchronizer`, two-instance headless test |
+| [`godot-export`](skills/godot/godot-export/SKILL.md) | Export templates and presets, command-line export, web COOP/COEP headers |
+| [`godot-csharp`](skills/godot/godot-csharp/SKILL.md) | C#/.NET in Godot: partial classes, `[Export]`/`[Signal]`, signals as events, GDScript interop |
+| [`godot-gdscript-headless-testing`](skills/godot/godot-gdscript-headless-testing/SKILL.md) | GDScript tests with `godot --headless`, non-zero exit on failure, CI jobs |
 
 #### Unity — 9 ([`skills/unity/`](skills/unity/)) · Unity 6.3 LTS (6000.3)
 
 | Skill | Scope |
 |-------|-------|
-| [`unity-csharp-scripting`](skills/unity/unity-csharp-scripting/SKILL.md) | `MonoBehaviour` lifecycle, component model, coroutines, serialization |
-| [`unity-input-system`](skills/unity/unity-input-system/SKILL.md) | New Input System: actions, bindings, action maps, devices |
-| [`unity-physics`](skills/unity/unity-physics/SKILL.md) | Rigidbody, colliders, layers, joints |
-| [`unity-animation`](skills/unity/unity-animation/SKILL.md) | Animator Controllers, state machines, blend trees, humanoid IK |
-| [`unity-scriptableobjects`](skills/unity/unity-scriptableobjects/SKILL.md) | Data architecture with `ScriptableObject` |
-| [`unity-tilemap-2d`](skills/unity/unity-tilemap-2d/SKILL.md) | 2D Tilemap/Tile Palette, rule tiles, tilemap colliders |
-| [`unity-navmesh`](skills/unity/unity-navmesh/SKILL.md) | AI navigation: NavMesh bake, `NavMeshAgent` |
-| [`unity-build-pipeline`](skills/unity/unity-build-pipeline/SKILL.md) | Build/player/quality settings, code stripping, Addressables |
+| [`unity-csharp-scripting`](skills/unity/unity-csharp-scripting/SKILL.md) | `MonoBehaviour` lifecycle, serialization, `.meta`/GUID discipline, command-line compile and test checks |
+| [`unity-input-system`](skills/unity/unity-input-system/SKILL.md) | Input System: `.inputactions`, action maps, `PlayerInput`, control schemes |
+| [`unity-physics`](skills/unity/unity-physics/SKILL.md) | 3D and 2D physics: Rigidbody and Rigidbody2D, collisions, layers, raycasts, joints |
+| [`unity-animation`](skills/unity/unity-animation/SKILL.md) | Animator: states and transitions, blend trees, Avatar Masks, root motion, humanoid IK |
+| [`unity-scriptableobjects`](skills/unity/unity-scriptableobjects/SKILL.md) | `ScriptableObject` config assets, shared runtime variables, event channels |
+| [`unity-tilemap-2d`](skills/unity/unity-tilemap-2d/SKILL.md) | Tile Palette, Tilemap Collider 2D with a Composite Collider, Rule Tiles, runtime `SetTile` |
+| [`unity-navmesh`](skills/unity/unity-navmesh/SKILL.md) | AI Navigation: `NavMeshSurface` baking, `NavMeshAgent`, `NavMeshLink`, runtime rebakes |
+| [`unity-build-pipeline`](skills/unity/unity-build-pipeline/SKILL.md) | Build and player settings, IL2CPP vs Mono, code stripping, scripted and CI builds, Addressables |
 | [`unity-build-size`](skills/unity/unity-build-size/SKILL.md) | Build Report triage, uncompressed glTF/GLB textures, texture/audio import budgets, per-platform size levers (Web, Android, iOS, desktop, Steam) |
 
-#### Unreal — 6 ([`skills/unreal/`](skills/unreal/)) · Unreal Engine 5.8
+#### Unreal — 6 ([`skills/unreal/`](skills/unreal/)) · Unreal Engine 5.8 (5.9 in Preview)
 
 | Skill | Scope |
 |-------|-------|
-| [`unreal-blueprints`](skills/unreal/unreal-blueprints/SKILL.md) | Blueprint visual scripting: classes, graphs, comms, common nodes |
-| [`unreal-cpp-gameplay`](skills/unreal/unreal-cpp-gameplay/SKILL.md) | C++ gameplay + Gameplay Framework (GameMode, Pawn, Controller) |
-| [`unreal-enhanced-input`](skills/unreal/unreal-enhanced-input/SKILL.md) | Enhanced Input: Input Actions, Mapping Contexts, Modifiers, Triggers |
-| [`unreal-behavior-trees`](skills/unreal/unreal-behavior-trees/SKILL.md) | AI Behavior Trees + Blackboard, tasks/decorators/services |
-| [`unreal-niagara`](skills/unreal/unreal-niagara/SKILL.md) | Niagara VFX: systems, emitters, modules, parameters |
-| [`unreal-packaging`](skills/unreal/unreal-packaging/SKILL.md) | Packaging/cooking projects, build configs, shipping builds |
+| [`unreal-blueprints`](skills/unreal/unreal-blueprints/SKILL.md) | Blueprint Classes vs the Level Blueprint, Event Graph, Cast, Interfaces, Event Dispatchers |
+| [`unreal-cpp-gameplay`](skills/unreal/unreal-cpp-gameplay/SKILL.md) | C++ reflection (`UCLASS`/`UPROPERTY`), Gameplay Framework, GC-safe pointers, command-line builds |
+| [`unreal-enhanced-input`](skills/unreal/unreal-enhanced-input/SKILL.md) | Input Actions, Mapping Contexts, `ETriggerEvent` bindings, remappable keys |
+| [`unreal-behavior-trees`](skills/unreal/unreal-behavior-trees/SKILL.md) | Behavior Trees, Blackboards, EQS and StateTree: Observer Aborts, C++ `BTTask` nodes |
+| [`unreal-niagara`](skills/unreal/unreal-niagara/SKILL.md) | Niagara systems, emitters, User parameters, spawning, bounds, GPU vs CPU sim |
+| [`unreal-packaging`](skills/unreal/unreal-packaging/SKILL.md) | Shipping builds, cooking, pak/IoStore, `RunUAT BuildCookRun`, reading UAT and cook logs |
 
-#### Ebitengine — 1 ([`skills/ebitengine/`](skills/ebitengine/)) · Ebitengine v2.10.5 · Go 1.25+
+#### Ebitengine — 1 ([`skills/ebitengine/`](skills/ebitengine/)) · Ebitengine v2.10.6 · Go 1.25+
 
 | Skill | Scope |
 |-------|-------|
-| [`ebitengine-game`](skills/ebitengine/ebitengine-game/SKILL.md) | Playable Go 2D games: update/draw contracts, input, rendering, text, audio, gameplay tests, optional starter and platform builds |
+| [`ebitengine-game`](skills/ebitengine/ebitengine-game/SKILL.md) | Go 2D games: play-and-retry loop, input, pixel-art scaling, text, audio, tests, desktop, WASM and mobile builds |
 
 #### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r187
 
 | Skill | Scope |
 |-------|-------|
-| [`phaser-core`](skills/web-engines/phaser-core/SKILL.md) | Phaser 4.2 game config, Scene lifecycle, loader, cameras |
-| [`phaser-arcade-physics`](skills/web-engines/phaser-arcade-physics/SKILL.md) | Arcade Physics: bodies, velocity, colliders/overlap, groups |
-| [`pixijs-rendering`](skills/web-engines/pixijs-rendering/SKILL.md) | PixiJS v8 scene graph: `Application`, `Container`, `Sprite`, events |
-| [`threejs-scene-setup`](skills/web-engines/threejs-scene-setup/SKILL.md) | Three.js scene/camera/renderer/animation-loop, resizing, controls |
-| [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | Loading glTF/GLB + skinned animation (`GLTFLoader`/`AnimationMixer`) |
-| [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Materials (PBR), lights, shadows, environment maps |
+| [`phaser-core`](skills/web-engines/phaser-core/SKILL.md) | Phaser 4.2 (and pinned 3.90): Game config, Scene lifecycle, loader, Phaser 3 to 4 migration |
+| [`phaser-arcade-physics`](skills/web-engines/phaser-arcade-physics/SKILL.md) | Arcade Physics: bodies, velocity, gravity, colliders vs overlaps, groups, bullet pools |
+| [`pixijs-rendering`](skills/web-engines/pixijs-rendering/SKILL.md) | PixiJS 8.22 for games: async init, `Assets`, `Container`/`Sprite` scene graph, pointer drag, v7 to v8 |
+| [`threejs-scene-setup`](skills/web-engines/threejs-scene-setup/SKILL.md) | three.js r187 scene, camera, renderer, `setAnimationLoop`, resize, `OrbitControls`, `WebGPURenderer` |
+| [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | glTF/GLB loading with DRACO, Meshopt and KTX2, `AnimationMixer` cross-fades, `SkeletonUtils` clones |
+| [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Standard, physical and unlit materials, lights, shadows, HDR environments, tone mapping |
 
 #### Other engines — 12 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
 
 | Skill | Scope |
 |-------|-------|
-| [`bevy-ecs`](skills/other-engines/bevy-ecs/SKILL.md) | Bevy app + ECS: components, systems, queries, resources, plugins (Bevy 0.20) |
-| [`pygame-core`](skills/other-engines/pygame-core/SKILL.md) | pygame loop, `Surface`/`Rect`, sprites/groups, events (pygame-ce 2.5.8) |
-| [`love2d-core`](skills/other-engines/love2d-core/SKILL.md) | LÖVE `load/update/draw` loop, dt-driven motion, input, states (LÖVE 11.5) |
-| [`defold-core`](skills/other-engines/defold-core/SKILL.md) | Defold collections, game objects, script lifecycle, input, messages, factories, proxies, Bob build checks (Defold 1.14.0) |
-| [`roblox-luau`](skills/other-engines/roblox-luau/SKILL.md) | Roblox Luau scripting: services, instances, client/server model |
-| [`roblox-datastores`](skills/other-engines/roblox-datastores/SKILL.md) | Persistent data with `DataStoreService`: sessions, limits, ordered stores |
-| [`roblox-ui`](skills/other-engines/roblox-ui/SKILL.md) | Roblox UI: `ScreenGui` layout, responsive scaling, safe areas, gamepad/touch navigation |
-| [`roblox-networking`](skills/other-engines/roblox-networking/SKILL.md) | Remotes, server-authoritative validation, rate limiting, replication boundaries |
-| [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | Character lifecycle: spawn/respawn scopes, `Humanoid`, rigs, `Animator` tracks |
-| [`roblox-physics`](skills/other-engines/roblox-physics/SKILL.md) | Assemblies, constraints, collision/query policy, raycasts, forces, network ownership |
-| [`roblox-studio-workflow`](skills/other-engines/roblox-studio-workflow/SKILL.md) | Explorer-first place editing, structure preservation, multi-context Studio verification |
-| [`roblox-simulator-economy`](skills/other-engines/roblox-simulator-economy/SKILL.md) | Simulator/tycoon/idle economy: cost curves, buy max, rebirths, offline earnings, big-number display, server-owned purchases, paid random item odds (Lune 0.11.0 pacing calculator) |
+| [`bevy-ecs`](skills/other-engines/bevy-ecs/SKILL.md) | Bevy ECS: components, `Query`/`Commands` systems, schedules, States, observers, headless tests (Bevy 0.20) |
+| [`pygame-core`](skills/other-engines/pygame-core/SKILL.md) | pygame-ce event-update-draw loop, delta time, `Surface`/`Rect`, sprite groups, headless tests (pygame-ce 2.5.8) |
+| [`love2d-core`](skills/other-engines/love2d-core/SKILL.md) | LÖVE callbacks, `conf.lua`, fixed steps, crisp pixel-art scaling, `love.filesystem` saves (LÖVE 11.5) |
+| [`defold-core`](skills/other-engines/defold-core/SKILL.md) | Defold collections, game objects, input focus, `msg.post`, factories, collection proxies, Bob builds (Defold 1.14.1) |
+| [`roblox-luau`](skills/other-engines/roblox-luau/SKILL.md) | Luau services, Instances, Script vs LocalScript vs ModuleScript, `task` library, typed Luau, selene and luau-lsp checks |
+| [`roblox-datastores`](skills/other-engines/roblox-datastores/SKILL.md) | `DataStoreService`: load on join, save on leave and `BindToClose`, `UpdateAsync`, session locking, ordered leaderboards |
+| [`roblox-ui`](skills/other-engines/roblox-ui/SKILL.md) | `ScreenGui`/`PlayerGui`, `UDim2` scaling, layouts, safe areas, StyleSheet, gamepad selection, touch controls |
+| [`roblox-networking`](skills/other-engines/roblox-networking/SKILL.md) | Remote contracts, server authority, rate limits, hit validation, replication |
+| [`roblox-characters`](skills/other-engines/roblox-characters/SKILL.md) | `CharacterAdded` lifecycle, `Humanoid`, R6/R15/custom rigs, respawn, Tools |
+| [`roblox-physics`](skills/other-engines/roblox-physics/SKILL.md) | Assemblies, constraints, collision groups, `Raycast`/`Shapecast`, network ownership |
+| [`roblox-studio-workflow`](skills/other-engines/roblox-studio-workflow/SKILL.md) | Safe edits to an existing place or Rojo project, proven with the right test mode or Studio MCP |
+| [`roblox-simulator-economy`](skills/other-engines/roblox-simulator-economy/SKILL.md) | Simulator/tycoon/idle economy: cost curves, income per second, rebirth pacing, big numbers, paid-egg odds (Lune 0.11.1 calculator) |
 
 ### Disciplines — 15 ([`skills/disciplines/`](skills/disciplines/))
 
@@ -229,21 +247,21 @@ Cross-engine concepts that load alongside the detected engine skill.
 
 | Skill | Scope |
 |-------|-------|
-| [`create-game-assets`](skills/disciplines/create-game-assets/SKILL.md) | Art direction and production pipeline for cohesive sprites, tiles, textures, icons, UI art, and 3D assets |
-| [`game-ai`](skills/disciplines/game-ai/SKILL.md) | NPC decision-making: FSMs, behavior trees, steering, pathfinding |
-| [`ai-behavior-trees-utility-ai`](skills/disciplines/ai-behavior-trees-utility-ai/SKILL.md) | Production behavior-tree runtime (Blackboard, composites, decorators, leaves) + Utility AI (curves, considerations, evaluator) + hybrid AI |
-| [`procedural-gen`](skills/disciplines/procedural-gen/SKILL.md) | Noise, RNG, seeds, grid/dungeon/terrain generation |
-| [`dialogue-systems`](skills/disciplines/dialogue-systems/SKILL.md) | Branching dialogue/narrative: nodes, conditions, variables (Yarn/Ink) |
-| [`save-systems`](skills/disciplines/save-systems/SKILL.md) | Serialize/restore game state: formats, slots, versioning, autosave |
-| [`audio-design`](skills/disciplines/audio-design/SKILL.md) | Buses/mixing, adaptive music, SFX, ducking |
-| [`shader-programming`](skills/disciplines/shader-programming/SKILL.md) | Cross-engine shader concepts: vertex/fragment, UVs, common effects |
-| [`physics-tuning`](skills/disciplines/physics-tuning/SKILL.md) | Tuning feel: fixed timestep, mass/drag, CCD, stability, layers |
-| [`level-design`](skills/disciplines/level-design/SKILL.md) | Whitebox/blockout structure, tile/grid layout, pacing |
-| [`input-systems`](skills/disciplines/input-systems/SKILL.md) | Input architecture: action mapping, rebinding, multi-device, buffering |
-| [`game-feel`](skills/disciplines/game-feel/SKILL.md) | Juice: screen shake, hit-stop, tweening/easing, squash & stretch, feedback tiers |
-| [`game-ui-ux`](skills/disciplines/game-ui-ux/SKILL.md) | Cross-engine HUD/menus: anchors, resolution scaling, safe areas, focus navigation |
-| [`camera-systems`](skills/disciplines/camera-systems/SKILL.md) | 2D follow/deadzone/look-ahead + bounds, 3D orbit/first-person, screen-shake hook |
-| [`performance-optimization`](skills/disciplines/performance-optimization/SKILL.md) | Profile-first: frame budget, CPU/GPU triage, draw calls, pooling, GC, asset budgets |
+| [`create-game-assets`](skills/disciplines/create-game-assets/SKILL.md) | Consistent game art: style guides, sprites, pixel art, tilesets, icons, textures, QA and licence records |
+| [`game-ai`](skills/disciplines/game-ai/SKILL.md) | Enemy and NPC AI: choosing FSM, BT, utility or GOAP; perception, steering, A* pathfinding |
+| [`ai-behavior-trees-utility-ai`](skills/disciplines/ai-behavior-trees-utility-ai/SKILL.md) | Engine-neutral behavior tree and utility AI code: Blackboard, reactive composites, decorators, response curves |
+| [`procedural-gen`](skills/disciplines/procedural-gen/SKILL.md) | Seeded RNG, dungeon layouts, wave function collapse, noise terrain, loot tables |
+| [`dialogue-systems`](skills/disciplines/dialogue-systems/SKILL.md) | Branching dialogue with Ink, Yarn Spinner or a JSON graph: choices, conditions, variables, localization IDs |
+| [`save-systems`](skills/disciplines/save-systems/SKILL.md) | What to serialize, slots and autosave, atomic writes, versioned migration |
+| [`audio-design`](skills/disciplines/audio-design/SKILL.md) | Bus layout, decibel volume sliders, loudness, ducking, adaptive music, SFX variation |
+| [`shader-programming`](skills/disciplines/shader-programming/SKILL.md) | How effects work (dissolve, outline, fresnel rim, post) in GLSL with HLSL equivalents |
+| [`physics-tuning`](skills/disciplines/physics-tuning/SKILL.md) | Fixed timestep and interpolation, CCD against tunnelling, damping, solver iterations, layer matrices |
+| [`level-design`](skills/disciplines/level-design/SKILL.md) | Player metrics, key and ability gating with a soft-lock check, blockouts, pacing |
+| [`input-systems`](skills/disciplines/input-systems/SKILL.md) | Named actions, stick deadzones, buffered presses, rebinding with conflict checks |
+| [`game-feel`](skills/disciplines/game-feel/SKILL.md) | Juice: trauma-based screen shake, hit-stop, eased tweens, squash & stretch, knockback |
+| [`game-ui-ux`](skills/disciplines/game-ui-ux/SKILL.md) | HUD and menu rules: anchors, scaling, safe areas, gamepad focus, event-driven HUDs, accessibility minimums |
+| [`camera-systems`](skills/disciplines/camera-systems/SKILL.md) | 2D follow with deadzone and look-ahead, third-person orbit, first-person look, split-screen |
+| [`performance-optimization`](skills/disciplines/performance-optimization/SKILL.md) | Measure first: CPU- vs GPU-bound, then the biggest fix (draw calls, pooling, GC spikes) |
 
 ### Genres — 9 ([`skills/genres/`](skills/genres/))
 
@@ -252,24 +270,24 @@ primitives.
 
 | Skill | Scope |
 |-------|-------|
-| [`platformer`](skills/genres/platformer/SKILL.md) | 2D platformer: run/jump/coyote-time, tiled levels, hazards, goals |
-| [`roguelike`](skills/genres/roguelike/SKILL.md) | Grid/turn movement, procedural dungeons, permadeath, FOV, loot |
-| [`rpg`](skills/genres/rpg/SKILL.md) | Stats/leveling, inventory, quests, dialogue, save/load, combat |
-| [`fps-shooter`](skills/genres/fps-shooter/SKILL.md) | First-person controller, camera, shooting/hitscan, enemy AI |
-| [`tower-defense`](skills/genres/tower-defense/SKILL.md) | Wave spawning, lane pathing, towers/targeting, economy |
-| [`card-game`](skills/genres/card-game/SKILL.md) | Card data, deck/hand/discard zones, play rules, turn structure |
-| [`visual-novel`](skills/genres/visual-novel/SKILL.md) | Branching script, character/bg display, text box + choices, backlog |
-| [`survival-crafting`](skills/genres/survival-crafting/SKILL.md) | Resource gathering, inventory, crafting, needs, base building |
-| [`puzzle`](skills/genres/puzzle/SKILL.md) | Grid/board state, match/rule resolution, undo, level progression |
+| [`platformer`](skills/genres/platformer/SKILL.md) | Jump feel (coyote time, jump buffer, variable height, fall gravity), wall jumps, hazards, checkpoints, jump calculator |
+| [`roguelike`](skills/genres/roguelike/SKILL.md) | Run structure, permadeath, meta-progression, seeded and daily runs, turn order, field of view |
+| [`rpg`](skills/genres/rpg/SKILL.md) | Stats with a modifier stack, XP curves, damage formulas, items and equipment, quests |
+| [`fps-shooter`](skills/genres/fps-shooter/SKILL.md) | Hitscan vs projectiles, time-to-kill, damage falloff, recoil, ADS sensitivity, lag-compensated hits |
+| [`tower-defense`](skills/genres/tower-defense/SKILL.md) | Lane and maze pathing, wave pacing, targeting, armoured and flying counters, gold economy, wave-curve checker |
+| [`card-game`](skills/genres/card-game/SKILL.md) | Cards as data with one effect interpreter, deck zones, trigger stack, seeded shuffles, roguelike deckbuilders |
+| [`visual-novel`](skills/genres/visual-novel/SKILL.md) | Routes and endings, save-anywhere, backlog, skip-read-only, typewriter text (Ren'Py or any engine) |
+| [`survival-crafting`](skills/genres/survival-crafting/SKILL.md) | Gathering, recipes and tech trees, carry weight, spoilage, needs, base building |
+| [`puzzle`](skills/genres/puzzle/SKILL.md) | Match-3 cascades, Sokoban, unique-solution grids, exact undo, solver-checked levels |
 
 ### Workflows — 5 ([`skills/workflows/`](skills/workflows/))
 
 | Skill | Scope |
 |-------|-------|
-| [`game-jam`](skills/workflows/game-jam/SKILL.md) | Scope/plan/execute a jam build under time limits; submit |
-| [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | Greybox a playable vertical slice quickly; cut scope; validate the fun |
-| [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | Steamworks onboarding: app/depots, store page, builds, release checklist |
-| [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | Publish/update on itch.io: project page, channels, `butler` uploads |
+| [`game-jam`](skills/workflows/game-jam/SKILL.md) | Read the jam rules, scope to the clock, keep a cut list, check the build before submitting |
+| [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | One-question throwaway prototype: greybox, debug HUD, playtest, then keep, kill or retune |
+| [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | SteamPipe: depots, `app_build` scripts, `steamcmd` uploads, beta branches, SetLive, store review |
+| [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | `butler push` to channels, platform tags, HTML5 builds, `--userversion`, CI uploads |
 | [`game-docs`](skills/workflows/game-docs/SKILL.md) | One-page GDD with a feature index and short per-feature notes, kept in sync with the code |
 
 ## Agent compatibility

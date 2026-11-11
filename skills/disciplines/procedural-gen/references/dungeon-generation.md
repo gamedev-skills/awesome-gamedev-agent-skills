@@ -1,5 +1,9 @@
 # Dungeon and level generation
 
+Contents: A. rooms and corridors; B. BSP; C. random-walk and cellular caves;
+D. wave function collapse; connectivity validation; distribution control for
+loot and spawns.
+
 Four families cover most 2D level generation. All write into a plain grid
 (`0 = wall`, `1 = floor`, or tile ids for WFC) that a tile pass renders later.
 All take a seeded RNG.

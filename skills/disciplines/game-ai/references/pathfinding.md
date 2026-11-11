@@ -1,5 +1,13 @@
 # Pathfinding: A* in full
 
+Contents:
+1. Complete A* (engine-neutral Python) and its correctness points
+2. Heuristics by movement type
+3. Grid graph adapter (no corner cutting)
+4. Admissibility self-test
+5. When to use Godot `AStarGrid2D` or an engine navmesh instead
+6. Performance notes
+
 A* finds the shortest path on a **graph** (nodes + weighted edges). A grid is
 just one kind of graph. The algorithm is the same whether nodes are tiles, rooms,
 or navmesh polygons — only `neighbors()` and `cost()` change.
@@ -18,7 +26,7 @@ def heuristic(a, b):               # nodes are (x, y) tuples; see the table belo
     dx, dy = abs(a[0] - b[0]), abs(a[1] - b[1])
     return (dx + dy) + (math.sqrt(2) - 2) * min(dx, dy)   # octile (8-way grid)
 
-def a_star(graph, start, goal):
+def a_star(graph, start, goal, h=heuristic):   # h=lambda a, b: 0 turns this into Dijkstra
     # Priority queue of (f_score, tie, node). heapq pops the SMALLEST first.
     frontier = [(0, 0, start)]
     came_from = {start: None}      # node -> node we reached it from
@@ -35,7 +43,7 @@ def a_star(graph, start, goal):
             # Relax: accept this edge only if it improves the best known cost.
             if nxt not in cost_so_far or new_cost < cost_so_far[nxt]:
                 cost_so_far[nxt] = new_cost
-                priority = new_cost + heuristic(nxt, goal)   # f = g + h
+                priority = new_cost + h(nxt, goal)           # f = g + h
                 counter += 1
                 heapq.heappush(frontier, (priority, counter, nxt))
                 came_from[nxt] = current
@@ -104,6 +112,29 @@ If diagonals cost 1 the true distance is Chebyshev (`max(dx, dy)`) and octile
 overestimates; on a 4-way grid (`diagonal=False`) switch the heuristic to Manhattan.
 Terrain weights below 1 make any of these heuristics inadmissible.
 
+## Admissibility self-test
+
+Run this whenever the heuristic, step costs or terrain weights change. Dijkstra (`h = 0`) is
+always optimal, so any grid where A* returns a higher cost means the heuristic overestimates.
+
+```python
+import random
+
+def check_admissible(trials=50, size=20, wall_ratio=0.25, seed=1):
+    rng = random.Random(seed)
+    for _ in range(trials):
+        walls = {(rng.randrange(size), rng.randrange(size))
+                 for _ in range(int(size * size * wall_ratio))}
+        start, goal = (0, 0), (size - 1, size - 1)
+        walls -= {start, goal}
+        graph = GridGraph(walls, size, size, diagonal=True)
+        _, a_cost = a_star(graph, start, goal)
+        _, d_cost = a_star(graph, start, goal, h=lambda a, b: 0.0)
+        if goal in d_cost:
+            assert abs(a_cost[goal] - d_cost[goal]) < 1e-9, (a_cost[goal], d_cost[goal])
+    return True
+```
+
 ## When to use an engine navmesh instead
 
 Hand-rolled grid A* is ideal for 2D tile games and for understanding the
@@ -115,9 +146,13 @@ agent radius/height, prefer the engine's baked navigation:
 - **Unreal** — Nav Mesh Bounds + `AIController` MoveTo (see `unreal-behavior-trees`).
 - **Godot** — `NavigationRegion2D/3D` + `NavigationAgent2D/3D`, querying
   `NavigationServer2D/3D` for paths. For a tile grid, the built-in `AStarGrid2D`
-  already implements this file: set `region`, `cell_size`, `diagonal_mode` and
-  `default_compute_heuristic`/`default_estimate_heuristic`, call `update()`, mark walls
-  with `set_point_solid()`, then read `get_id_path(from, to)` (or `get_point_path`).
+  already implements this file: set `region` and `cell_size`, set `diagonal_mode`
+  (the default `DIAGONAL_MODE_ALWAYS` cuts wall corners) and the heuristics, call
+  `update()`, and only then mark walls with `set_point_solid()` or
+  `fill_solid_region()`, because `update()` clears every solid flag and weight. Read
+  paths with `get_id_path(from, to)` or `get_point_path`; pass
+  `allow_partial_path = true` to get the closest reachable cell instead of an empty
+  array. `jumping_enabled` speeds searches up but ignores weight scales.
 
 These handle path smoothing, off-mesh links, and crowd avoidance you would
 otherwise reimplement. Use A* directly when the world is a discrete grid/graph or

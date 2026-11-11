@@ -1,150 +1,196 @@
 ---
 name: love2d-core
 description: >
-  Structure and debug a LÖVE (Love2D) game in Lua: the love.load/update/draw loop,
-  delta-time movement, input, and screen states. Use when building a LÖVE 11.x game
-  (main.lua, conf.lua, .love).
+  Builds and debugs LÖVE (Love2D) 11.x games in Lua: main.lua callbacks, conf.lua, fixed steps,
+  crisp pixel-art scaling, love.filesystem saves and a scripted run. Use when main.lua calls
+  love.*, or on blurry pixel art, the blue error screen or speed tied to frame rate. Not for
+  Defold (`defold-core`) or engine-neutral saves and input (`save-systems`, `input-systems`).
 ---
 
 # LÖVE (Love2D) Core
 
-Set up and debug the foundation of a LÖVE game in Lua: the callback loop, frame-rate-
-independent movement, input, and screen states. Targets **LÖVE 11.5**.
+Build and debug a LÖVE game. New code targets **LÖVE 11.5**, the current stable release;
+12.0 is unreleased and changes APIs, so do not copy 12.0 examples into an 11.x game.
 
 ## When to use
 
-- Use when starting a LÖVE game, wiring up `main.lua`/`conf.lua`, or fixing the core loop,
-  movement that runs at the wrong speed, input handling, or screen switching.
-- Use when the workspace has `main.lua` calling `love.*`, a `conf.lua`, or a `.love` file.
+- Starting a LÖVE game, or fixing its loop, timing, input, drawing, scaling, saving or
+  screen flow.
+- Any folder with `main.lua` calling `love.*`, a `conf.lua`, or a `.love` archive.
 
-**When *not* to use:** Lua *language* questions unrelated to LÖVE; physics bodies/joints
-(LÖVE uses Box2D via `love.physics` — a separate concern); shader code (`love.graphics`
-GLSL is its own topic). For cross-engine save/load patterns, use `save-systems`.
+**When not to use:** Defold (also Lua, but `game.project` and `.script` files); physics
+joints, shaders and networking beyond pointers; portable design owned by related skills.
 
-## Core workflow
+## Workflow
 
-1. **Confirm the entry points.** A LÖVE game runs `main.lua`; it should define
-   `love.load()` (one-time setup), `love.update(dt)` (state), and `love.draw()` (rendering).
-   Window/version setup goes in `conf.lua` (run *before* modules load).
-2. **Pin the version.** Set `t.version = "11.5"` in `conf.lua` so LÖVE warns on mismatch.
-3. **Drive all motion by `dt`** (delta time, in seconds) so speed is frame-rate independent.
-4. **Handle input** two ways: polled (`love.keyboard.isDown` in `update`, for held keys) and
-   event (`love.keypressed` callback, for discrete presses).
-5. **Manage screens** (menu, game, pause) with a small state stack rather than a pile of
-   `if` flags — see Patterns and `references/state-stack.md`.
-6. **Run and observe.** Launch with `love .` from the project folder; verify the window,
-   motion speed, and input on screen before assuming it works.
+1. **Read `conf.lua` first.** `t.version` names the target LÖVE version and `t.identity`
+   the save folder. Keep the project's version; ask before porting between 0.10, 11 and 12.
+2. **Load once, draw often.** Create images, fonts, canvases and sounds in `love.load` (or
+   a loader), never inside `love.draw` or `love.update`.
+3. **Simulate in steps.** Scale motion by `dt`; for physics, collisions or replays use the
+   fixed-step accumulator below.
+4. **Wrap world drawing in `push`/`pop`** and draw the HUD after `pop`, in screen space.
+5. **Verify.** Add the `--frames` check below and run it under a timeout; read the output
+   and open the screenshot in the save directory. Report what you ran. Input feel and sound
+   need a person: ask the user to play briefly and report speed, controls and audio.
 
-## Patterns
-
-### 1. `main.lua` skeleton (the callback loop + input)
+## Pattern: conf.lua with an error-exit hook
 
 ```lua
--- main.lua — LÖVE calls these callbacks for you. Colors are 0–1 in LÖVE 11.x.
-function love.load()
-    -- One-time setup. speed is in PIXELS PER SECOND, not per frame.
-    player = { x = 100, y = 100, size = 40, speed = 220 }
-    love.graphics.setBackgroundColor(0.1, 0.1, 0.12)
+function love.conf(t)
+    t.version = "11.5"               -- warns when run on another LÖVE version
+    t.identity = "my-game"           -- save folder name; set it before the first release
+    t.window.width, t.window.height = 960, 540
+end
+
+-- Under --frames, print errors and exit 1 instead of showing the blue error screen.
+-- conf.lua runs before main.lua, so this also catches syntax errors in main.lua.
+if arg and table.concat(arg, " "):find("--frames", 1, true) then
+    function love.errorhandler(msg)
+        print("ERROR: " .. tostring(msg) .. debug.traceback("", 2))
+        return function() return 1 end
+    end
+end
+```
+
+## Pattern: fixed step and a scripted run
+
+```lua
+local STEP = 1 / 60
+local acc = 0
+local check = { frames = nil, shot = nil, count = 0 }
+local player
+
+function love.load(args)             -- args: command-line arguments after the game folder
+    for i, a in ipairs(args) do
+        if a == "--frames" then check.frames = tonumber(args[i + 1]) end
+        if a == "--shot" then check.shot = args[i + 1] end
+    end
+    love.graphics.setDefaultFilter("nearest", "nearest")  -- before any newImage/newCanvas
+    player = { x = 100, y = 100, speed = 120 }            -- pixels per second
+end
+
+local function step(dt)
+    local dx = (love.keyboard.isDown("right") and 1 or 0)
+             - (love.keyboard.isDown("left") and 1 or 0)
+    player.x = player.x + dx * player.speed * dt
 end
 
 function love.update(dt)
-    -- Polled input: good for continuous movement while a key is held.
-    if love.keyboard.isDown("right") then player.x = player.x + player.speed * dt end
-    if love.keyboard.isDown("left")  then player.x = player.x - player.speed * dt end
-    if love.keyboard.isDown("down")  then player.y = player.y + player.speed * dt end
-    if love.keyboard.isDown("up")    then player.y = player.y - player.speed * dt end
+    acc = acc + math.min(dt, 0.25)   -- clamp stalls so the loop cannot spiral
+    while acc >= STEP do
+        step(STEP)
+        acc = acc - STEP
+    end
+    check.count = check.count + 1
+    if check.frames and check.count == check.frames and check.shot then
+        love.graphics.captureScreenshot(check.shot)       -- saved in the save directory
+    elseif check.frames and check.count > check.frames then
+        print("RUN OK frames=" .. check.frames .. " save=" .. love.filesystem.getSaveDirectory())
+        love.event.quit(0)
+    end
 end
+```
+
+Use `love.keypressed(key, scancode, isrepeat)` for one-off actions and
+`love.keyboard.isDown` inside `step` for held movement.
+
+## Pattern: pixel-art canvas and camera
+
+```lua
+local W, H = 320, 180
+local canvas                         -- create in love.load, after setDefaultFilter
 
 function love.draw()
-    love.graphics.setColor(0.2, 0.8, 1.0)                 -- tint ON
-    love.graphics.rectangle("fill", player.x, player.y, player.size, player.size)
-    love.graphics.setColor(1, 1, 1)                       -- reset tint before text/images
-    love.graphics.print("Arrow keys to move, Esc to quit", 10, 10)
-end
+    love.graphics.setCanvas(canvas)
+    love.graphics.clear(0.1, 0.1, 0.12)
+    love.graphics.push()
+    love.graphics.translate(-math.floor(cam.x), -math.floor(cam.y))  -- whole pixels
+    drawWorld()
+    love.graphics.pop()              -- every push needs a pop, even on an early return
+    drawHud()                        -- screen space, after pop
+    love.graphics.setCanvas()
 
-function love.keypressed(key)
-    -- Event input: fires once per physical press. Use for menus, jumps, toggles.
-    if key == "escape" then love.event.quit() end
-end
-```
-
-### 2. Frame-rate independence (the single most common bug)
-
-```lua
--- RIGHT: scaled by dt → same real-world speed at 30 or 240 FPS.
-player.x = player.x + player.speed * dt
--- WRONG: "pixels per frame" → moves twice as fast at double the frame rate.
-player.x = player.x + player.speed
-```
-
-### 3. `conf.lua` (window + version; runs before `main.lua`)
-
-```lua
--- conf.lua — must be its own file; love.conf will NOT run from main.lua.
-function love.conf(t)
-    t.version = "11.5"             -- the LÖVE version this game targets (string "X.Y")
-    t.window.title  = "My LÖVE Game"
-    t.window.width  = 800
-    t.window.height = 600
-    t.window.vsync  = 1            -- number since 11.0: 1 = on, 0 = off, -1 = adaptive
-    t.window.resizable = false
-    t.modules.physics = false      -- disable modules you don't use to trim startup/memory
+    local w, h = love.graphics.getDimensions()
+    local s = math.max(1, math.floor(math.min(w / W, h / H)))  -- integer scale only
+    love.graphics.draw(canvas, math.floor((w - W * s) / 2), math.floor((h - H * s) / 2), 0, s, s)
 end
 ```
 
-### 4. Color is 0–1 in LÖVE 11.x (not 0–255)
+Save with `love.filesystem.write("save.lua", text)` and read back with
+`love.filesystem.read` or `love.filesystem.load`; files land in the save directory.
 
-```lua
--- LÖVE 11.x uses normalized floats. (Pre-11.0 code used 0–255 and will look wrong.)
-love.graphics.setColor(1, 0, 0)                          -- opaque red
-love.graphics.setColor(0.2, 0.8, 1.0, 0.5)               -- translucent cyan (alpha 0.5)
--- Need to convert old byte values? Use the helper instead of dividing by hand:
-love.graphics.setColor(love.math.colorFromBytes(128, 234, 255))
+## The check to run
+
+```sh
+love --version
+timeout 30 love . --frames 120 --shot frame.png; echo "exit=$?"
 ```
 
-### 5. Screen states (brief — full manager in references)
+Expect `RUN OK` and exit 0; exit 1 prints the Lua error and traceback; exit 124 means the
+game hung or the error hook is missing. The PNG is in the printed save directory, not the
+project folder. On a Linux machine without a display, run `xvfb-run -a love . …`; if OpenAL
+cannot open a sound device there, point `ALSA_CONFIG_PATH` at a file containing
+`pcm.!default { type null }`.
 
-```lua
--- A screen is a table with optional :update(dt), :draw(), :keypressed(key).
--- Keep the active screen on a stack so pause/menu overlays are trivial to pop.
-local Stack = require("state_stack")   -- see references/state-stack.md for the module
+## Gotchas
 
--- Call a method on the top screen only if it defines it (a menu may have no update).
-local function forward(name, ...)
-    local screen = Stack.current()
-    if screen and screen[name] then screen[name](screen, ...) end
-end
-
-function love.load()          Stack.push(require("screens.menu")) end
-function love.update(dt)      forward("update", dt) end
-function love.draw()          forward("draw") end
-function love.keypressed(key) forward("keypressed", key) end
-```
-
-## Pitfalls
-
-- **Speed varies with FPS** → you forgot `* dt`. Every per-frame change to position, timers,
-  or animation must be scaled by `dt`.
-- **`love.conf` placed in `main.lua`** → it silently does nothing. It must live in `conf.lua`,
-  which LÖVE runs *before* loading modules.
-- **Colors washed out or invisible** → you used 0–255 values. 11.x does not rescale them;
-  every channel above 1 draws at full intensity, so `setColor(128, 234, 255)` comes out
-  plain white and an alpha of `128` is fully opaque. Use 0–1 floats or
-  `love.math.colorFromBytes` (11.3+).
-- **Everything tinted after one `setColor`** → color is global and persists across draws.
-  Reset with `love.graphics.setColor(1, 1, 1)` before drawing text/images you want untinted.
-- **Holding a key fires `love.keypressed` only once** → key repeat is off by default.
-  Call `love.keyboard.setKeyRepeat(true)` (e.g. for text fields or menu scrolling); the
-  repeats then arrive with the third argument `isrepeat` set, so a jump handler can
-  ignore them. Releases go to `love.keyreleased(key)`.
+- **Pixel art looks blurry** → images default to linear filtering. Call
+  `love.graphics.setDefaultFilter("nearest", "nearest")` before creating images, fonts or
+  canvases (earlier objects keep `linear`), draw to a low-resolution canvas, scale it by a
+  whole number, and round camera offsets.
+- **`Maximum stack depth reached (more pushes than pops?)`** → a `push` without a matching
+  `pop`, often skipped by an early `return` in `love.draw`. The stack survives across frames,
+  so the error appears a few frames later. `Minimum stack depth reached` is the reverse.
+- **Save file missing from the project folder** → `love.filesystem.write` only writes to the
+  save directory (`love.filesystem.getSaveDirectory()`, named by `t.identity`; on Linux
+  `~/.local/share/love/<identity>`). The game folder is read-only. Changing `t.identity`
+  after release orphans players' saves.
+- **A module's state resets or is duplicated** → it was required with two spellings.
+  `require("screens.menu")` and `require("screens/menu")` load two separate copies. Always
+  use dotted paths from the game root.
+- **Same "random" level every run** → LuaJIT's `math.random` is not seeded at startup, while
+  `love.math.random` is. Use `love.math.random` (or `love.math.newRandomGenerator(seed)` for
+  replayable runs).
+- **Speed changes with frame rate, or objects tunnel after a stall** → scale by `dt`, clamp
+  `dt`, and step physics and collisions at a fixed rate.
+- **The game freezes on the blue error screen in a scripted run** → the default error
+  handler waits for the user. Use the `conf.lua` hook above so errors print and exit 1.
+- **Colours come out white or fully opaque** → 11.x colours are 0–1. `setColor(128, 234,
+  255)` draws white; use `love.math.colorFromBytes(128, 234, 255)` for byte values.
+- **Everything is tinted after one `setColor`** → colour is global state. Reset with
+  `love.graphics.setColor(1, 1, 1)` before drawing images and text.
+- **`love.conf` has no effect** → it must be in `conf.lua`, which runs before `main.lua`.
+- **Holding a key fires `love.keypressed` once** → key repeat is off by default.
+  `love.keyboard.setKeyRepeat(true)` enables it; repeats arrive with `isrepeat == true`.
+- **Memory climbs and frames slow down** → `newFont`, `newImage` or `newCanvas` is called
+  every frame. Create them once and reuse them.
 
 ## References
 
-- For a complete push/pop screen-state manager (menu → game → pause, with delegated
-  callbacks), read `references/state-stack.md`.
+- Read `references/state-stack.md` when the game needs menus, pause overlays or several
+  screens: a complete push/pop screen manager with delegated callbacks and example screens.
 
 ## Related skills
 
-- `save-systems` — saving/loading game state (engine-agnostic).
-- `input-systems` — rebindable, multi-device input architecture.
-- `pygame-core` / `phaser-core` — the same loop concepts in other lightweight engines.
+- `save-systems` — save formats, slots and migration; `input-systems` — rebinding and
+  gamepads.
+- `defold-core` — the other Lua engine in this catalog; `pygame-core` — the same loop in
+  Python.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- LÖVE 11.5 (2023-12-03) is the latest stable release; 12.0 has no stable release yet.
+- The patterns, the check commands and the behaviour in Gotchas (filters, `require`
+  spellings, seeding, push/pop errors across frames, save directory, error hook,
+  `colorFromBytes`, key repeat) were run with the official LÖVE 11.5 x86_64 AppImage under
+  Xvfb. Taken from the wiki only: `t.window.vsync` is a number since 11.0 and
+  `love.math.colorFromBytes` arrived in 11.3.
+- Sources: [LÖVE releases](https://github.com/love2d/love/releases),
+  [love2d.org](https://love2d.org/), [11.5 `love.run`
+  source](https://github.com/love2d/love/blob/11.5/src/modules/love/callbacks.lua),
+  [love.filesystem](https://love2d.org/wiki/love.filesystem),
+  [love.graphics.setDefaultFilter](https://love2d.org/wiki/love.graphics.setDefaultFilter),
+  [Config Files](https://love2d.org/wiki/Config_Files).

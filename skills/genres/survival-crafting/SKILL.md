@@ -1,148 +1,125 @@
 ---
 name: survival-crafting
 description: >
-  Build a survival-crafting game: resource gathering, inventory, crafting and a tech tree,
-  needs (hunger/thirst/temperature), and base building. Use for a survival or crafting/base-building game.
+  Designs survival-crafting loops in any engine: gathering, recipes and tech trees, carry weight,
+  spoilage, hunger and temperature, and base building. Use for a Minecraft-, Valheim- or Don't
+  Starve-like, or crafting that eats materials or needs that feel like chores. Not for RPG
+  equipment stats (`rpg`), terrain generation (`procedural-gen`) or save files (`save-systems`).
 ---
 
-# Survival Crafting
+# Survival crafting
 
-A playbook for survival-crafting games — the gather → craft → build loop, survival needs, the
-crafting/tech progression, and base building. This is a **compositional** skill: it orchestrates
-inventory data, world content, persistence, and threats. It does not re-teach those primitives;
-it defines the loop and the pressure systems (needs, scarcity, escalation) that make survival
-tense rather than tedious.
+Owns the gather, craft, build and survive loop and the pressure systems around it: needs,
+scarcity, logistics and escalating threats. Each tier of tools must open the next tier of
+resources; when that ladder breaks, the game turns into chores.
 
 ## When to use
 
-- Use when the player **gathers resources, crafts items/structures, manages survival needs, and
-  builds a base** against escalating threats: survival sandbox, crafting/base-building game.
-- Use when designing needs (hunger/thirst/temperature), a crafting tech tree, gathering loops,
-  or base placement/building.
+- The player gathers resources, crafts tools and structures, manages needs and builds a base
+  against rising threats: survival sandbox, crafting game, colony or base builder.
+- Tuning needs, recipes, carry limits, spoilage, building rules or raid pacing.
 
-**When *not* to use:** crafting as a minor RPG feature → `rpg`. Permadeath grid dungeon →
-`roguelike`. For inventory/items as data assets, use `godot-resources` /
-`unity-scriptableobjects`; for world generation, `procedural-gen`.
+**When not to use:** weapon and armour stat systems, rarity and affixes (`rpg`); world and
+biome generation (`procedural-gen`); save file format and migration (`save-systems`).
 
-## Core loop
+## Workflow
 
-**Gather raw resources → craft tools/items → build and upgrade a base → manage survival needs
-→ explore farther for better resources → survive escalating threats → repeat at a higher tier.**
-Each loop should unlock the *next* loop (better tools → reach new biomes → new resources →
-better crafts). When that ladder breaks, the game becomes a grind.
+1. **Choose the needs model with the user** (it sets the tone):
+   - *Attrition:* an empty bar causes damage. Minecraft: 20 hunger points; at 0 the player loses
+     1 HP every 4 s, stopping at 10 HP on Easy and 1 HP on Normal, and it can kill on Hard.
+   - *Buff:* food raises maximums instead. Valheim: up to 3 different foods at once, each
+     adding max health and stamina for about 10-50 minutes; nobody starves. Better for
+     co-op and building-focused games.
+2. **Set the clock.** Pick day length (Minecraft: 20 minutes, 10 of them full day) and size
+   needs to it: a full hunger bar lasts about 1-2 days of normal activity, thirst drains about
+   1.5-2x faster than hunger, warnings appear at 25-30%, and activity (sprint, cold, carrying
+   weight) speeds the drain.
+3. **Draw the progression ladder** as a graph: resource tier → tool → new node type → station
+   → next resource tier. Each step needs one new trip outward from the base.
+4. **Define recipes as data** with a station and tech requirement (Pattern 1), and choose how
+   they are discovered: show a recipe once the player has picked up one of its ingredients, so
+   the menu teaches the next goal without a wiki.
+5. **Set logistics limits:** slots with stack sizes (Minecraft stacks most items to 64), or
+   weight (Valheim starts at 300). Storage and crafting from nearby chests relieve them at base.
+6. **Pace threats by progress** (bosses killed, tech tier, base size), not by wall-clock time
+   alone, and telegraph big raids at least a day ahead.
+7. **Check it.** Write and run these as tests and report the results:
+   - every craftable item is reachable from the starting resources through the recipe and tech
+     graph, and no recipe needs its own output (or a later tier) to be made;
+   - crafting with a full inventory either fits the output or changes nothing;
+   - simulated needs: minutes from full to warning and to empty at idle and at sprint, printed
+     against the day length;
+   - spoilage moves food through each freshness tier at the expected time;
+   - save, change one chunk and a container, reload: the change and the contents survive.
 
-## Must-have systems
+## Spoilage
 
-1. **Resource nodes + gathering** — harvestable world objects; tool requirements/tiers; respawn.
-2. **Inventory** — stacks, capacity (slots or weight), drop/transfer, hotbar.
-3. **Crafting** — recipes (inputs → output), a crafting station/tech gate, a tech tree.
-4. **Survival needs** — hunger, thirst, temperature, stamina, health, with decay + consequences.
-5. **Base building** — placeable structures, a build grid/snapping, storage, crafting stations.
-6. **World + day/night** — biomes/resources (often procedural); a time cycle driving threats.
-7. **Threats** — hostile creatures/weather/events that escalate; combat or avoidance.
-8. **Save/load** — world state, inventory, base, needs, progression; large-world persistence.
+Track freshness per stack (`0..1`, merged as a count-weighted average) and apply tiers.
+Don't Starve's tiers are a tested reference: fresh (50-100%) gives full value; stale
+(20-50%) gives 2/3 of the hunger, 1/3 of the health and no sanity; spoiled (under 20%) gives
+1/2 the hunger, no health and costs 10 sanity, then the item rots. Cooking halves the spoilage
+so far. Cold storage slows the clock. Show the tier on the icon.
 
-## Design knobs
-
-| Knob | Effect | Notes |
-|------|--------|-------|
-| Needs decay rates | pressure cadence | Slow enough to explore, fast enough to matter. |
-| Need-failure consequence | stakes | Damage over time, not instant death. |
-| Resource scarcity / respawn | exploration push | Scarce near base → travel for more. |
-| Tool tiers / gating | progression ladder | Better tool → new node types. |
-| Recipe complexity / tech depth | long-term goals | Multi-step chains, not flat lists. |
-| Inventory limit (slots/weight) | logistics tension | Forces base trips and storage. |
-| Threat escalation curve | difficulty over time | Night/seasonal/event ramps. |
-| Day length | rhythm | Day = gather, night = defend. |
-
-## Patterns
-
-### 1. Needs decay with graded consequences
-
-```python
-# Pseudocode in the per-frame/per-tick update. dt = seconds. Needs fall; failure bleeds HP.
-def update_needs(p, dt):
-    p.hunger = max(0, p.hunger - HUNGER_RATE * dt)
-    p.thirst = max(0, p.thirst - THIRST_RATE * dt)
-    p.temp   = approach(p.temp, ambient_temperature(p), TEMP_RATE * dt)
-
-    # Consequences are graded, not binary: warnings, then attrition — never instant death.
-    if p.hunger == 0 or p.thirst == 0:
-        p.hp -= STARVE_DAMAGE * dt          # damage over time creates urgency with recovery room
-    if p.temp < COLD_THRESHOLD or p.temp > HEAT_THRESHOLD:
-        p.hp -= EXPOSURE_DAMAGE * dt
-    if p.hunger > 0 and p.thirst > 0 and not exposed(p):
-        p.hp = min(p.max_hp, p.hp + REGEN_RATE * dt)   # safe + fed => heal
-```
-
-### 2. Crafting: validate, then atomically consume inputs
+## Pattern 1: atomic crafting
 
 ```python
-# Pseudocode. Recipes are data: inputs -> output, with an optional station/tech requirement.
-recipe = {"id": "stone_axe",
-          "inputs": {"wood": 3, "stone": 2}, "output": ("stone_axe", 1),
-          "station": "workbench", "requires_tech": "basic_tools"}
-
-def can_craft(recipe, inv, tech, station):
-    if recipe.get("requires_tech") and recipe["requires_tech"] not in tech: return False
-    if recipe.get("station") and recipe["station"] != station: return False
-    return all(inv.count(item) >= n for item, n in recipe["inputs"].items())
+# Pseudocode. Validate everything, then consume and add as one step.
+recipe = {"id": "stone_axe", "inputs": {"wood": 3, "stone": 2}, "output": ("stone_axe", 1),
+          "station": "workbench", "tech": "basic_tools"}
 
 def craft(recipe, inv, tech, station):
-    if not can_craft(recipe, inv, tech, station): return False
-    if not inv.can_add_after_removing(recipe["inputs"], *recipe["output"]):
-        return notify("No room for the result")    # check space BEFORE consuming anything
-    for item, n in recipe["inputs"].items(): inv.remove(item, n)   # consume all, then add
-    inv.add(*recipe["output"])                                     # atomic: no partial craft
-    return True
+    if recipe["tech"] and recipe["tech"] not in tech: return "locked"
+    if recipe["station"] and recipe["station"] != station: return "needs " + recipe["station"]
+    if any(inv.count(i) < n for i, n in recipe["inputs"].items()): return "missing materials"
+    if not inv.fits_after_removing(recipe["inputs"], *recipe["output"]):
+        return "no room"                             # count slots the inputs free up
+    for item, n in recipe["inputs"].items():
+        inv.remove(item, n)
+    inv.add(*recipe["output"])
+    return "ok"
 ```
 
-The space check must count the slots the inputs free up (crafting 3 wood into 1 plank can
-succeed in a full bag). If space is short, refuse, or drop the result on the ground; never
-consume the inputs and then fail the add.
+## Gotchas
 
-### 3. Gathering gated by tool tier
-
-```python
-# Pseudocode. A node yields only if the held tool meets its required tier.
-def harvest(node, tool):
-    if tool.tier < node.required_tier:
-        return notify("Need a better tool")        # e.g. stone node needs a pickaxe, not fists
-    node.hp -= tool.power
-    if node.hp <= 0:
-        spawn_drops(node.drop_table)               # weighted drops (see roguelike loot pattern)
-        node.start_respawn(node.respawn_time)      # node returns later; world isn't depleted forever
-```
-
-## Pitfalls / failure modes
-
-- **Needs that kill instantly** → frustration and save-scumming. Make failure damage over time,
-  with clear warnings and a recovery path (Pattern 1).
-- **Grind without a ladder** → gathering that never unlocks new gathering. Each tier must open
-  the next (better tool → new node → new resource → better craft).
-- **Non-atomic crafting** → inputs consumed but output not granted on an edge case, most often
-  a full inventory. Validate inputs and space first, then consume-and-add as one step
-  (Pattern 2).
-- **Inventory with no limits** → no logistics tension and no reason for a base/storage. Cap by
-  slots or weight.
-- **Permanently depleting the world** → players strip the map and quit. Respawn nodes or
-  regenerate resources over time.
-- **Per-frame decay unscaled by `dt`** → needs drain at different speeds on different hardware.
-  Scale by `dt`.
-- **No save / fragile save of a large world** → a crash wipes hours. Persist world+base+needs
-  incrementally; version it (see `save-systems`).
-- **Flat threat curve** → no late-game pressure. Escalate via night/season/event tiers.
-
-## Composition (build it from these skills)
-
-- **Items/recipes as data:** `godot-resources` / `unity-scriptableobjects` — items, recipes, tech tree, drop tables.
-- **World:** `procedural-gen` for biomes/resource placement; `level-design` for authored areas.
-- **Persistence:** `save-systems` for large-world state, base, inventory, needs, and versioning.
-- **Threats:** `game-ai` for creatures; the engine physics skill for melee/collision.
-- **Building/placement:** `godot-tilemap` / `unity-tilemap-2d` (2D) or `godot-3d-essentials` (3D) plus UI snapping.
-- **UI:** `game-ui-ux` for inventory/crafting/HUD layout and scaling; `godot-ui-control` for the concrete inventory, crafting menu, needs HUD, and build mode.
+- **Inputs consumed, nothing crafted** → output added after removal into a full bag, or an
+  exception between the two steps. Check space including freed slots first (Pattern 1); if
+  "drop on the ground" is the rule, do it inside the same step.
+- **Needs feel like chores** → bars that drain fast with small refills. Fewer, larger meals,
+  meal variety that rewards effort, or the buff model.
+- **Instant deaths from needs** → binary failure. Warn, then attrition with time to recover.
+- **Map stripped, players quit** → no regrowth. Respawn nodes on a timer or when the player is
+  far away, and keep rare nodes scarce near base so exploration stays the answer.
+- **Inventory always full** → weight or slots with no base-side relief. Add storage, crafting
+  from nearby containers and a deposit-all action.
+- **Mid-game stalls** → a tier needs a resource with no hint where to find it. Every tier's key
+  resource must be visible or hinted before the player needs it.
+- **Spoilage doubles or resets when stacks merge** → freshness kept per item but merged by
+  taking the newest. Merge by count-weighted average.
+- **Needs drain differently on fast machines** → per-frame decay without `dt`, or decay tied to
+  render frames. Tick needs on the game clock.
+- **Huge, slow saves or lost bases** → saving the whole world each time. Save changed chunks
+  and structures incrementally, autosave on sleep or day rollover, never mid-combat
+  (`save-systems`).
 
 ## References
 
-- For the full needs model and thresholds, the crafting tech-tree graph, gather/respawn tuning,
-  base-building grids, and threat escalation, read `references/needs-and-crafting.md`.
+- `references/needs-and-crafting.md`: read when writing the needs model and thresholds, the
+  tech tree as a graph, multi-step recipe chains, gather and respawn rules, build placement
+  and stability, threat escalation or incremental world saves.
+
+Related: `rpg` (gear stats and loot rarity), `procedural-gen` (biomes, resource placement),
+`save-systems`, `game-ai` (creatures and raiders), `game-ui-ux` with the engine UI skill
+(inventory, crafting menu, needs HUD), `godot-tilemap` or `unity-tilemap-2d` (2D build grids).
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Minecraft hunger (20 points, starvation 1 HP per 4 s, difficulty floors 10/1/0 HP):
+  https://minecraft.wiki/w/Food and https://minecraft.wiki/w/Damage. Day length 24,000
+  ticks = 20 minutes: https://minecraft.wiki/w/Daylight_cycle.
+- Don't Starve freshness tiers and cooking halving spoilage: https://dontstarve.wiki.gg/wiki/Food.
+- Valheim: 3 food slots adding max health and stamina, base carry weight 300 (community
+  guides, for example https://eip.gg/valheim/guides/carry-weight).
+- Pacing ratios (bar length in days, thirst versus hunger, warning thresholds) are design
+  starting points.

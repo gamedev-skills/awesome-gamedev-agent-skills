@@ -1,177 +1,204 @@
 ---
 name: godot-physics
 description: >
-  Use Godot 4.7 physics bodies and detection in 2D and 3D: RigidBody, StaticBody,
-  Area, and CharacterBody; collision layers vs masks; contact/overlap signals; and
-  raycasts (RayCast nodes and direct space-state queries). Use when configuring
-  collision layers/masks, detecting overlaps with Area2D/Area3D, applying forces to a
-  RigidBody, or casting rays in a Godot project (.tscn with physics bodies), including
-  3D projects running Jolt Physics, the default 3D engine for projects created in 4.6+.
+  Godot 4.7 physics API in 2D and 3D: body and Area types, collision_layer and mask bits, Area
+  signals for hurtboxes, RayCast and space queries, and Jolt (3D default since 4.6). Use when
+  objects pass through each other, body_entered never fires or a raycast hits itself. Not for
+  engine-neutral jitter and tunnelling (`physics-tuning`) or CharacterBody movement
+  (`godot-2d-movement`).
 ---
 
 # Godot Physics (4.x, 2D + 3D)
 
-Pick the right physics body, wire up collision layers/masks, detect overlaps, and cast
-rays. Concepts apply to both 2D and 3D (swap the `2D`/`3D` suffix). Targets
-**Godot 4.7**. In 3D, projects created with Godot 4.6 or later run **Jolt Physics** by
-default; older projects keep **GodotPhysics3D** unless someone switched them. 2D always
-uses Godot's own 2D engine.
+Pick the body type, wire collision layers and masks, detect overlaps, cast rays, and know
+where Jolt differs. Swap the `2D`/`3D` suffix as needed. Targets **Godot 4.7** (see Version
+notes). 2D always uses Godot's own 2D engine.
 
 ## When to use
 
-- Use when choosing between body types, setting collision layers/masks so the right
-  things collide, detecting overlaps (triggers, hurtboxes) with `Area`, applying
-  forces/impulses to a `RigidBody`, or casting rays for line-of-sight/ground checks.
+- Choosing a body type, setting layers/masks so the right things collide, overlap
+  detection (triggers, hurtboxes) with `Area`, forces/impulses on a `RigidBody`, or rays
+  for line-of-sight and ground checks.
 
-**When *not* to use:** kinematic character controllers (`move_and_slide`) →
-`godot-2d-movement`; tile collision setup → `godot-tilemap`; tuning the *feel* of physics
-(timestep, mass, jitter) → `physics-tuning`.
+**When *not* to use:** `move_and_slide` controllers → `godot-2d-movement`; tile collision
+setup → `godot-tilemap`; engine-neutral feel (timestep, mass, jitter, CCD strategy) →
+`physics-tuning`.
 
 ## Core workflow
 
-1. **For 3D, check which engine runs** before debugging behavior: Project Settings >
-   Physics > 3D > Physics Engine (`[physics]` `3d/physics_engine="Jolt Physics"` in
-   `project.godot`). Projects created in 4.6+ get Jolt written there by default; with no
-   such line (`DEFAULT`) the engine is GodotPhysics3D. The API is the same, but joints,
-   ray-cast face indices, kinematic contacts, and collision margins behave differently
-   (see Pitfalls).
-2. **Choose the body type:**
-   - `StaticBody` — never moves (floors, walls). Collides, no simulation.
-   - `RigidBody` — fully simulated (gravity, forces, bouncing). Don't set its
-     `position` directly; apply forces/impulses or set `linear_velocity`.
-   - `CharacterBody` — script-driven kinematic (see `godot-2d-movement`).
-   - `Area` — detects overlaps and can apply gravity/damping; no solid collision.
-   Every body needs a `CollisionShape` (or `CollisionPolygon`) child.
-3. **Configure layers and masks.** A body is *on* its **layers** and *scans for* its
-   **masks**. Two bodies interact only if one's layer is in the other's mask. Name layers
-   in Project Settings > Layer Names for clarity.
-4. **Detect overlaps** with `Area` signals (`body_entered`, `area_entered`).
-5. **Drive RigidBodies with forces/impulses**, or override `_integrate_forces` for full
-   control.
-6. **Cast rays** with a `RayCast2D/3D` node (polled each frame) or a one-shot space-state
-   query from code.
+1. **For 3D, read which engine runs** before debugging behavior. In `project.godot`,
+   `[physics]` `3d/physics_engine="Jolt Physics"` means Jolt; no line (`DEFAULT`) means
+   GodotPhysics3D. New 4.6+ projects write the Jolt line. The API is the same, but joints,
+   ray face indices, kinematic contacts and margins differ (see Gotchas).
+2. **Choose the body type:** `StaticBody` never moves; `AnimatableBody` is moved by code or
+   animation and pushes others (platforms, doors); `RigidBody` is simulated (move it with
+   forces, impulses or `linear_velocity`, never `position`); `CharacterBody` is
+   script-driven; `Area` only detects and can override gravity/damping. Every body needs a
+   non-empty `CollisionShape`/`CollisionPolygon` child.
+3. **Configure layers and masks.** Layers are what a body *is*; masks are what it *scans*.
+   A detects B only if B's layer bit is in A's mask. Name the bits in `project.godot` so
+   the `.tscn` values are readable:
+
+   ```ini
+   [layer_names]
+   2d_physics/layer_1="player"
+   2d_physics/layer_2="walls"
+   2d_physics/layer_3="enemies"
+   ```
+
+   In a `.tscn`, `collision_layer = 1` and `collision_mask = 6` (bits 2 and 3) are plain
+   integers; bit *n* is `1 << (n - 1)`. In code, `set_collision_mask_value(3, true)` uses
+   the same 1-based numbers as the editor checkboxes.
+4. **Detect overlaps** with `Area` signals (`body_entered`, `area_entered`); `monitoring`
+   on the detecting Area, `monitorable` on the detected one.
+5. **Cast rays** with a `RayCast2D/3D` node (polled each physics frame) or a one-shot
+   `direct_space_state` query (Pattern 2).
+6. **Check before you finish.** Physics runs normally under `--headless`, so prove the
+   behavior with a test runner instead of describing it (Pattern 3). Run
+   `godot --headless --path . --script res://tests/test_physics.gd` and read the exit code
+   and any `SCRIPT ERROR`/`ERROR:` lines. With no Godot binary (`godot`, `godot4` or
+   `$GODOT_BIN`), ask the user to run it and paste the output. For a visual check, ask the
+   user to run `godot --path . --debug-collisions` and report what overlaps. If you edited
+   `.tscn` files by hand, also run the `godot-nodes-scenes` skill's
+   `scripts/check_godot_project.py <project-dir>`.
 
 ## Patterns
 
-### 1. Collision layers vs masks (set from code)
-
-```gdscript
-# Player is on layer 1, scans layers 2 (walls) and 3 (enemies).
-func _ready() -> void:
-    set_collision_layer_value(1, true)    # I am on layer 1
-    set_collision_mask_value(2, true)     # I collide with things on layer 2
-    set_collision_mask_value(3, true)     # ...and layer 3
-    # Bit-field forms also exist: collision_layer = 1; collision_mask = 0b110
-```
-
-### 2. Area2D as a trigger / hurtbox
-
-```gdscript
-extends Area2D                            # e.g. a damage zone
-
-func _ready() -> void:
-    body_entered.connect(_on_body_entered)
-    area_entered.connect(_on_area_entered)
-
-func _on_body_entered(body: Node2D) -> void:
-    if body.has_method("take_damage"):
-        body.take_damage(10)
-
-func _on_area_entered(area: Area2D) -> void:
-    print("Overlapped area: ", area.name)
-```
-
-### 3. Applying force and impulse to a RigidBody3D
+### 1. RigidBody: impulse, force, and a safe teleport
 
 ```gdscript
 extends RigidBody3D
 
-func push(direction: Vector3) -> void:
-    apply_central_impulse(direction * 8.0)     # instantaneous velocity change
+var _teleport_to: Variant = null
 
-func _physics_process(_delta: float) -> void:
-    apply_central_force(Vector3.FORWARD * 4.0) # continuous force (per tick)
-    # Never set `position` on a RigidBody to move it; use forces/impulses or
-    # set linear_velocity. Use freeze=true if you must hold it in place.
+func push(direction: Vector3) -> void:
+    apply_central_impulse(direction * 8.0)      # one-off velocity change
+
+func teleport(to: Transform3D) -> void:
+    _teleport_to = to                           # applied inside the solver step
+
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+    if _teleport_to != null:
+        state.transform = _teleport_to
+        state.linear_velocity = Vector3.ZERO
+        state.angular_velocity = Vector3.ZERO
+        _teleport_to = null
 ```
 
-### 4. Raycast two ways
+### 2. One-shot ray that skips the caster
 
 ```gdscript
-# A) RayCast2D node: enable it, then poll after physics has updated.
-@onready var ray: RayCast2D = $RayCast2D    # set target_position in the editor
-
-func _physics_process(_delta: float) -> void:
-    if ray.is_colliding():
-        var hit := ray.get_collider()
-        var point := ray.get_collision_point()
-
-# B) One-shot query from code (no node needed).
-func ground_under(global_from: Vector2) -> Dictionary:
+func ground_under(from: Vector2) -> Dictionary:
     var space := get_world_2d().direct_space_state
-    var query := PhysicsRayQueryParameters2D.create(global_from, global_from + Vector2(0, 64))
-    query.collision_mask = 1                 # only layer 1
-    return space.intersect_ray(query)        # {} if nothing hit, else collider/position/normal
+    var query := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 64))
+    query.collision_mask = 0b10                  # layer 2 only ("walls")
+    query.exclude = [get_rid()]                  # Array[RID], not nodes
+    return space.intersect_ray(query)            # {} on miss, else collider/position/normal
 ```
 
-## Pitfalls
+Call it from `_physics_process`; space-state data is only valid during the physics step.
 
-- **Layer vs mask confusion** is the #1 bug. Layer = "what I am"; mask = "what I look
-  for". For A to detect B, B's layer must be in A's mask. Detection can be one-directional.
-- **Moving a RigidBody by `position`** fights the solver and causes tunneling/jitter.
-  Use impulses/forces, set `linear_velocity`, or `freeze` it. To teleport, set position
-  and zero the velocities inside `_integrate_forces`.
-- **`Area` doesn't fire** when neither monitoring nor monitorable is set, or layers/masks
-  don't overlap. `monitoring` must be on for the Area to detect; `monitorable` lets others
-  detect it.
-- **RayCast2D/3D read stale or no data** if `enabled` is false, or if you read it before
-  physics updated — read in `_physics_process`, and call `force_raycast_update()` after
-  moving it within the same tick.
-- **Forgetting a `CollisionShape`** (or leaving it empty) means the body never collides.
-- **Fast objects tunnel** through thin walls; enable **continuous CD** on the RigidBody
-  (`continuous_cd`) or use a raycast-based check.
-- **`intersect_ray` excludes its own body?** Pass `query.exclude = [self.get_rid()]` (an
-  `Array[RID]`, not an array of nodes) to skip self-hits.
+### 3. Headless test that an Area sees a body
+
+```gdscript
+# res://tests/test_physics.gd
+extends SceneTree
+
+func _initialize() -> void:
+    var level: Node = load("res://levels/test_arena.tscn").instantiate()
+    root.add_child(level)
+    for _i in 3:
+        await physics_frame                      # overlap lists update once per step
+    var hurtbox: Area2D = level.get_node("Hurtbox")
+    var player: Node2D = level.get_node("Player")
+    var ok := hurtbox.overlaps_body(player)
+    print("hurtbox sees player: ", ok)
+    quit(0 if ok else 1)
+```
+
+Place the two nodes so they overlap in the test scene. The same shape works for "the crate
+lands on the floor" (compare `global_position.y` after N frames) or "the ray hits the
+wall". Add counters as in `godot-gdscript-headless-testing` once there is more than one
+assertion.
+
+## Gotchas
+
+- **Layer vs mask confusion** is the most common bug. Detection can be one-directional:
+  A sees B if B's layer is in A's mask, whatever B's mask says.
+- **Moving a RigidBody by `position`** fights the solver and causes tunnelling or jitter.
+  Use impulses, forces, `linear_velocity`, `freeze`, or set `state.transform` in
+  `_integrate_forces` (Pattern 1).
+- **A RigidBody's own `body_entered` never fires** unless `contact_monitor = true` and
+  `max_contacts_reported > 0`.
+- **`Area` doesn't fire** when `monitoring` is off on it, `monitorable` is off on the other
+  Area, or the bits don't overlap. Toggling `monitoring` from inside an enter/exit signal
+  handler is blocked ("Function blocked during in/out signal"); use
+  `set_deferred("monitoring", false)`.
+- **`get_overlapping_bodies()` is empty right after spawning** → the list updates once per
+  physics step. Await a `physics_frame` or use the signals.
+- **RayCast2D/3D read stale or no data** if `enabled` is false or you read before physics
+  ran. Read in `_physics_process`; call `force_raycast_update()` after moving it in the
+  same tick.
+- **Fast objects tunnel** through thin walls → enable `continuous_cd` on the RigidBody or
+  sweep with a ray/shape cast. Tuning strategy belongs to `physics-tuning`.
+- **"Can't change this state while flushing queries"** → you added/removed bodies or
+  shapes inside a physics callback. Use `call_deferred` / `set_deferred`.
 
 ### Jolt Physics (3D) differences
 
-- **`face_index` is always `-1`** in `intersect_ray()` / `RayCast3D` results under Jolt.
-  Turn on Project Settings > Physics > Jolt Physics 3D > Queries > Enable Ray Cast Face
-  Index if you need it (it costs roughly 25% more memory for `ConcavePolygonShape3D`).
+- **`face_index` is always `-1`** in `intersect_ray()` / `RayCast3D` results. Set
+  `physics/jolt_physics_3d/queries/enable_ray_cast_face_index=true` in `project.godot` if
+  you need it (roughly 25% more memory for `ConcavePolygonShape3D`).
 - **A joint with only one body gets inverted limits after switching engines.** Jolt treats
-  the lone body as `node_b` with `node_a` as the world; GodotPhysics3D always treats it as
-  `node_a`. Assign the body to the slot Jolt expects, or use Physics > Jolt Physics 3D >
-  Joints > World Node for compatibility with an older project.
+  the lone body as `node_b` with `node_a` as the world; GodotPhysics3D treats it as
+  `node_a`. Move the body to the slot Jolt expects, or set
+  `physics/jolt_physics_3d/joints/world_node` for compatibility with an older project.
 - **Joint soft-limit properties do nothing** under Jolt: `bias`/`damping`/`impulse_clamp` on
   `PinJoint3D`; `bias`/`softness`/`relaxation` on `HingeJoint3D` and `ConeTwistJoint3D`;
   `angular_*` and limit softness/restitution/damping on `SliderJoint3D`; limit
   softness/restitution/damping/erp on `Generic6DOFJoint3D`. Godot warns when they are set
   to non-default values.
 - **A frozen kinematic `RigidBody3D` reports no contacts** with static or kinematic bodies,
-  even with `max_contacts_reported > 0`. Enable Physics > Jolt Physics 3D > Simulation >
-  Generate All Kinematic Contacts if gameplay depends on those contacts.
-- **Shape `margin` shrinks the shape instead of padding it** under Jolt, so sizes stay
-  true but shape queries can return odd normals on small shapes; the effective margin comes
-  from Physics > Jolt Physics 3D > Collisions > Collision Margin Fraction.
-- **`Area3D` now fires `body_entered` for `SoftBody3D`** under Jolt (GodotPhysics3D never
-  did). Filter soft bodies out with layers/masks if the old behavior is expected.
-- **A `WorldBoundaryShape3D` floor sits at the wrong height after upgrading to 4.7** → under
-  Jolt, 4.7 reads `plane.d` with Godot's sign convention, the opposite of 4.6; flip the sign
-  of `d` in projects tuned on 4.6. Jolt also caps the plane's effective size (Physics > Jolt
-  Physics 3D > Limits > World Boundary Shape Size), so bodies far from the origin can fall
-  off an "infinite" floor.
+  even with `max_contacts_reported > 0`. Enable
+  `physics/jolt_physics_3d/simulation/generate_all_kinematic_contacts` if gameplay needs them.
+- **Shape `margin` shrinks the shape instead of padding it**, so sizes stay true but shape
+  queries can return odd normals on small shapes; the effective margin comes from
+  `physics/jolt_physics_3d/collisions/collision_margin_fraction`.
+- **`Area3D` fires `body_entered` for `SoftBody3D`** under Jolt. Filter soft bodies with
+  layers/masks if the old behavior is expected.
+- **A `WorldBoundaryShape3D` floor sits at the wrong height after upgrading to 4.7** →
+  under Jolt, 4.7 reads `plane.d` with Godot's sign convention, the opposite of 4.6; flip
+  the sign of `d` in projects tuned on 4.6. Jolt also caps the plane's effective size
+  (`physics/jolt_physics_3d/limits/world_boundary_shape_size`), so bodies far from the
+  origin can fall off an "infinite" floor.
 
 ## References
 
-- For `_integrate_forces`, joints, one-way collision, `PhysicsServer` direct access,
-  shape queries (`intersect_shape`), and 3D `move_and_collide`, read
-  `references/bodies-and-queries.md`.
-- Jolt specifics: Godot docs "Using Jolt Physics"
-  (`https://docs.godotengine.org/en/stable/tutorials/physics/using_jolt_physics.html`).
+- Read `references/bodies-and-queries.md` when you need the body-type table, the full
+  RigidBody control API, shape queries (`intersect_shape`, `cast_motion`), RayCast node
+  options, joints, one-way collision, or Area gravity/damping overrides.
+- Read the Godot docs page [Using Jolt Physics](https://docs.godotengine.org/en/stable/tutorials/physics/using_jolt_physics.html)
+  when a Jolt difference is not in the list above.
 
 ## Related skills
 
-- `godot-2d-movement` — kinematic `CharacterBody2D` controllers.
-- `godot-tilemap` — tile collision shapes and their layers.
-- `physics-tuning` — engine-agnostic feel: timestep, mass, drag, CCD.
-- `godot-3d-essentials` — 3D scene setup these bodies live in.
+- `godot-2d-movement` for `CharacterBody2D` controllers.
+- `godot-tilemap` for tile collision shapes and their layers.
+- `physics-tuning` for engine-neutral feel: timestep, mass, drag, CCD, jitter.
+- `godot-3d-essentials` for the 3D scene these bodies live in.
+- `godot-gdscript-headless-testing` to keep Pattern 3 tests in CI.
+
+## Version notes
+
+Last verified: 2026-11-11 against Godot 4.7.2-stable (released 2026-08-18).
+
+- Jolt Physics is the default 3D engine for projects created in 4.6 or later; older
+  projects keep GodotPhysics3D until someone switches them.
+- 4.7 flipped how Jolt reads `WorldBoundaryShape3D` `plane.d` and added
+  `one_way_collision_direction` on 2D collision shapes.
+- The `physics/jolt_physics_3d/*` settings named above exist in 4.7.2.
+
+Sources: [Godot 4.6 release](https://godotengine.org/releases/4.6),
+[Upgrading from 4.6 to 4.7](https://docs.godotengine.org/en/stable/tutorials/migrating/upgrading_to_godot_4.7.html),
+[ProjectSettings @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/doc/classes/ProjectSettings.xml),
+[Area2D @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/doc/classes/Area2D.xml).

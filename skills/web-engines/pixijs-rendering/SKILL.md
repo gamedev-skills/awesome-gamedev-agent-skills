@@ -1,225 +1,232 @@
 ---
 name: pixijs-rendering
 description: >
-  Build a PixiJS v8 render layer: create the async Application, load textures with
-  Assets, compose the scene graph with Container and Sprite, drive the ticker loop,
-  wire pointer events, and group draws with render groups. Use when building or
-  debugging PixiJS v8 — when the user mentions PixiJS, Pixi, Application, app.stage,
-  Container, Sprite, Assets.load, app.ticker, or eventMode. Pins the v8 async
-  init() API (examples checked against 8.22).
+  Builds and debugs 2D browser game rendering with PixiJS v8: async init, Assets loading, the
+  Container and Sprite scene graph, pointer dragging and v7-to-v8 migration. Use when a game or
+  playable ad uses pixi.js, or on a blank canvas, clicks not firing, or drag stopping at the
+  sprite edge. Not for dashboards or charts, Phaser (`phaser-core`) or 3D (`threejs-scene-setup`).
 ---
 
-# PixiJS 8.22 Rendering
+# PixiJS 8 rendering for games
 
-Set up and structure a PixiJS **8.22** application: the async `Application`, asset
-loading via `Assets`, the `Container`/`Sprite` scene graph, the ticker loop,
-pointer events, and render groups. Pins the 8.22 API (async `init`, unified
-`Assets`, `eventMode`).
+Sets up and structures a PixiJS **8.22** game renderer: the async `Application`, asset
+loading through `Assets`, the `Container` scene graph, the ticker loop, pointer events and
+render groups. PixiJS draws; it has no scenes, physics or input mapping. A game that wants
+those built in is usually better served by Phaser. With PixiJS you write the loop, the
+screen manager and the collision code yourself.
 
 ## When to use
 
-- Use when starting a PixiJS v8 project, fixing a blank canvas, structuring the
-  display list, loading textures, animating via the ticker, or handling pointer
-  input.
-- Use when `package.json` depends on `pixi.js` (v8) and code does
-  `import { Application } from 'pixi.js'`.
+- Starting a PixiJS v8 game or playable, fixing a blank canvas, structuring the display list,
+  loading textures and sprite sheets, animating with the ticker, or handling pointer input.
+- `package.json` depends on `pixi.js` 8.x and code imports from `'pixi.js'`.
+- Not for dashboards, charts or other non-game UIs, Phaser projects (`phaser-core`) or 3D
+  (`threejs-scene-setup`). PixiJS v7 code (`new Application({...})`, `Loader`,
+  `beginFill`) must be migrated first; the Gotchas list the renames.
 
-**When *not* to use:** Phaser's scene/loader model → `phaser-core`. 3D scenes →
-`threejs-scene-setup`. PixiJS v7-and-earlier code (synchronous `new
-Application({...})`, `Loader`, `beginFill`/`endFill`) needs the v8 migration first;
-this skill targets v8 only. (`interactive = true` still works in v8 as an alias for
-`eventMode = 'static'`, but prefer the explicit `eventMode`.)
+## Workflow
 
-## Core workflow
-
-1. **Create and `await` the Application.** In v8, `new Application()` is empty;
-   configuration happens in `await app.init({...})`. Append `app.canvas` (not
-   `app.view`) to the DOM. Wrap top-level `await` in an async function for bundlers.
-2. **Load assets with `Assets`.** `await Assets.load(url)` returns a `Texture`. For
-   many assets, register a manifest/bundle and load by name. There is no v7 `Loader`.
-3. **Build the scene graph.** Everything descends from `app.stage` (a `Container`).
-   Group related objects in `Container`s; child transforms are relative to the
-   parent. Draw order = insertion order (later = on top).
-4. **Animate with the ticker.** `app.ticker.add((ticker) => {...})`. Scale motion by
-   `ticker.deltaTime` (frames, ~1 at 60fps) or `ticker.deltaMS` (milliseconds) so
-   speed is frame-rate independent.
-5. **Enable events per object** by setting `eventMode = 'static'` (or `'dynamic'`),
-   then `obj.on('pointerdown', ...)`. Federated pointer events cover mouse/touch/pen.
-6. **Promote big static subtrees to render groups** (`isRenderGroup: true`) so the
-   GPU caches their transforms. Profile before and after; confirm pixels on screen.
+1. **Read the installed version.** v8 changed boot, loading, Graphics and events, so v7
+   answers from memory break here.
+2. **Create, then `await app.init({...})`.** The v8 constructor takes no options. Append
+   `app.canvas` to the page.
+3. **Load before you build.** `await Assets.load(...)` or a manifest bundle per screen; the
+   returned `Texture` is what `Sprite` takes.
+4. **Build the display list from `Container`s**, one per layer (world, effects, HUD). Child
+   transforms are relative to the parent; later children draw on top.
+5. **Run game logic in one ticker callback** scaled by `ticker.deltaMS / 1000` (seconds) or
+   `ticker.deltaTime` (≈1 per 60 Hz frame). Keep rules in plain modules the callback calls.
+6. **Turn on input per object** with `eventMode = 'static'`, then `on('pointerdown', ...)`.
+7. **Clean up on screen changes**: `destroy()` what you remove and `Assets.unload()` what the
+   next screen does not need.
+8. **Verify** with [Verify](#verify).
 
 ## Patterns
 
-### 1. Async Application boot (the v8 entry point)
+### 1. Async boot
 
 ```js
 import { Application, Assets, Sprite } from 'pixi.js';
 
-(async () => {
-  // v8: construct empty, then await init(). Config does NOT go in the constructor.
-  const app = new Application();
-  await app.init({
-    background: '#1099bb',
-    resizeTo: window,        // track the window size
-    antialias: true,
-    // preference: 'webgpu',  // hint only; default order tries 'webgl' first.
-    //                        // Pixi falls back if the backend is unavailable —
-    //                        // branch on app.renderer.name, don't assume it took.
-  });
+const app = new Application();
+await app.init({
+  background: '#1099bb',
+  resizeTo: window,
+  antialias: true,
+  // preference: 'webgpu', // a hint; default order is webgl, webgpu, canvas
+});
+document.body.appendChild(app.canvas);
+Object.assign(window, { app }); // for the smoke check and console debugging (TS-safe)
 
-  document.body.appendChild(app.canvas); // v8 uses app.canvas, not app.view
-
-  const texture = await Assets.load('https://pixijs.com/assets/bunny.png');
-  const bunny = new Sprite(texture);
-  bunny.anchor.set(0.5);
-  bunny.position.set(app.screen.width / 2, app.screen.height / 2);
-  app.stage.addChild(bunny);
-})();
+const texture = await Assets.load('assets/bunny.png');
+const bunny = new Sprite(texture);
+bunny.anchor.set(0.5);
+bunny.position.set(app.screen.width / 2, app.screen.height / 2);
+app.stage.addChild(bunny);
 ```
 
-### 2. Containers for a relative-transform scene graph
+### 2. Layers as containers
 
 ```js
-import { Container, Sprite } from 'pixi.js';
+import { Container } from 'pixi.js';
 
-const world = new Container();
-app.stage.addChild(world);
+const world = new Container();       // camera: move or scale this, not every sprite
+const hud = new Container();         // added last, so it draws over the world
+app.stage.addChild(world, hud);
 
-// Children are positioned relative to `world`; move/scale/rotate the whole group
-// by transforming the parent.
-for (let i = 0; i < 10; i++) {
-  const coin = new Sprite(coinTexture);
-  coin.x = i * 40;
-  world.addChild(coin);
-}
-world.position.set(100, 100);
-world.scale.set(2);            // every coin scales with the container
+world.position.set(-camera.x, -camera.y);
+world.scale.set(2);
 ```
 
-### 3. The ticker loop (frame-rate independent)
+### 3. One game loop on the ticker
 
 ```js
-let elapsed = 0;
 app.ticker.add((ticker) => {
-  // deltaTime ≈ 1 at 60fps; deltaMS is milliseconds since last frame.
-  elapsed += ticker.deltaMS;
-  bunny.rotation += 0.05 * ticker.deltaTime;          // smooth at any frame rate
-  bunny.y = app.screen.height / 2 + Math.sin(elapsed / 500) * 50;
+  const dt = ticker.deltaMS / 1000;  // seconds since the last frame
+  stepGame(state, input, dt);        // rules live in a plain module
+  bunny.rotation += 1.5 * dt;
 });
 ```
 
-### 4. Pointer events (federated)
+### 4. Pointer input and dragging
 
 ```js
-bunny.eventMode = 'static';   // 'static' = interactive, doesn't move on its own
-bunny.cursor = 'pointer';     // hover cursor; `buttonMode` was removed in v8
-bunny.on('pointerdown', (event) => {
-  bunny.tint = 0xff0000;
-  // event.global is the pointer position in stage space.
-});
-bunny.on('pointerover', () => bunny.scale.set(1.1));
-bunny.on('pointerout',  () => bunny.scale.set(1.0));
-```
-
-Dragging needs `globalpointermove`, not `pointermove`. In v8 `pointermove` fires
-**only while the pointer is over the object**, so a drag that follows the cursor
-past the object's edge stops updating. `globalpointermove` fires on every move:
-
-```js
-let dragging = false;
+bunny.eventMode = 'static';          // the v8 default 'passive' ignores the object itself
+bunny.cursor = 'pointer';
 bunny.on('pointerdown', () => { dragging = true; });
 bunny.on('pointerup', () => { dragging = false; });
-bunny.on('pointerupoutside', () => { dragging = false; }); // release off the object
+bunny.on('pointerupoutside', () => { dragging = false; });
+// pointermove fires only over the object in v8; globalpointermove fires on every move.
 bunny.on('globalpointermove', (event) => {
   if (dragging) bunny.position.copyFrom(event.global);
 });
 ```
 
-### 5. Loading many assets by name (bundles)
+### 5. Load a screen's assets by name
 
 ```js
-import { Assets } from 'pixi.js';
+// addBundle works at any time; Assets.init({ manifest }) only works before the first load.
+Assets.addBundle('level-1', [
+  { alias: 'hero', src: 'assets/hero.png' },
+  { alias: 'atlas', src: 'assets/characters.json' }, // TexturePacker JSON
+]);
+Assets.addBundle('level-2', [{ alias: 'boss', src: 'assets/boss.png' }]);
 
-await Assets.init({
-  manifest: {
-    bundles: [{
-      name: 'level-1',
-      assets: [
-        { alias: 'hero',  src: 'assets/hero.png' },
-        { alias: 'tiles', src: 'assets/tiles.png' },
-      ],
-    }],
-  },
-});
-
-const bundle = await Assets.loadBundle('level-1'); // { hero: Texture, tiles: Texture }
-const hero = new Sprite(bundle.hero);
+const level = await Assets.loadBundle('level-1');
+const hero = new Sprite(level.hero);
+Assets.backgroundLoadBundle('level-2'); // warm the next screen while this one plays
 ```
 
-### 6. Render groups for large static layers
+### 6. Render group for a large static layer
 
 ```js
-// A big, rarely-changing background subtree: let the GPU cache its transforms.
 const background = new Container({ isRenderGroup: true });
-app.stage.addChild(background);
-// Add hundreds of static tiles to `background`. Moving `background` itself stays
-// cheap; constantly re-adding/removing children negates the benefit.
+app.stage.addChildAt(background, 0);
+// Hundreds of static tiles go in here. Moving `background` stays cheap;
+// adding and removing children every frame cancels the benefit.
 ```
 
-## Pitfalls
+## Verify
 
-- **Blank canvas, or `TypeError` reading `canvas`/`screen` of undefined** → you didn't
-  `await app.init()`, or you configured the constructor. In v8 the constructor is
-  empty; all options go to `init()`. `app.stage` exists right away, but
-  `app.renderer` is `undefined` until the `init()` promise resolves, so `app.canvas`
-  and `app.screen` throw before then.
-- **`app.view` logs a deprecation warning** → v8 renamed it to `app.canvas`; the old
-  getter still returns the canvas for now.
-- **Porting v7 code** → `Loader`/`loader.add` → `Assets.load` (the `Loader` class is
-  gone); synchronous `new Application({...})` → empty constructor + async `init()`
-  (options in the constructor are ignored with a deprecation warning, not an error);
-  `beginFill()`/`endFill()` → shape-first `.rect(...).fill(...)`. `interactive = true`
-  and `app.view` still work as deprecated aliases.
-- **Ticker callback arg is the Ticker, not a delta number** → `app.ticker.add((dt) =>
-  { obj.rotation += dt; })` compiles, but `dt` is the whole `Ticker` object, so the
-  math yields `NaN` and nothing animates. Read `ticker.deltaTime` off the argument.
-- **Top-level await build error (Vite ≤6.0.6)** → wrap boot in `(async () => { ... })()`.
-- **Speed varies with frame rate** → multiply movement by `ticker.deltaTime` (~1 at
-  60fps) or scale by `ticker.deltaMS`; never assume 60fps. `deltaTime` is a
-  dimensionless multiplier, not milliseconds.
-- **Clicks do nothing** → the object's `eventMode` is still `'passive'` (the v8
-  default: self not interactive, children still are); set it to `'static'` (or
-  `'dynamic'` for objects that move under a stationary cursor).
-- **Drag stops at the object's edge** → `pointermove` fires only while the pointer is
-  over the object in v8; use `globalpointermove` for drag/global tracking.
-- **Right-click opens the browser menu over the game** → PixiJS does not block it.
-  From 8.22, listen for `contextmenu` on the object and call
-  `event.preventDefault()`; cancelling `rightdown`/`rightclick` does not stop the menu.
-  On older 8.x, add a native `contextmenu` listener to `app.canvas` instead.
-- **`addChild` on a `Sprite`/`Graphics`/`Text` logs a deprecation warning** → in v8
-  only `Container`s should hold children; put the sprite and its children side by side
-  in a `Container`.
-- **`Texture.from(url)` returns a blank/undefined texture** → in v8 it only reads the
-  Assets cache; `await Assets.load(url)` first, then use the returned `Texture`.
-- **WebGPU features error out** → `preference` is a hint. If the backend is
-  unavailable Pixi falls back (WebGL, then Canvas); branch on `app.renderer.name`
-  before using backend-specific code.
-- **Textures look blurry on pixel art** → set
-  `texture.source.scaleMode = 'nearest'` (or pass it when loading).
-- **Memory grows** → `removeChild` does not free GPU memory; call
-  `sprite.destroy()` and `Assets.unload(url)` for assets you're done with.
-- **Flicker/corruption after tearing down and re-creating an app in the same tab** →
-  destroy with `app.destroy({ releaseGlobalResources: true })`; otherwise pooled
-  batches/textures from the old app leak into the new one.
+1. `npm run build` (or `npx tsc --noEmit`) passes.
+2. Smoke-test in a headless browser. With the dev server running and `window.app` exposed
+   (Pattern 1), run `node smoke.mjs <url>` after `npm i -D playwright` and
+   `npx playwright install chromium`. Without browser automation, ask the user to open the
+   page and report the console output and what is drawn.
+
+```js
+// smoke.mjs: fails on page errors; prints the backend and the display list size.
+import { chromium } from 'playwright';
+
+const browser = await chromium.launch();
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+await page.goto(process.argv[2]);
+await page.waitForFunction(() => window.app?.renderer, null, { timeout: 15000 });
+await page.waitForTimeout(1000); // let the first assets load
+const state = await page.evaluate(() => ({
+  backend: window.app.renderer.name,           // 'webgl', 'webgpu' or 'canvas'
+  stageChildren: window.app.stage.children.length,
+  tickerRunning: window.app.ticker.started,
+  canvasSize: [window.app.canvas.width, window.app.canvas.height],
+}));
+await page.screenshot({ path: 'smoke.png' });
+await browser.close();
+console.log(JSON.stringify({ ...state, errors }, null, 2));
+process.exit(errors.length ? 1 : 0);
+```
+
+Expect a backend name, a non-zero child count, `tickerRunning: true`, a canvas size other
+than 0 × 0, and no errors. Open `smoke.png`: a correct display list with missing textures
+still renders blank sprites.
+
+## Gotchas
+
+- **Blank canvas, or `TypeError` reading `canvas` or `screen`** → `init()` was not awaited,
+  or options went to the constructor. `app.stage` exists at once, but `app.renderer` is
+  `undefined` until `init()` resolves.
+- **Ticker callback animates nothing (`NaN`)** → the callback's argument is the `Ticker`,
+  not a delta number. Read `ticker.deltaTime` or `ticker.deltaMS` from it.
+- **Speed changes with frame rate** → movement was not scaled by delta. `deltaTime` is a
+  multiplier (≈1 at 60 Hz), not milliseconds.
+- **Clicks do nothing** → `eventMode` is still `'passive'`. Use `'static'`, or `'dynamic'`
+  for objects that move under a still cursor.
+- **Drag stops at the object's edge** → `pointermove` fires only over the object in v8; use
+  `globalpointermove`.
+- **`AssetManager already initialized` warning, then `loadBundle` returns `undefined`** →
+  `Assets.init({ manifest })` ran after an `Assets.load`, so the manifest was ignored. Call
+  `init` once before any load, or register bundles with `Assets.addBundle`.
+- **`Texture.from(url)` gives a blank texture** → in v8 it only reads the `Assets` cache.
+  `await Assets.load(url)` first and use the returned texture.
+- **`addChild` on a `Sprite`, `Graphics` or `Text` logs a deprecation warning** → only
+  `Container`s should hold children in v8. Put the sprite and its children side by side in a
+  `Container`.
+- **Right-click opens the browser menu over the game** → listen for `contextmenu` on the
+  object and call `event.preventDefault()` (PixiJS 8.22+); cancelling `rightdown` does not
+  stop the menu. On older 8.x, add a native `contextmenu` listener to `app.canvas`.
+- **Pixel art is blurry or shimmers** → set `TextureStyle.defaultOptions.scaleMode =
+  'nearest'` before loading (or `texture.source.scaleMode = 'nearest'` per texture), and pass
+  `roundPixels: true` to `init()`.
+- **WebGPU-only code fails on some machines** → `preference` is a hint and PixiJS falls back.
+  Branch on `app.renderer.name` before using backend-specific features.
+- **Memory grows across levels** → `removeChild` frees nothing on the GPU. `destroy()` removed
+  objects and `Assets.unload()` assets the next screen does not use.
+- **Flicker or corrupt textures after re-creating the app in the same tab** → destroy the old
+  one with `app.destroy({ removeView: true, releaseGlobalResources: true })`.
+- **Porting v7 code** → `Loader`/`loader.add` became `Assets.load`;
+  `new Application({...})` became an empty constructor plus `await app.init({...})`;
+  `beginFill()`/`endFill()` became shape-first `.rect(...).fill(...)`; `app.view` became
+  `app.canvas`; `interactive = true` became `eventMode = 'static'`; `buttonMode` became
+  `cursor = 'pointer'`; `cacheAsBitmap` became `cacheAsTexture()`. The old `app.view`,
+  constructor options and `interactive` still work with deprecation warnings.
 
 ## References
 
-- For the texture/asset pipeline (sprite sheets/atlases, `Assets.add`, background
-  loading, unloading) and Graphics/Text/`TilingSprite`/`ParticleContainer` plus
-  filters, read `references/assets-and-display.md`.
+- Read [`references/assets-and-display.md`](references/assets-and-display.md) when working
+  with sprite sheets and animations, background loading and unloading, `Graphics`, `Text`
+  and `BitmapText`, `TilingSprite`, `ParticleContainer`, filters, or teardown and context
+  loss.
 
 ## Related skills
 
-- `phaser-core` — a batteries-included 2D framework (scenes, physics, input).
-- `threejs-scene-setup` — 3D in the browser with three.js.
-- `prototype-fast` — greybox a playable slice quickly (often cites PixiJS).
+- `phaser-core`: a full 2D game framework with scenes, physics and input.
+- `create-game-assets`: making and packing the sprites and atlases PixiJS loads.
+- `game-ui-ux`: HUD and menu layout rules for the `hud` layer.
+- `prototype-fast`: greyboxing a playable slice.
+
+## Version notes
+
+Last verified: 2026-11-11 against pixi.js 8.22.0 (npm `latest`, released 2026-10-01).
+
+- 8.22 added the federated `contextmenu` event.
+- The renderer order `["webgl", "webgpu", "canvas"]`, the deprecation warnings for
+  constructor options, `app.view` and leaf `addChild`, and the cache-only `Texture.from` were
+  checked in the 8.22.0 build.
+- PixiJS's Quick Start still says Vite 6.0.6 and older fail on top-level `await` in the boot
+  code; on those versions wrap boot in an async function. Current Vite is 8.x.
+- Sources: [v8.22.0 release notes](https://github.com/pixijs/pixijs/releases/tag/v8.22.0),
+  [PixiJS v8 migration guide](https://pixijs.com/8.x/guides/migrations/v8),
+  [Quick Start](https://pixijs.com/8.x/guides/getting-started/quick-start),
+  `npm view pixi.js dist-tags`.

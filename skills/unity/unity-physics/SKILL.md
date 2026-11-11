@@ -1,59 +1,62 @@
 ---
 name: unity-physics
 description: >
-  Set up 3D physics in Unity 6.3 LTS: Rigidbody movement and forces, colliders, triggers vs
-  collisions, layer-based collision, raycasts, and joints. Use when adding a Rigidbody,
-  handling OnCollisionEnter/OnTriggerEnter, tuning collision layers, casting rays, or when
-  the user mentions Unity physics, AddForce, isKinematic, or linearVelocity.
+  Unity 6.3 LTS physics in 3D and 2D: Rigidbody and Rigidbody2D, forces and linearVelocity, the
+  layer collision matrix and raycasts. Use when an object falls through the floor, OnTriggerEnter
+  never fires, or a ground ray hits the player. Not for engine-neutral tunnelling tuning
+  (`physics-tuning`), tilemap colliders (`unity-tilemap-2d`) or NavMesh (`unity-navmesh`).
 ---
 
-# Unity Physics (Rigidbody / PhysX)
+# Unity Physics (3D PhysX and 2D)
 
-Make objects move, collide, and detect each other with Unity 6.3 LTS's built-in 3D physics
-(PhysX). Get the `FixedUpdate` discipline, trigger-vs-collision rules, and collision layers
-right. Targets **Unity 6.3 LTS (6000.3)**.
-
-> **Unity 6 renames:** `Rigidbody.velocity` → **`linearVelocity`**, `drag` → **`linearDamping`**,
-> `angularDrag` → **`angularDamping`**. The old names still compile in 6.3 LTS but are obsolete
-> (warnings; the API Updater offers the rename), so write the new names. `PhysicMaterial` →
-> **`PhysicsMaterial`** is a hard compile error in old code.
+Make objects move, collide and detect each other in Unity 6.3 LTS (6000.3). Unity has two
+separate physics engines: 3D (`Rigidbody`, `Collider`, `Physics`) and 2D (`Rigidbody2D`,
+`Collider2D`, `Physics2D`). They never interact: a `Rigidbody2D` falls straight through a
+`BoxCollider`, and 3D callbacks never fire on 2D objects.
 
 ## When to use
 
-- Use when giving an object physical motion (forces, velocity, gravity), responding to
-  collisions or triggers, setting up collision layers/masks, raycasting for ground checks or
-  line-of-sight, or connecting bodies with joints.
-- Use when scenes/prefabs contain `Rigidbody` + `Collider` components.
+- Giving an object physical motion, responding to collisions or triggers, setting up layers,
+  ray or shape casts for ground checks and line of sight, joints, kinematic movers.
+- The project's scenes or prefabs contain `Rigidbody`/`Collider` or `Rigidbody2D`/`Collider2D`.
 
-**When *not* to use:** 2D physics (`Rigidbody2D`, `Collider2D`) is a separate API — adapt the
-concepts but the types differ. Unity 6.3 also has a separate low-level 2D API
-(`UnityEngine.LowLevelPhysics2D`: `PhysicsWorld`, `PhysicsBody`) with its own isolated worlds;
-it is not the `Rigidbody2D` system. Unity 6.5 renamed it Physics Core 2D, namespace
-`Unity.U2D.Physics` (the API Updater rewrites old scripts). Cross-engine *feel* tuning
-(timestep, jitter, tunnelling) → `physics-tuning`. Reading input that drives movement →
-`unity-input-system`.
+**When not to use:** cross-engine feel (fixed timestep choice, jitter strategy, tunnelling
+trade-offs) → `physics-tuning`; Tilemap Collider 2D and composite merging →
+`unity-tilemap-2d`; pathfinding agents → `unity-navmesh`; reading the input that drives
+movement → `unity-input-system`. If Unity's official `fix-3d-physics-collisions` or
+`create-2d-physics` skill is installed and an Editor is connected, it can drive the Editor for
+scene setup; this skill still owns the API and the code.
 
-## Core workflow
+## Workflow
 
-1. **Add a `Rigidbody`** to anything that should be simulated; add a `Collider` to anything
-   that should be hit. `OnCollision*` messages need a Collider on both and at least one
-   **dynamic** (non-kinematic) Rigidbody: with the default Contact Pairs Mode, kinematic vs
-   kinematic and kinematic vs static send no collision messages.
-2. **Do all physics in `FixedUpdate`.** Read input in `Update`, store intent, then apply
-   forces / set `linearVelocity` / call `MovePosition` in `FixedUpdate`.
-3. **Move bodies through the physics API, not the Transform.** Use `AddForce`,
-   `linearVelocity`, or `MovePosition` — never assign `transform.position` to a non-kinematic
-   Rigidbody (it teleports and breaks collision resolution).
-4. **Pick collision vs trigger.** A solid collision blocks and calls `OnCollisionEnter`; a
-   `Collider` with `Is Trigger` checked passes through and calls `OnTriggerEnter`.
-5. **Organise interactions with layers.** Put objects on layers and edit the Layer Collision
-   Matrix (Project Settings → Physics) so unrelated things don't test against each other.
-6. **Verify** with the Physics Debugger (Window → Analysis → Physics Debugger) and by watching
-   for jitter; if fast objects pass through walls, raise Collision Detection mode.
+1. **Find out which engine the object uses before touching code.** Grep the scene or prefab
+   YAML for a `Rigidbody2D:` or `Rigidbody:` document header (and `BoxCollider2D:` vs
+   `BoxCollider:`). Mixed 2D and 3D components on interacting objects are a bug, not a design.
+2. **Read the physics settings as text, not through the Inspector.** 3D settings live in
+   `ProjectSettings/DynamicsManager.asset` (`m_QueriesHitTriggers`, `m_ContactPairsMode`,
+   `m_LayerCollisionMatrix`), 2D settings in `ProjectSettings/Physics2DSettings.asset`
+   (`m_QueriesHitTriggers`, `m_QueriesStartInColliders`, `m_SimulationMode`,
+   `m_LayerCollisionMatrix`). The matrix is a hex bitfield: read and change it with
+   `Physics.GetIgnoreLayerCollision`/`IgnoreLayerCollision` (2D: the `Physics2D` versions)
+   rather than editing the hex.
+3. **Do physics in `FixedUpdate`.** Read input in `Update`, store intent, apply forces or set
+   `linearVelocity` or call `MovePosition` in `FixedUpdate`. Both engines step after
+   `FixedUpdate` by default.
+4. **Move bodies through the physics API, not the Transform.** `AddForce`, `linearVelocity`,
+   `MovePosition`. Writing `transform.position` on a dynamic body teleports it and skips
+   collision resolution.
+5. **Pick collision vs trigger.** A solid collider blocks and calls `OnCollisionEnter`
+   (`OnCollisionEnter2D`); `isTrigger` passes through and calls `OnTriggerEnter`
+   (`OnTriggerEnter2D`). At least one of the pair needs a rigidbody.
+6. **Prune layer pairs** that never need to touch. A runtime `IgnoreLayerCollision` call is
+   not saved; for a lasting change ask the user to untick the pair in Project Settings >
+   Physics (or Physics 2D) > Layer Collision Matrix, or for 3D use the Unity CLI's
+   `settings.physics set` command, which asks for confirmation.
+7. **Verify** with one of the checks below, then remove any temporary logging.
 
 ## Patterns
 
-### 1. Force-based movement in `FixedUpdate` (with a speed clamp)
+### 1. Force-based movement in `FixedUpdate` with a speed clamp (3D)
 
 ```csharp
 using UnityEngine;
@@ -70,7 +73,6 @@ public class Mover : MonoBehaviour
     private void FixedUpdate()
     {
         _rb.AddForce(_input * accel, ForceMode.Acceleration);     // mass-independent accel
-        // Unity 6.3 LTS: linearVelocity (was 'velocity'). Clamp horizontal speed.
         Vector3 flat = new(_rb.linearVelocity.x, 0, _rb.linearVelocity.z);
         if (flat.magnitude > maxSpeed)
         {
@@ -81,111 +83,140 @@ public class Mover : MonoBehaviour
 }
 ```
 
-`ForceMode`: `Force` (continuous, mass-scaled), `Acceleration` (continuous, ignores mass),
-`Impulse` (instant, mass-scaled — jumps), `VelocityChange` (instant, ignores mass).
+`ForceMode`: `Force` and `Acceleration` are continuous (mass-scaled vs not); `Impulse` and
+`VelocityChange` are instant (mass-scaled vs not; use them for jumps).
 
-### 2. Collision vs trigger callbacks
-
-```csharp
-// Solid hit: both have colliders, at least one has a dynamic (non-kinematic) Rigidbody.
-private void OnCollisionEnter(Collision col)
-{
-    // GetContact avoids the garbage that the col.contacts array allocates.
-    Debug.Log($"Hit {col.gameObject.name} at {col.GetContact(0).point}");
-}
-
-// Overlap: one collider has 'Is Trigger' = true, and at least one party has a Rigidbody
-// (or a Rigidbody carries the trigger). Two static colliders never report.
-private void OnTriggerEnter(Collider other)
-{
-    if (other.CompareTag("Pickup")) Destroy(other.gameObject);
-}
-```
-
-### 3. Ground check with a layer-masked raycast
+### 2. Ground check that ignores triggers (3D)
 
 ```csharp
-[SerializeField] private LayerMask groundMask;   // set to your "Ground" layer in the Inspector
+[SerializeField] private LayerMask groundMask;   // only the Ground layer
 
-private bool IsGrounded()
-{
-    // Cast a short ray down; only test colliders on groundMask.
-    return Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit,
-                           1.1f, groundMask);
-}
+private bool IsGrounded() =>
+    Physics.Raycast(transform.position, Vector3.down, out RaycastHit _, 1.1f,
+                    groundMask, QueryTriggerInteraction.Ignore);
 ```
 
-### 4. Kinematic platform that still pushes bodies
+### 3. Kinematic platform that carries resting bodies (3D)
 
 ```csharp
-// isKinematic Rigidbody: not driven by forces, but MovePosition interpolates and carries
-// resting bodies correctly (unlike moving the Transform directly).
-private void FixedUpdate() => _rb.MovePosition(_rb.position + Vector3.right * (2f * Time.fixedDeltaTime));
+// isKinematic Rigidbody: MovePosition moves it through the solver, so bodies on top ride along.
+private void FixedUpdate() =>
+    _rb.MovePosition(_rb.position + Vector3.right * (2f * Time.fixedDeltaTime));
 ```
 
-## Pitfalls
+## 2D physics (Rigidbody2D)
 
-- **Obsolete warnings on `velocity` / `drag` / `angularDrag`** — Unity 6 renamed them to
-  `linearVelocity`, `linearDamping` and `angularDamping` (`angularVelocity` is unchanged). Let
-  the API Updater rename them or edit by hand; `PhysicMaterial` must become `PhysicsMaterial`.
-- **Setting `transform.position` on a dynamic Rigidbody** — teleports it, skips collision.
-  Use `MovePosition` (kinematic/interpolated) or apply forces. If you *do* write the transform,
-  physics queries (`Raycast`, `OverlapSphere`) see the old position until the next physics step
-  — call `Physics.SyncTransforms()` once before a same-frame query, never every frame.
-- **`OnCollisionEnter` never fires on a `CharacterController`** — `CharacterController.Move`
-  bypasses the Rigidbody system; it reports hits via `OnControllerColliderHit(ControllerColliderHit)`
-  instead. Don't add a Rigidbody to "fix" it — the two are mutually exclusive movement modes.
-- **A ground or line-of-sight ray stops on a trigger volume** — `Physics.Raycast` hits trigger
-  colliders by default (Project Settings → Physics → Queries Hit Triggers is on, i.e.
-  `Physics.queriesHitTriggers == true`). Pass `QueryTriggerInteraction.Ignore` to skip them in
-  one query, or turn the global setting off. A ray also returns `false` for a collider its
-  origin starts *inside*.
-- **A resting Rigidbody stays put after you move or disable what it rests on** — below the
-  Sleep Threshold a body goes to sleep. Collisions and `AddForce` wake it automatically, but
-  moving a *static* collider (no Rigidbody) via its Transform may not, so the crate hangs in
-  mid-air when the floor slides away. Call `Rigidbody.WakeUp()` on the affected bodies.
-- **Applying forces in `Update`** — frame-rate-dependent and jittery. Physics goes in
-  `FixedUpdate`.
-- **`OnCollisionEnter` never fires between two kinematic bodies** (or kinematic vs static) —
-  with the default Contact Pairs Mode, Unity only sends collision messages when at least one
-  body is dynamic. Make one dynamic, use a trigger, or set Project Settings → Physics →
-  Contact Pairs Mode to enable kinematic pairs (more contact work every step).
-- **Trigger callbacks never fire** — triggers need a `Rigidbody` on at least one of the two
-  colliders, and both colliders enabled; two static triggers don't report overlaps.
-- **Fast objects pass through walls (tunnelling)** — raise the Rigidbody's Collision Detection
-  from `Discrete`. Note `Continuous` sweeps against **static colliders only** (it falls back to
-  Discrete against other dynamic bodies); `Continuous Dynamic` also sweeps against other
-  continuous dynamic bodies; `Continuous Speculative` works against everything and is cheaper.
-  For bullets, also consider a `SphereCast`/`Raycast` along the trajectory instead of a collider.
-- **Non-uniform-scaled `MeshCollider`s or scaled colliders** misbehave; prefer primitive
-  colliders and keep scale uniform.
-- **A concave `MeshCollider` on a moving body** — Mesh colliders are concave by default, and
-  concave ones can only be static or kinematic; two concave colliders never collide at all.
-  For a dynamic Rigidbody enable **Convex** on the MeshCollider, or build a compound collider
-  from primitives.
-- **Part of a compound body drifts off on its own** — a compound collider should have exactly
-  one Rigidbody, on the root. An extra Rigidbody on a child makes that child a separate body.
-- **Nothing moves and no callbacks fire, but raycasts still hit** — `Time.timeScale = 0` stops
-  `FixedUpdate` and the simulation; queries read collider geometry and keep working. Restore
-  a positive `timeScale` when the pause ends.
-- **Everything collides with everything** — wasted cost; assign layers and prune the Layer
-  Collision Matrix.
+Same rules, different types. The traps a 3D habit walks into:
+
+| 3D | 2D equivalent | Difference that bites |
+|---|---|---|
+| `Rigidbody.isKinematic` | `Rigidbody2D.bodyType` (`Dynamic`, `Kinematic`, `Static`) | `Rigidbody2D.isKinematic` is obsolete; set `bodyType` |
+| `OnCollisionEnter(Collision)` | `OnCollisionEnter2D(Collision2D)` | a 3D-named method on a 2D object never runs, with no error |
+| `OnTriggerEnter(Collider)` | `OnTriggerEnter2D(Collider2D)` | same |
+| `Physics.Raycast` → `bool` + `out RaycastHit` | `Physics2D.Raycast` → `RaycastHit2D` | test `if (hit)` or `hit.collider != null` |
+| ray starting inside a collider misses it | `Physics2D.queriesStartInColliders` is on by default | a ground ray cast from the player's centre hits the player itself |
+| `RaycastNonAlloc` | `Physics2D.Raycast(origin, dir, contactFilter, results, distance)` | the 2D `*NonAlloc` methods are deprecated in Unity 6 |
+| `Vector3 angularVelocity` (rad/s) | `float angularVelocity` (degrees/s) | unit change |
+
+For a kinematic 2D character, `Rigidbody2D.Slide` moves the body along surfaces with gravity
+and slope limits, which saves writing your own cast-and-slide loop. Patterns for the ground
+check with a `ContactFilter2D`, one-way platforms and `Slide` are in
+`references/physics-2d.md`.
+
+## Verify
+
+Pick the first path that is available and say which one you used.
+
+- **Unity CLI with a ready Editor** (`unity status --project-path <project>` reports
+  `ready`): run `unity recompile --project-path <project>` for compile errors, then read the
+  state back instead of eyeballing it, for example
+  `unity command script eval --code 'return Physics2D.GetIgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("Enemy"));'`
+  or a body's `bodyType`, `collisionDetectionMode` and `linearVelocity` after a few seconds of
+  Play mode (`unity command editor.playmode start`). Commands change between CLI releases:
+  find the current name with `unity command --query <word>` and its flags with `--help`.
+- **PlayMode test, with or without the CLI:** build the case in code (a floor, a falling
+  body, `yield return new WaitForSeconds(1f)`, assert the body rests above the floor or the
+  callback count is 1). Run it with `unity test <project> --mode PlayMode`, or without the
+  CLI in batch mode: `-batchmode -projectPath <project> -runTests -testPlatform PlayMode
+  -testResults <file>` (no `-quit`; the test runner exits by itself). Read the NUnit XML, not
+  just the exit code. Test-assembly setup is in `unity-csharp-scripting`.
+- **Feel or visual only:** ask the user to enter Play mode and report a number (does the
+  crate rest at y ≈ 1, how many `OnCollisionEnter` logs per hit).
+
+## Gotchas
+
+- **`OnCollisionEnter` never fires on a `CharacterController`.** `Move` bypasses the
+  rigidbody system and reports through `OnControllerColliderHit`. Adding a Rigidbody does not
+  fix it; the two are separate movement modes.
+- **Trigger callbacks never fire.** One of the two colliders needs a rigidbody (2D: a
+  `Rigidbody2D`, and `simulated` on), and both colliders must be enabled. Two static colliders
+  never report.
+- **No collision messages between two kinematic bodies, or kinematic vs static.** With the
+  default 3D Contact Pairs Mode Unity only reports when one body is dynamic. Make one dynamic,
+  use a trigger, or change Contact Pairs Mode. In 2D, turn on `useFullKinematicContacts` on
+  the kinematic `Rigidbody2D`.
+- **A ground or line-of-sight ray stops on a trigger volume.** Queries hit triggers by
+  default in both engines. Pass `QueryTriggerInteraction.Ignore` (3D) or a `ContactFilter2D`
+  with `useTriggers = false` (2D), or turn off Queries Hit Triggers.
+- **2D ground check is always true.** The ray starts inside the player's own collider and
+  `queriesStartInColliders` returns it. Exclude the player's layer from the mask, or start the
+  ray just below the collider.
+- **Obsolete warnings on `velocity`, `drag`, `angularDrag`.** Unity 6 renamed them
+  `linearVelocity`, `linearDamping`, `angularDamping` in both 3D and 2D (2D also has
+  `linearVelocityX`/`Y`). They still compile with warnings; `PhysicMaterial` →
+  `PhysicsMaterial` is a hard error.
+- **Setting `transform.position` on a dynamic body.** It teleports and skips collision. If
+  you do write the Transform, queries see the old position until the next step; call
+  `Physics.SyncTransforms()` (2D: `Physics2D.SyncTransforms()`) once before a same-frame query.
+- **A resting body hangs in mid-air after its floor moves.** Sleeping bodies wake on
+  collisions and forces, but a static collider moved by its Transform may not wake them. Call
+  `WakeUp()`. A collider that moves every frame should get a kinematic rigidbody instead of
+  staying static.
+- **Fast objects pass through walls.** Raise Collision Detection from `Discrete`. 3D
+  `Continuous` sweeps only against static colliders; `Continuous Dynamic` also against other
+  continuous dynamic bodies; `Continuous Speculative` against everything and cheaper. 2D has
+  `CollisionDetectionMode2D.Continuous`. For bullets, a cast along the path is often better.
+- **A concave `MeshCollider` on a moving body.** Concave mesh colliders can only be static or
+  kinematic, and two concave colliders never collide. Enable Convex or build a compound
+  collider from primitives, and keep scale uniform.
+- **Part of a compound body drifts away.** A compound collider has one rigidbody, on the root.
+  An extra rigidbody on a child makes it a separate body.
+- **Nothing moves, raycasts still hit.** `Time.timeScale = 0` stops the simulation; queries
+  still read collider geometry. In 2D also check `Physics2D.simulationMode`: with `Script`,
+  nothing moves until you call `Physics2D.Simulate`.
 
 ## References
 
-- For raycast variants (`SphereCast`, `RaycastAll`, `OverlapSphere`, `LayerMask` bit math) and
-  joints (`FixedJoint`, `HingeJoint`, `ConfigurableJoint`, breakable joints), read
-  `references/raycasting-and-joints.md`.
-- Primary docs: Unity Manual "Physics" section and `ScriptReference/Rigidbody`,
-  `ScriptReference/Physics.Raycast`. For the added gotchas: `ScriptReference/CollisionDetectionMode`,
-  `ScriptReference/Physics-queriesHitTriggers`, `ScriptReference/MonoBehaviour.OnControllerColliderHit`,
-  `ScriptReference/Physics.SyncTransforms`, `ScriptReference/Rigidbody.WakeUp`, and the Manual
-  pages "Physics settings" (Queries Hit Triggers, Contact Pairs Mode), "Introduction to rigid
-  body physics" (sleeping), "Introduction to compound colliders" and "Introduction to Mesh
-  colliders" (concave vs convex).
+- Read `references/physics-2d.md` when writing 2D movement, ground checks, one-way platforms
+  or kinematic `Slide` controllers.
+- Read `references/raycasting-and-joints.md` when you need 3D cast variants (`SphereCast`,
+  `RaycastAll`, `OverlapSphere`, non-allocating buffers), `LayerMask` bit math or 3D joints.
 
 ## Related skills
 
-- `physics-tuning` — engine-agnostic feel: fixed timestep, mass/drag, CCD, stability.
-- `unity-csharp-scripting` — the `FixedUpdate`/`Update` split these patterns rely on.
-- `unity-navmesh` — agent movement that is *not* force-driven.
+- `physics-tuning`: engine-neutral feel, timestep, mass ratios, stability.
+- `unity-csharp-scripting`: the `FixedUpdate`/`Update` split, test assemblies, the `.meta`
+  checker.
+- `unity-tilemap-2d`: tilemap colliders and composite colliders.
+- `unity-navmesh`: agent movement that is not force-driven.
+
+## Version notes
+
+Last verified: 2026-11-11, against Unity 6000.3.28f1 (latest 6.3 LTS patch).
+
+- Unity 6 renames (3D and 2D `velocity`/`drag`/`angularDrag`, `Rigidbody2D.isKinematic`,
+  the 2D `*NonAlloc` queries, `Physics2D.OverlapCollider` → `Overlap`) are obsolete warnings
+  with an API Updater path in 6.3; `PhysicMaterial` is an error. Source: Unity C# reference
+  source at tag 6000.3.28f1, `Modules/Physics/ScriptBindings/*.deprecated.cs` and
+  `Modules/Physics2D/ScriptBindings/Physics2D.deprecated.cs`
+  (https://github.com/Unity-Technologies/UnityCsReference/tree/6000.3.28f1).
+- Unity 6.3 also ships a separate low-level 2D API, `UnityEngine.LowLevelPhysics2D`
+  (`PhysicsWorld`, `PhysicsBody`), with its own worlds; it is not the `Rigidbody2D` system.
+  Unity 6.5 renamed it Physics Core 2D, namespace `Unity.U2D.Physics`. Use it only when the
+  project already does.
+- Unity CLI 1.0.0-beta.17 (2026-11-05) and the `com.unity.pipeline` package
+  1.0.0-pre.1 (2026-11-10) are pre-release; command names can change.
+  https://docs.unity.com/en-us/unity-cli and
+  https://docs.unity3d.com/Packages/com.unity.pipeline@1.0/manual/index.html
+- Manual: https://docs.unity.com/en-us/engine/6000.3/manual/unity-editor/editor-settings-reference/comp-manager-group/class-physics2dsettings
+  and Scripting API pages for `Rigidbody2D`, `Physics2D`, `Rigidbody`, `Physics`.

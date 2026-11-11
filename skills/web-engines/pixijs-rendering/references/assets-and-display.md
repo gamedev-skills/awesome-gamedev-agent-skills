@@ -4,6 +4,15 @@ Depth on the v8 asset pipeline and the display-object types beyond `Sprite`. The
 `SKILL.md` covers the boot path and scene graph; this file fills in textures and
 the other things you draw.
 
+Contents:
+
+- The `Assets` system (aliases, sprite sheets, background loading, unloading)
+- Texture settings
+- Display object types: `AnimatedSprite`, `Graphics`, `Text` and `BitmapText`,
+  `TilingSprite`, `ParticleContainer`
+- Filters
+- Cleanup (destroy options, `cacheAsTexture`, app teardown, context loss)
+
 ## The `Assets` system (v8)
 
 `Assets` replaces the v7 `Loader`. It caches by URL/alias, so calling
@@ -42,7 +51,7 @@ const runFrames = sheet.animations['hero_run'];            // Texture[] for anim
 ## Texture settings
 
 ```js
-import { Texture } from 'pixi.js';
+import { Rectangle, Texture } from 'pixi.js';
 
 texture.source.scaleMode = 'nearest';  // crisp pixel art ('linear' is the default)
 const sub = new Texture({ source: texture.source, frame: new Rectangle(0, 0, 16, 16) });

@@ -1,140 +1,148 @@
 ---
 name: godot-3d-essentials
 description: >
-  Set up a Godot 4.7 3D scene: Node3D transforms, Camera3D, lighting
-  (DirectionalLight3D/OmniLight3D), WorldEnvironment for sky/ambient/tonemap/post,
-  MeshInstance3D materials, and GridMap for tile-based 3D levels. Use when building
-  a 3D scene in a Godot project, placing cameras/lights, configuring environment and
-  post-processing, or working with Node3D/.tscn 3D content and GridMap.
+  Godot 4.7 3D scene setup: Camera3D, lights, WorldEnvironment (sky, ambient, tonemap, fog),
+  StandardMaterial3D, GridMap and local vs global transforms, with a headless scene check. Use
+  when a 3D scene renders black or washed out, a mesh is invisible, or a child rotates on the
+  wrong axis. Not for spatial shaders (`godot-shaders`), bodies and raycasts (`godot-physics`) or
+  camera feel (`camera-systems`).
 ---
 
 # Godot 3D Essentials (4.x)
 
-Assemble a working 3D scene: transforms, camera, lights, environment/post, materials, and
-`GridMap` blockouts. Targets **Godot 4.7**.
+Assemble a 3D scene that shows what it should in the running game: a current camera, real
+lights, an environment, materials and GridMap blockouts. Targets **Godot 4.7**; read
+`config/features` and `rendering/renderer/rendering_method` in `project.godot` first,
+because Forward+, Mobile and Compatibility differ in what they draw.
 
-## When to use
+## Workflow
 
-- Use when starting or fixing a 3D scene: positioning a `Camera3D`, adding lights, setting
-  up a `WorldEnvironment` (sky, ambient, tonemap, glow/SSAO), assigning materials, or
-  building levels with `GridMap`.
-
-**When *not* to use:** writing spatial shaders → `godot-shaders`; 3D physics bodies and
-raycasts → `godot-physics`; character animation blending → `godot-animation`; full FPS
-template → the `fps-shooter` genre skill.
-
-## Core workflow
-
-1. **Everything 3D is a `Node3D`** with a `Transform3D` (position, rotation basis, scale).
-   Move with `global_position`, rotate with `rotate_y(angle)` or `look_at(target)`.
-2. **Add a `Camera3D`.** Mark it `current` (or call `make_current()`); set `fov`, `near`,
-   `far`. Parent it to a rig/pivot for orbit or follow cameras.
-3. **Light the scene.** A `DirectionalLight3D` is the sun; `OmniLight3D`/`SpotLight3D` are
-   local; `AreaLight3D` (4.7+) is a rectangular panel light that costs more than omni/spot.
-   Enable shadows per light. Without lights and ambient, surfaces render black.
-4. **Add a `WorldEnvironment`** with an `Environment` resource: background (sky/color),
-   ambient light, tonemap, and post (glow, SSAO, fog, adjustments).
-5. **Give meshes materials** (`StandardMaterial3D` or a `ShaderMaterial`) on
-   `MeshInstance3D`.
-6. **Block out levels with `GridMap`**, which places `MeshLibrary` items on a 3D grid
-   (the 3D analog of a tilemap).
+1. **Check the renderer** (`rendering/renderer/rendering_method`: `forward_plus`, `mobile`
+   or `gl_compatibility`). Mobile and Compatibility (web, low-end) have no SDFGI, SSIL,
+   screen-space reflections or volumetric fog, and Mobile also has no SSAO, so do not build
+   the look on them for those targets. The reference has the renderer table.
+2. **One current `Camera3D` per viewport.** Set `current = true` on the one you want.
+   Godot's convention is -Z forward, +Y up.
+3. **Light the scene in the scene itself.** The editor viewport's preview sun and preview
+   environment (toolbar toggles) do not exist at runtime. Add a `DirectionalLight3D` and a
+   `WorldEnvironment` to the main scene, or set
+   `rendering/environment/defaults/default_environment`.
+4. **Configure the `Environment`:** background (sky or colour), ambient source, tonemapper,
+   then post effects. Pick the tonemapper before tuning light energy or glow.
+5. **Materials:** `StandardMaterial3D` on `MeshInstance3D.material_override` (all surfaces)
+   or `set_surface_override_material(i, mat)`; `ShaderMaterial` for custom looks.
+6. **Block out with `GridMap`** and a `MeshLibrary`.
+7. **Verify before you finish** (paths are relative to this skill's folder):
+   - If `godot-nodes-scenes` is installed, run `python3 ../godot-nodes-scenes/scripts/check_godot_project.py <project>`
+     and fix every `ERROR`.
+   - Run `godot --headless --path <project> --script <this skill>/assets/check_3d_scene.gd -- res://level.tscn`
+     (no scene argument means the main scene). It needs no GPU and exits 1 when there is no
+     current camera, nothing lights the meshes, a sky background has no `Sky`, or a mesh is
+     hidden by the camera's `cull_mask`, behind the camera or past `far`.
+   - To see a frame without a GPU, render one in software with Movie Maker:
+     `xvfb-run -a godot --path <project> --rendering-driver opengl3 --write-movie shots/f.png --quit-after 3 res://level.tscn`
+     writes `shots/f00000000.png` and up, which you can open and inspect. This draws with
+     the Compatibility renderer, so judge Forward+ looks by asking the user for a screenshot.
 
 ## Patterns
 
-### 1. A follow camera (third-person, smoothed)
-
-```gdscript
-extends Camera3D
-
-@export var target: Node3D
-@export var offset := Vector3(0, 4, 8)
-@export var smooth := 6.0
-
-func _physics_process(delta: float) -> void:
-    if target == null:
-        return
-    var desired := target.global_position + offset
-    global_position = global_position.lerp(desired, smooth * delta)  # smooth follow
-    look_at(target.global_position, Vector3.UP)                      # face the target
-```
-
-### 2. Sun + environment in code
+### 1. Sun and environment from code
 
 ```gdscript
 func _ready() -> void:
     var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-45, -30, 0)
+    sun.rotation_degrees = Vector3(-50, -30, 0)   # pointing down: -X tilt
     sun.shadow_enabled = true
     add_child(sun)
 
-    var we := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     env.sky = Sky.new()
     env.sky.sky_material = ProceduralSkyMaterial.new()
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-    env.glow_enabled = true
-    we.environment = env
-    add_child(we)
+    env.tonemap_mode = Environment.TONE_MAPPER_AGX
+    var world_env := WorldEnvironment.new()
+    world_env.environment = env
+    add_child(world_env)
 ```
 
-### 3. Assign a StandardMaterial3D from code
+Only one `WorldEnvironment` applies per world: the first one keeps control and a later one
+is ignored without a runtime message (the editor shows a node warning).
+
+### 2. A material from code
 
 ```gdscript
-func tint_mesh(mesh: MeshInstance3D, color: Color) -> void:
+func tint(mesh: MeshInstance3D, color: Color) -> void:
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
-    mat.metallic = 0.0
     mat.roughness = 0.6
-    mat.emission_enabled = true
-    mat.emission = color * 0.3
-    mesh.material_override = mat       # overrides the mesh's surface materials
+    mesh.material_override = mat   # wins over surface and mesh materials
 ```
 
-### 4. Place tiles into a GridMap
+### 3. Fill a GridMap from code
 
 ```gdscript
-@onready var grid: GridMap = $GridMap   # cell_size + mesh_library set in the editor
+@onready var grid: GridMap = $GridMap   # mesh_library and cell_size set on the node
 
 func build_floor(width: int, depth: int, item_id: int) -> void:
     for x in width:
         for z in depth:
-            # set_cell_item(Vector3i cell, int item, orientation = 0)
-            grid.set_cell_item(Vector3i(x, 0, z), item_id)
+            grid.set_cell_item(Vector3i(x, 0, z), item_id)   # -1 clears a cell
 ```
 
-## Pitfalls
+## Gotchas
 
-- **Scene renders black** → no lights and no ambient. Add a `DirectionalLight3D` and/or a
-  `WorldEnvironment` with ambient/sky. New scenes have neither by default.
-- **No camera / wrong camera.** If nothing shows, no `Camera3D` is `current`. Set
-  `current = true` or `make_current()`; only one camera renders per viewport.
-- **Confusing local vs global transforms.** `position`/`rotation` are relative to the
-  parent; `global_position`/`global_transform` are world space. Mixing them under a rotated
-  parent gives surprising results. `look_at` uses global coordinates.
-- **Scaling physics/lights.** Non-uniform `scale` on a `Node3D` distorts child collisions
-  and lights; prefer scaling the mesh asset or using uniform scale.
-- **`look_at` does nothing and prints an error** → the target equals the node's position, the
-  `up` vector is parallel to the look direction (e.g. looking straight down with
-  `Vector3.UP`), or the node is not in the tree yet. Keep an offset, pass a different `up`, or
-  use `look_at_from_position()` before the node enters the tree.
-- **GridMap with no `MeshLibrary`** places nothing. Create a `MeshLibrary` (from scenes)
-  and assign it; `set_cell_item(cell, -1)` clears a cell.
-- **HDR/glow too strong** → check `tonemap_mode` and glow thresholds; raw emissive values
-  bloom hard under filmic tonemapping.
+- **Fine in the editor, dark or flat in the game** → the editor preview sun and environment
+  were doing the lighting. Put a light and a `WorldEnvironment` in the scene.
+- **Meshes are black** → nothing lights them. With no `Environment`, Forward+ and Mobile still
+  add flat ambient from `rendering/environment/defaults/default_clear_color`, but
+  Compatibility adds none, so the same scene is dim grey on desktop and black on web. An
+  `Environment` with ambient `Disabled` or a black colour background does the same.
+- **Plain grey screen** → no current camera, so you only see the clear colour; or the camera
+  sits inside a mesh, whose back faces are culled.
+- **Wrong camera renders** → a camera in an instanced sub-scene also has `current = true`.
+  Keep `current` on one camera, or call `make_current()` after the scene loads.
+- **A mesh is missing** → its `layers` do not overlap the camera's `cull_mask`, it is past
+  `far`, or an imported mesh has flipped normals (try `cull_mode = CULL_DISABLED` to test).
+- **`look_at()` errors and does nothing** → the target equals the node's position, the up
+  vector is parallel to the view direction (looking straight down with `Vector3.UP`), or the
+  node is not in the tree yet; use `look_at_from_position()` before `add_child()`.
+- **Local vs global mix-ups** → `position`/`rotation` are parent-relative; `look_at()` and
+  `global_position` are world space.
+- **Non-uniform scale distorts collision and lights** → scale the mesh resource or use uniform
+  scale on bodies.
+- **Washed-out or blown highlights** → the tonemapper is `Linear` (no tonemapping) or glow
+  thresholds are low; switch to AgX or Filmic and lower `glow_intensity`.
+- **GridMap places nothing** → no `MeshLibrary` assigned, or the item id is not in it.
 
 ## References
 
-- For Transform3D math, camera projection modes, light/shadow params, the full
-  Environment/post-processing options, `MeshLibrary` creation, and `ReflectionProbe`/
-  `LightmapGI` lighting, read `references/scene-and-environment.md`.
+- Read `references/scene-and-environment.md` for Transform3D math, camera projection and
+  picking, the light table (including AreaLight3D costs), every Environment option, material
+  fields, building a `MeshLibrary`, and baked or real-time GI.
+- `assets/check_3d_scene.gd` is the headless check used in step 7.
 
 ## Related skills
 
-- `godot-physics` — 3D bodies, areas, and raycasts.
-- `godot-shaders` — spatial shaders for custom 3D surfaces.
-- `godot-animation` — `AnimationTree` for 3D characters.
-- `camera-systems` — third-person orbit / first-person look rigs, framing, and collision.
-- `performance-optimization` — keep 3D scenes within frame budget (draw calls, lights, LOD).
-- `fps-shooter` — composes 3D movement, input, and AI into a game.
+- `camera-systems`: orbit, follow and first-person camera feel.
+- `godot-physics`: 3D bodies, CharacterBody3D, areas and raycasts.
+- `godot-shaders`: spatial shaders.
+- `godot-animation`: AnimationTree for 3D characters.
+- `performance-optimization`: draw calls, lights, LOD and frame budget.
+- `fps-shooter`: a full 3D game on top of these pieces.
+
+## Version notes
+
+Last verified: 2026-11-11 against the Godot 4.7.2 class reference, renderer source and a
+4.7.2 headless and Movie Maker run.
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- `AreaLight3D` and the dedicated MeshLibrary editor are new in 4.7.
+- The AgX tonemapper exists since 4.4.
+- No-environment ambient: Forward+/Mobile fall back to the default clear colour
+  (`render_scene_data_rd.cpp`); Compatibility has no fallback (`rasterizer_scene_gles3.cpp`).
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Godot 4.7 release page](https://godotengine.org/releases/4.7),
+  [Environment and post-processing](https://docs.godotengine.org/en/stable/tutorials/3d/environment_and_post_processing.html),
+  [render_scene_data_rd.cpp @ 4.7.2](https://github.com/godotengine/godot/blob/4.7.2-stable/servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.cpp),
+  [rasterizer_scene_gles3.cpp @ 4.7.2](https://github.com/godotengine/godot/blob/4.7.2-stable/drivers/gles3/rasterizer_scene_gles3.cpp).

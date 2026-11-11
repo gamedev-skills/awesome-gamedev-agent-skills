@@ -4,6 +4,15 @@ Detail behind `SKILL.md`. Engine-neutral pseudocode. Covers the branching data m
 structures, and the save/backlog/skip data a VN needs. For the branching-script runtime
 (Ink/Yarn) defer to `dialogue-systems`; this file is the VN-specific glue.
 
+Contents:
+1. The script data model
+2. Route structures
+3. Flags and variables
+4. Save-anywhere data (Ink, Yarn Spinner, Ren'Py)
+5. Backlog, skip and auto
+6. Presentation conventions
+7. Localization
+
 ## 1. The script data model
 
 A VN script is a graph of nodes. Whether authored in Ink, Yarn, or your own format, the engine

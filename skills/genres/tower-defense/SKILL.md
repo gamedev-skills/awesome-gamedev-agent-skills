@@ -1,124 +1,119 @@
 ---
 name: tower-defense
 description: >
-  Build a tower defense: enemies pathing along lanes, wave spawning, towers that auto-target and fire,
-  an economy, and lives. Use for a tower-defense/wave-defense game, or balancing waves and economy.
+  Designs tower defense games in any engine: lane and maze pathing, wave pacing, targeting
+  priorities, armoured and flying counters, and the gold economy, with a wave-curve checker. Use
+  for a Bloons- or Kingdom Rush-like, or late waves that are impossible or trivial or a dominant
+  tower. Not for pathfinding (`game-ai`) or survival base building (`survival-crafting`).
 ---
 
-# Tower Defense
+# Tower defense
 
-A playbook for tower defense — enemy pathing, wave spawning, tower targeting, and the
-economy that ties them together. This is a **compositional** skill: it orchestrates pathing,
-AI, and UI into a TD loop. It does not re-teach pathfinding; it defines the systems and the
-balance levers (DPS vs. HP vs. income) that decide whether a TD is tense or trivial.
+Owns the TD loop: paths, waves, towers, targeting and the economy that links them. The core
+balance question is whether the DPS the player can afford keeps pace with the HP each wave
+sends, so design both curves together and check them with the script before playtesting.
 
 ## When to use
 
-- Use when building a game where the player **places towers** that automatically attack
-  **waves of enemies** following a path, spends earned currency to expand/upgrade, and loses
-  if too many enemies leak through.
-- Use when designing wave composition/pacing, tower targeting priorities, or the gold economy.
+- Towers attack waves on their own, the player spends earned currency to build, upgrade and
+  sell, and leaks cost lives. Includes lane defense, mazing TD and TD-action hybrids.
+- Balancing waves and economy, choosing targeting modes, adding enemy types, fixing pathing.
 
-**When _not_ to use:** the player directly controls a shooter → `fps-shooter`. Free-form base
-building with needs → `survival-crafting`. For the pathfinding algorithm itself, use `game-ai`.
+**When not to use:** the player shoots directly (`fps-shooter`); free-form base building with
+needs (`survival-crafting`); the A* or flow-field code itself (`game-ai`).
 
-## Core loop
+## Workflow
 
-**Prepare (place/upgrade towers with current gold) → start the wave → enemies path toward the
-goal while towers auto-fire → earn gold from kills → survive the wave → repeat against a
-harder one.** The tension is a planning puzzle: is my current DPS enough for what's coming,
-and can I afford the answer?
+1. **Pick the map model:** fixed lanes (most TDs; full control of pacing), maze (towers shape
+   the path; needs placement validation) or open field with flow fields (large crowds).
+2. **Write towers, enemies and waves as data.** Each tower has a role (single-target DPS,
+   splash, slow, anti-air, armour pierce, support) and each enemy type exists to counter one
+   lazy build: fast (beats slow single-target), armoured (beats rapid low-damage), flying
+   (skips ground-only), swarm (beats single-target), boss (HP spike), regenerating or shielded
+   (punish slow DPS).
+3. **Set the curves:** enemy HP per wave grows geometrically (start near 1.12-1.18x per wave)
+   and income grows from bounty growth plus enemy count. The two compound against each other,
+   so small changes matter: in the script's example, HP growth 1.15 holds for 30 waves while
+   1.25 walls by wave 2.
+4. **Run the curve check** (path relative to this skill folder):
+   `python3 scripts/td_curve_check.py waves.json`. It buys a reference tower with all gold
+   before each wave and prints each wave's pressure (needed DPS / owned DPS x efficiency).
+   Errors are walls (pressure above 1.0); warnings are runs of trivial waves. Aim for 0.6-0.95
+   with breathers between spikes. `--help` shows the spec format; `--json` for tooling.
+5. **Pace the session:** a short build phase between waves, a next-wave preview, an early-call
+   bonus for confident players and a 2-3x fast-forward toggle.
+6. **Check it.** Run the curve check and these tests, then report the numbers:
+   - a fast enemy (speed x 10) on a path with sharp corners keeps its total travel time within
+     one tick of `path_length / speed` (refs §1);
+   - maze maps: every placement that would cut the spawn or any walking enemy off from the goal
+     is refused (refs §1);
+   - targeting "first" picks the enemy with the most path progress even when another is
+     closer to the tower.
 
-## Must-have systems
+## Economy rules
 
-1. **Enemy path** — waypoint lanes, or grid + pathfinding for maze TD (refs).
-2. **Wave spawner** — timed, scripted sequences of enemy types with per-wave scaling.
-3. **Towers** — range, fire rate, damage, projectile/hitscan, splash; placement validity.
-4. **Targeting** — per-tower priority (first/last/closest/strongest/weakest) (refs).
-5. **Economy** — gold from kills + wave bonuses; tower/upgrade costs; sell refund.
-6. **Lives / leak** — enemies reaching the goal cost lives; 0 = game over.
-7. **Wave/prep UI** — lives, gold, next-wave preview, start-next-wave control.
+| Lever | Start here | Why |
+|-------|-----------|-----|
+| Wave 1 | beatable with starting gold at pressure about 0.5-0.7 | the first wave teaches, it does not test |
+| Kill bounty | most income early; wave-clear bonus grows later | late income should reward survival, not farming |
+| Leaks | cost lives and the bounty | otherwise leaking can be optimal |
+| Sell refund | 50-80% of money spent | repositioning possible, never free |
+| Interest | optional, capped | rewards saving but snowballs |
+| Upgrades | competitive gold-per-DPS with new towers, with diminishing tiers | "tall" and "wide" both viable |
+| Early call | gold bonus scaled by time skipped | speeds the game for experts |
+| Targeting | per tower: first (default), last, strongest, weakest, closest | changes play more than raw stats |
 
-## Design knobs
-
-| Knob                      | Effect                  | Notes                                    |
-| ------------------------- | ----------------------- | ---------------------------------------- |
-| Enemy HP growth/wave      | upgrade pressure        | Geometric ~1.1–1.2× (refs).              |
-| Income vs. HP curves      | difficulty              | Player should _almost_ afford each wave. |
-| Tower DPS / range / cost  | tower identity          | Cheap+wide vs. expensive+tall.           |
-| Targeting priority        | optimal placement       | Changes play more than raw stats.        |
-| Enemy variety             | counters one-build wins | Fast / armored / flying / swarm / boss.  |
-| Leak penalty              | stakes                  | Cost lives _and_ lost bounty.            |
-| Upgrade vs. build economy | strategy depth          | Diminishing upgrade returns.             |
-| Wave pacing               | tension curve           | Spike → breather → spike, not monotonic. |
-
-## Patterns
-
-### 1. Wave spawner (timed, data-driven)
-
-```python
-# Pseudocode. A wave is data: a list of (enemy_type, count, spacing). Spawn over time.
-wave = [ ("grunt", 10, 0.5), ("runner", 5, 0.3), ("tank", 2, 1.0) ]
-
-def run_wave(wave):
-    for enemy_type, count, spacing in wave:
-        for _ in range(count):
-            spawn_enemy(enemy_type, at=path[0])   # enter at the path start
-            wait(spacing)                          # seconds between spawns (use a timer/coroutine)
-    # wave clears when all spawned enemies are dead or have leaked
-```
-
-### 2. Tower targeting (filter to range, then pick by priority)
+## Pattern 1: wave data
 
 ```python
-# Pseudocode. "First" (furthest along path) is the standard default for stopping leaks.
-def acquire_target(tower, enemies, mode="first"):
-    in_range = [e for e in enemies if distance(tower.pos, e.pos) <= tower.range]
-    if not in_range: return None
-    if mode == "first":    return max(in_range, key=lambda e: e.progress)   # furthest along path (stop leaks)
-    if mode == "last":     return min(in_range, key=lambda e: e.progress)   # least progress (guard the entrance)
-    if mode == "closest":  return min(in_range, key=lambda e: distance(tower.pos, e.pos))
-    if mode == "strongest":return max(in_range, key=lambda e: e.hp)         # burn down tanks first
-    if mode == "weakest":  return min(in_range, key=lambda e: e.hp)         # secure kills / last-hit bounty
-    return in_range[0]
+# A wave is data: groups spawn in order, each with its own spacing.
+WAVES = [
+    {"groups": [{"type": "grunt", "count": 10, "spacing": 0.6},
+                {"type": "runner", "count": 6, "spacing": 0.3}], "clear_bonus": 30},
+    {"groups": [{"type": "armored", "count": 4, "spacing": 1.2}], "clear_bonus": 35,
+     "preview": "armored"},                     # shown one wave ahead in the UI
+]
 ```
 
-### 3. "Can this lane hold?" sanity check (DPS vs. HP)
+Telegraph every new enemy type a wave ahead, and introduce it alone before mixing it with
+others, so the counter feels learnable rather than random.
 
-```python
-# Pseudocode. One tower's damage to one enemy crossing its range.
-tower_dps     = tower.damage * tower.fire_rate
-time_in_range = tower.range_coverage_length / enemy.speed
-damage_dealt  = tower_dps * time_in_range
-# Lane holds if summed damage_dealt from covering towers >= enemy.hp (per enemy). See refs.
-```
+## Gotchas
 
-## Pitfalls / failure modes
-
-- **Enemy HP scales slower than player income/DPS** → game trivializes after a few waves.
-  Tune the HP curve against the income curve (refs).
-- **One dominant tower/strategy** → no decisions. Add enemy types that hard-counter builds
-  (armored vs. rapid-fire, flying vs. ground-only) and diminishing upgrade returns.
-- **Maze TD that can fully block the goal** → enemies get stuck/softlock. Forbid placements
-  that sever the path for the spawn or for any enemy already walking; recompute paths when
-  towers change (refs §1).
-- **Fast enemies slow down at corners or skip waypoints** → per-step movement stops at each
-  waypoint or overshoots it. Carry the leftover distance to the next waypoint (refs §1).
-- **No next-wave telegraph** → specials feel random and unfair. Preview upcoming composition.
-- **Per-frame movement unscaled by `dt`** → speed varies with frame rate. Scale steering by `dt`.
-- **Leaks only cost lives, not gold** → leaking is sometimes optimal. Make leaks lose bounty too.
-- **Monotonic difficulty ramp** → exhausting. Pace spikes and breathers.
-
-## Composition (build it from these skills)
-
-- **Pathing:** `game-ai` for A\*/flow-field/steering; for fixed lanes, simple waypoint following.
-- **Enemy movement:** `godot-2d-movement` (or engine equivalent) to move along the path; `unity-navmesh` for nav-based pathing.
-- **Map:** `godot-tilemap` / `unity-tilemap-2d` for the grid/lanes; `level-design` for map layouts.
-- **Data:** `godot-resources` / `unity-scriptableobjects` to define towers, enemies, and waves as assets.
-- **UI:** `game-ui-ux` for HUD layout, scaling, and the build menu; `godot-ui-control` for the concrete widgets (lives, gold, wave preview).
-- **Polish:** `audio-design` for fire/hit/leak sound cues.
+- **Late game impossible or trivial** → HP growth and income growth set separately. Tune them
+  together with the curve check; geometric HP needs geometric income or upgrade efficiency.
+- **One tower wins everything** → no enemy counters it. Add the counter type (step 2) and
+  diminishing upgrade returns.
+- **Enemies stuck, or the goal unreachable** → a maze placement severed the path. Validate with
+  one search from the goal before committing (refs §1).
+- **Fast enemies slow down at corners or overshoot** → movement stops at each waypoint. Carry
+  the leftover distance (refs §1).
+- **Towers ignore the enemy about to leak** → "closest" used as the default. Default to
+  "first" by path progress.
+- **Wave timers drift on slow machines** → spawn spacing counted in frames. Use the game clock;
+  fast-forward multiplies the clock, not the frame rate.
+- **Specials feel unfair** → no preview. Show the next wave's composition.
+- **Monotonic ramp exhausts players** → every wave harder than the last. Spike, breather,
+  spike.
 
 ## References
 
-- For path representations (waypoints / A\* / flow fields), targeting modes, DPS and economy
-  math, enemy scaling, and wave pacing, read `references/balancing.md`.
+- `references/balancing.md`: read when choosing path representations and writing waypoint or
+  maze validation code, targeting mode code, DPS and "can this lane hold" math, HP scaling,
+  economy details, lives and wave pacing.
+- `scripts/td_curve_check.py --help`: spec format and the pressure model's limits.
+
+Related: `game-ai` (A*, flow fields), `level-design` (map layouts), `godot-tilemap` or
+`unity-tilemap-2d` (grid maps), `godot-resources` or `unity-scriptableobjects` (tower and
+wave data), `game-ui-ux` (build menu, wave preview, HUD), `game-feel` and `audio-design`.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7 `Path2D` and `PathFollow2D` (`progress`, `progress_ratio`, `loop`) and
+  `AStarGrid2D.set_point_solid()` (no `update()` needed afterwards) used in the reference were
+  checked against the 4.7.2 class reference (doc/classes/*.xml); `PathFollow2D.loop` defaults
+  to true, so set it to false for leak detection.
+- Curve figures (1.15 holds, 1.25 walls) come from running the bundled checker on its test
+  spec, not from a shipped game.

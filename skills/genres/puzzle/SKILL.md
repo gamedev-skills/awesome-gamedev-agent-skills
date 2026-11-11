@@ -1,143 +1,118 @@
 ---
 name: puzzle
 description: >
-  Build a puzzle game: grid/board state, move input, rule-based resolution (match-3 cascades, sokoban
-  pushes, tile logic), scoring, and undo. Use for a match-3, sokoban, or grid-logic puzzle.
+  Designs grid and logic puzzle games in any engine: match-3 cascades, Sokoban pushing,
+  unique-solution grids (nonogram, Sudoku), exact undo and solver-checked levels. Use for a Candy
+  Crush-like, Sokoban or Picross, or broken cascades, drifting undo or unsolvable levels. Not for
+  physics puzzlers (`platformer`, `physics-tuning`) or card games (`card-game`).
 ---
 
 # Puzzle
 
-A playbook for grid/board puzzle games — the board model, move input, rule resolution
-(matching, pushing, logic), scoring, undo, and level progression. This is a **compositional**
-skill: it models board state and rules and presents them through a tilemap/UI. It does not
-re-teach tilemaps; it defines the resolution loop and the correctness rules (clean state,
-deterministic resolution, undo) that keep a puzzle fair and bug-free.
+Owns discrete board puzzles: the rules engine, resolution order, undo, solvability and level
+difficulty. The board model is the only truth; the view replays the list of changes each move
+produced.
 
 ## When to use
 
-- Use when the game is a **discrete board** the player changes with moves, and the board
-  **resolves by rules**: match-3/tile-matching, sokoban/block-pusher, sliding puzzle, logic grid.
-- Use when designing match/cascade resolution, undo, level progression, or solvability.
+- The player changes a discrete board with moves and the board resolves by rules: matching,
+  pushing, sliding, merging, or pure logic deduction.
+- Writing a solver or generator, ordering levels by difficulty, fixing undo or soft-locks.
 
-**When *not* to use:** real-time grid action with permadeath → `roguelike`. Card zones/turns →
-`card-game`. Physics-based "puzzle platformer" → `platformer` + `physics-tuning`. For the tile
-rendering, use `godot-tilemap` / `unity-tilemap-2d`.
+**When not to use:** physics-driven puzzles and puzzle platformers (`platformer`,
+`physics-tuning`); turn-based dungeon runs (`roguelike`); card zones (`card-game`).
 
-## Core loop
+## Workflow
 
-**Read the board → plan a move → make the move → the board resolves by its rules (match, push,
-fall, fill, cascade) → see progress toward the objective → repeat until solved/failed.** The
-fun is the *planning*; the engine's job is to resolve each move **deterministically** and
-present it clearly.
+1. **Model the board as plain data** (grid of cell values plus counters and RNG state) with a
+   pure `apply(state, move) -> (state, events)` function. The view animates `events`.
+2. **Write the rule resolver** for the family (below) and loop until stable where rules cascade.
+3. **Undo from day one:** push a snapshot (or invertible command) before every move, including
+   score, move counters and RNG state. Add restart, which thinky puzzles need as much as undo.
+4. **Write a solver early** (BFS or A* over states for push and slide puzzles, a line or
+   constraint solver for logic grids, move-existence for match-3). It validates every level,
+   measures difficulty and powers hints.
+5. **Order levels by measured difficulty,** introducing one mechanic at a time: a level that
+   teaches it alone, a level that tests it, then one that combines it with a known mechanic.
+6. **Check it.** Run these in the project's test runner and report the numbers:
+   - the solver solves every shipped level; print minimum moves and states explored per level
+     and flag levels whose order disagrees with difficulty;
+   - logic grids: the solver finds exactly one solution without guessing;
+   - undo: hash the full state, make a random move, undo, and compare hashes (1,000 times);
+   - match-3: 10,000 random boards after generation have no ready-made match and at least one
+     valid move;
+   - input during a resolving cascade is ignored or queued, never applied mid-resolution.
 
-## Must-have systems
+## Rule families and numbers
 
-1. **Board model** — a grid of cells holding pieces; the single source of truth (logic, not visuals).
-2. **Move input** — swap, push, drag, rotate, or place; validate legality before applying.
-3. **Rule resolution** — detect and apply the genre's rule (matches, pushes, logic) until stable.
-4. **Cascades/chains** — when resolution changes the board, re-resolve until no more changes.
-5. **Objectives + scoring** — win/lose conditions (score, clear all, reach goal); move/time limits.
-6. **Undo** — revert the last move (and its resolution) exactly; essential for thinky puzzles.
-7. **Level progression + (often) generation** — hand-authored or generated **solvable** boards.
-8. **Feedback ("juice")** — clear, satisfying animation/sound for matches, falls, and chains.
+| Family | Rules that matter | Starting numbers |
+|--------|------------------|------------------|
+| Match-3 | 4 in a line makes a line-clear piece, an L or T of 5 makes an area bomb, 5 in a line makes a colour bomb (Candy Crush naming) | 8x8 or 9x9 board, 5-6 colours (fewer colours, more cascades), hint after about 5 s idle |
+| Push (Sokoban) | push one box, never pull; dead squares (non-goal corners, wall edges with no goal) | difficulty from minimum pushes and states explored, not board size |
+| Slide (15-puzzle) | half of random arrangements are unsolvable | check inversion parity (refs §7) |
+| Merge (2048) | slide, merge equal neighbours once per move, then spawn | the original spawns a 2 with 90% chance and a 4 with 10% |
+| Logic grids | exactly one solution, reachable by deduction alone | grade difficulty by the hardest deduction rule the solver needed |
+| Rule-changing (Baba Is You style) | rules are board objects; re-derive the rule set after every move, before win checks | test every rule word against every object type |
 
-## Design knobs
+No-guess generation is standard for logic puzzles: Simon Tatham's Mines, for example,
+ensures by default that the whole grid can be deduced from the first opening.
 
-| Knob | Effect | Notes |
-|------|--------|-------|
-| Grid size / shape | complexity | Square is standard; hex/irregular change feel. |
-| Match/push rule | genre identity | 3-in-a-row, shapes, push-into-goal, etc. |
-| Cascade scoring | reward depth | Bigger chains = exponential payoff. |
-| Move / time limit | pressure | Move-limited = puzzly; time = arcade. |
-| Difficulty curve | learning | Introduce one mechanic at a time. |
-| Undo depth | forgiveness | Single-step vs. full history. |
-| Solvability guarantee | fairness | Generated boards must be solvable. |
-| Deadlock handling | no dead ends | Detect no-moves; shuffle or end (refs). |
-
-## Patterns
-
-### 1. Board model + match detection (logic separate from visuals)
-
-```python
-# Pseudocode. The board is the truth; rendering reads from it. (0,0) top-left, y grows down.
-board = [[piece_or_empty for _ in range(W)] for _ in range(H)]
-
-def find_matches(board):
-    matched = set()
-    for y in range(H):                       # horizontal runs of >= 3 equal pieces
-        run = 1
-        for x in range(1, W):
-            if board[y][x] and board[y][x] == board[y][x-1]: run += 1
-            else:
-                if run >= 3: matched |= {(y, k) for k in range(x-run, x)}
-                run = 1
-        if run >= 3: matched |= {(y, k) for k in range(W-run, W)}
-    # ... repeat the same scan vertically (columns) ...
-    return matched
-```
-
-### 2. Resolve → collapse → refill → cascade (repeat to stability)
+## Pattern 1: resolve to stability (match-3)
 
 ```python
-# Pseudocode. One player move can trigger a chain; loop until the board stops changing.
-def resolve(board):
-    chain = 0
+def resolve(board, rng):
+    events, chain = [], 0
     while True:
-        matches = find_matches(board)
-        if not matches: break                 # stable: resolution complete
+        matches = find_matches(board)              # runs of 3+, rows and columns
+        if not matches:
+            break
         chain += 1
-        score += score_for(matches, chain)    # later chain steps score more (see refs)
-        clear(board, matches)                  # remove matched pieces
-        apply_gravity(board)                   # pieces fall into the gaps
-        refill(board, rng)                      # spawn new pieces at the top (seeded RNG)
-    return chain
+        specials = specials_from(matches)          # decide BEFORE clearing (shape and swap cell)
+        events.append(("clear", matches, chain))
+        clear(board, matches); place(board, specials)
+        events.append(("fall", apply_gravity(board)))
+        events.append(("spawn", refill(board, rng)))   # seeded RNG, saved in undo snapshots
+    if not has_valid_move(board):
+        events.append(("shuffle", reshuffle_until_playable(board, rng)))
+    return events
 ```
 
-### 3. Undo via state snapshot or command
+## Gotchas
 
-```python
-# Pseudocode. Snapshot before each move; undo restores it exactly (board + score + counters + RNG).
-def make_move(move):
-    history.append(snapshot(board, score, moves_left, rng.state))   # push BEFORE applying
-    apply(move); resolve(board); moves_left -= 1
-
-def undo():
-    if history:
-        board, score, moves_left, rng.state = history.pop()   # exact revert, including refills
-```
-
-For large boards prefer the **command** pattern (store the move + enough to invert it) over full
-snapshots to save memory; snapshots are simplest and fine for small boards.
-
-## Pitfalls / failure modes
-
-- **Mixing logic and visuals** → animations desync from state and cause bugs. The board model is
-  the single source of truth; the view only renders it.
-- **Resolving only once** → cascades/chains are missed. Loop resolution until the board is stable
-  (Pattern 2).
-- **Undo that doesn't restore everything** → score/move-count/random-state drift. Snapshot *all*
-  state, or make the move fully invertible. If undo skips the RNG state, redoing the same move
-  refills different pieces and players learn to "reroll" by undoing.
-- **Unseeded refill RNG** → can't reproduce a level / no deterministic undo or daily puzzle. Seed it.
-- **Generated boards that aren't solvable** → unfair dead ends. Generate-and-verify, or generate
-  from a known solution backward (refs). A sliding-tile puzzle filled by a random shuffle is
-  unsolvable half the time; check the parity rule in refs §7.
-- **No deadlock detection** (match-3) → board with no valid moves softlocks. Detect "no moves"
-  and shuffle or end the level (refs).
-- **Difficulty spikes** → too many mechanics at once. Teach one mechanic per level before combining.
-- **Resolution mid-animation accepts input** → double-moves/corruption. Lock input until the
-  board is stable.
-
-## Composition (build it from these skills)
-
-- **Board rendering:** `godot-tilemap` / `unity-tilemap-2d` for the grid; `godot-ui-control` for HUD, score, and menus.
-- **Levels:** `level-design` for hand-authored puzzles and difficulty pacing; `procedural-gen` for solvable generated boards.
-- **Persistence:** `save-systems` for level progress, high scores, and seeded daily puzzles.
-- **Juice:** `game-feel` for match/cascade pop, screen shake, and chain feedback; the engine animation/`Tween` skill for swaps/falls/clears; `audio-design` for match and chain cues.
-- **Scripting:** `godot-gdscript` / `unity-csharp-scripting` for the resolution loop and rules.
+- **Cascades miss matches** → resolution ran once. Loop until no matches (Pattern 1).
+- **Special piece appears in the wrong cell** → specials decided after clearing. Decide from
+  the match shape and the swapped cell first.
+- **Undo rerolls the refill** → RNG state not in the snapshot; players learn to undo for better
+  pieces. Snapshot board, score, counters and RNG state together.
+- **Visuals desync from the board** → animation code reads a half-updated board. Animate the
+  event list; lock or queue input until it finishes.
+- **Soft-lock with no moves** → no deadlock check. Detect and reshuffle (keep piece counts, no
+  free matches) or end the level.
+- **Unsolvable generated level** → random scramble with no check. Generate backwards from the
+  solved state with inverse moves (pull for Sokoban), or generate and solve, with the seed kept.
+- **Two valid answers in a logic grid** → generator never checked uniqueness. Run the solver
+  for a second solution and reject or add a clue.
+- **Difficulty jumps** → levels ordered by designer guess. Order by solver effort and teach one
+  mechanic at a time.
+- **Box pushed into a dead corner with no hint** → no dead-square detection. Precompute dead
+  squares and offer restart or flag them.
 
 ## References
 
-- For match-3 detection/gravity/refill/cascade detail, deadlock detection and reshuffles,
-  sokoban/rule-based puzzles, undo strategies, solvable generation, and scoring, read
-  `references/board-and-resolution.md`.
+- `references/board-and-resolution.md`: read when writing match-3 gravity, refill and
+  deadlock code, cascade scoring, Sokoban pushing, logic-grid validity checks, undo strategies,
+  solvable generation and sliding-tile parity, or input locking during animation.
+
+Related: `level-design` (teaching order), `procedural-gen` (seeded generators), `save-systems`
+(progress, daily seeds), `game-feel` (match pops, chain feedback), `godot-tilemap` or
+`unity-tilemap-2d` (board rendering).
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- 2048 spawn odds: `Math.random() < 0.9 ? 2 : 4` in
+  https://github.com/gabrielecirulli/2048/blob/master/js/game_manager.js.
+- Simon Tatham's Mines "Ensure solubility" option, on by default:
+  https://www.chiark.greenend.org.uk/~sgtatham/puzzles/doc/mines.html.
+- Match-3 board size, colour count and hint delay are common practice, not measured.

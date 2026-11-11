@@ -2,6 +2,9 @@
 
 Depth companion to `godot-3d-essentials`.
 
+Contents: Transform3D; Camera3D; Lights; Environment & post-processing; Materials; GridMap &
+MeshLibrary; Baked lighting & probes.
+
 ## Transform3D
 
 A `Node3D` has a `Transform3D` = `Basis` (3x3 rotation/scale) + `origin` (Vector3).
@@ -58,6 +61,14 @@ and high-end targets.
 A `CameraAttributes` resource (Practical/Physical) adds DOF, auto-exposure, and exposure
 controls, assigned on the camera or environment.
 
+Renderer support (4.7 docs, "Overview of renderers"):
+
+| Feature | Compatibility | Mobile | Forward+ |
+|---|---|---|---|
+| SSAO | yes | no | yes |
+| SSIL, SSR, SDFGI, volumetric fog | no | no | yes |
+| Fog, glow, tonemapping, adjustments | yes | yes | yes |
+
 ## Materials
 
 `StandardMaterial3D` (PBR) key fields: `albedo_color`/`albedo_texture`, `metallic`,
@@ -74,15 +85,18 @@ occlusion/roughness/metallic into one texture.
    (like the 2D `TileSet` editor) makes adding and
    editing items much quicker.
 2. Assign the `MeshLibrary` to the `GridMap.mesh_library` and set `cell_size`.
-3. Paint in the editor, or from code:
-   ```gdscript
-   grid.set_cell_item(Vector3i(x, y, z), item_id, orientation)
-   grid.get_cell_item(Vector3i(x, y, z))          # -1 if empty (GridMap.INVALID_CELL_ITEM)
-   grid.get_used_cells()
-   grid.clear()
-   grid.map_to_local(cell) / grid.local_to_map(pos)
-   ```
-   Orientation comes from `GridMap.get_orthogonal_index_from_basis(basis)`.
+3. Paint in the editor, or from code (below). Orientation comes from
+   `GridMap.get_orthogonal_index_from_basis(basis)`.
+
+```gdscript
+func gridmap_calls(grid: GridMap, cell: Vector3i, item_id: int, orientation: int) -> void:
+    grid.set_cell_item(cell, item_id, orientation)
+    print(grid.get_cell_item(cell))          # -1 if empty (GridMap.INVALID_CELL_ITEM)
+    print(grid.get_used_cells())
+    var centre := grid.map_to_local(cell)    # cell -> local position of its centre
+    print(grid.local_to_map(centre) == cell) # position -> cell
+    grid.clear()
+```
 
 ## Baked lighting & probes
 

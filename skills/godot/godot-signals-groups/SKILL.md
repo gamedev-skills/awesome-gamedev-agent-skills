@@ -1,58 +1,84 @@
 ---
 name: godot-signals-groups
 description: >
-  Build event-driven, decoupled Godot 4.7 gameplay with signals and node groups:
-  declare and emit custom signals, connect with Callables (incl. bind/one-shot),
-  and broadcast to many nodes via groups and call_group. Use when wiring node
-  communication in a Godot project, replacing tight references with signals,
-  emitting/connecting events, or porting 3.x connect("sig", self, "method") code.
+  Godot 4.7 signals and node groups: typed signals, connect() with Callables, one-shot and
+  deferred connections, event-bus autoloads and call_group broadcasts. Use when nodes must talk
+  without hard references, a handler fires twice or never, or the log says "already connected".
+  Not for GDScript syntax (`godot-gdscript`) or autoload setup (`godot-nodes-scenes`).
 ---
 
 # Godot Signals & Groups (4.x)
 
-Decouple nodes with the observer pattern (signals) and act on many nodes at once
-(groups), instead of hard-coding references between scenes. Targets **Godot 4.7**.
+Decouple nodes with signals and act on many nodes at once with groups, instead of
+hard-coding references between scenes. Targets **Godot 4.7** (see Version notes).
 
 ## When to use
 
-- Use when a node needs to tell others "something happened" (player died, item picked
-  up, wave cleared) without holding direct references to them.
-- Use when you need to address a whole category of nodes at once ("pause all enemies",
-  "save every checkpoint").
+- A node must announce "something happened" (player died, item picked up, wave
+  cleared) without holding references to its listeners.
+- A whole category of nodes needs one call ("pause all enemies", "save every
+  checkpoint").
 
-**When *not* to use:** raw signal *syntax* basics → `godot-gdscript`; scene structure
-and instancing → `godot-nodes-scenes`. For cross-scene global events, emit from an
-autoload (see `godot-nodes-scenes`).
+**When *not* to use:** general GDScript syntax → `godot-gdscript`; scene structure and
+autoload registration → `godot-nodes-scenes`.
 
 ## Core workflow
 
-1. **Decide the direction.** A child/sub-scene should *emit* a signal upward; the parent
-   *connects* to it. This keeps the child reusable and ignorant of who listens.
-2. **Declare typed signals** on the emitter; `emit()` them when the event occurs.
-3. **Connect with a Callable** (`sig.connect(_on_sig)`), optionally in the editor's Node
-   dock. Use `CONNECT_ONE_SHOT` for fire-once, `bind()` to pass extra context.
-4. **Use groups for broadcast**: add nodes to a named group, then iterate
-   `get_tree().get_nodes_in_group(...)` or `call_group(...)`.
-5. **Disconnect when needed** (e.g. before freeing a long-lived listener) and check
-   `is_connected()` to avoid duplicate connections.
+1. **Decide the direction.** A child or sub-scene *emits* upward; the parent *connects*.
+   The child stays reusable and ignorant of who listens. Calling down into a child you own
+   is a plain method call, not a signal.
+2. **Declare typed signals** on the emitter and `emit()` exactly the declared arguments.
+3. **Connect with a Callable** (`sig.connect(_on_sig)`). Use `CONNECT_ONE_SHOT` for
+   fire-once and `bind()` to pass extra context.
+4. **Editor connections and groups are plain text in the `.tscn`**, so you can read and
+   write them without the Node dock:
+
+   ```ini
+   [node name="Goblin" type="CharacterBody2D" parent="Enemies" groups=["enemies"]]
+
+   [connection signal="pressed" from="UI/StartButton" to="." method="_on_start_pressed"]
+   ```
+
+   `from`/`to` are paths relative to the scene root, and the `method` must exist on the
+   `to` node's script.
+5. **Use groups for broadcast**: `add_to_group()`, then `get_tree().call_group(...)` or
+   iterate `get_nodes_in_group(...)`.
+6. **For cross-scene events, put signals on an autoload** (event bus, see the reference).
+7. **Check before you finish.**
+   - If you edited `.tscn` connections, run the `godot-nodes-scenes` skill's
+     `scripts/check_godot_project.py <project-dir>`; it reports `[connection]` entries
+     whose `from`/`to` node does not exist. It does not check method names.
+   - Prove the wiring at runtime with a headless test (Pattern 4), or smoke-run the scene
+     and grep the log:
+
+     ```bash
+     godot --headless --path . --fixed-fps 60 --quit-after 300 --scene res://level.tscn > run.log 2>&1
+     grep -nE "^ *(SCRIPT ERROR|ERROR):" run.log   # signal errors print as ERROR: lines
+     ```
+
+     With no Godot binary (`godot`, `godot4` or `$GODOT_BIN`), ask the user to run it and
+     paste `run.log`.
 
 ## Patterns
 
 ### 1. Emit upward, connect from the parent
 
 ```gdscript
-# coin.gd (reusable pickup — knows nothing about the player or HUD)
+# coin.gd (reusable pickup; knows nothing about the player or HUD)
 extends Area2D
 signal collected(value: int)
 
-func _on_body_entered(body: Node) -> void:
+func _ready() -> void:
+    body_entered.connect(_on_body_entered)
+
+func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player"):
         collected.emit(10)
         queue_free()
 ```
 
 ```gdscript
-# level.gd (the parent wires the coin to game state)
+# level.gd (the parent wires coins to game state)
 func _ready() -> void:
     for coin in get_tree().get_nodes_in_group("coins"):
         coin.collected.connect(_on_coin_collected)
@@ -61,13 +87,12 @@ func _on_coin_collected(value: int) -> void:
     GameState.add_score(value)
 ```
 
-### 2. Connect flags: one-shot and bind extra arguments
+### 2. One-shot and bound arguments
 
 ```gdscript
 func _ready() -> void:
-    # Fire exactly once, then auto-disconnect.
-    $Door.opened.connect(_on_door_opened, CONNECT_ONE_SHOT)
-    # bind() appends arguments supplied at connect time (after the signal's own args).
+    $Door.opened.connect(_on_door_opened, CONNECT_ONE_SHOT)   # auto-disconnects
+    # bind() appends its arguments after the signal's own arguments.
     $RedButton.pressed.connect(_on_button.bind("red"))
 
 func _on_button(color: String) -> void:
@@ -78,57 +103,82 @@ func _on_button(color: String) -> void:
 
 ```gdscript
 func pause_all_enemies() -> void:
-    # Call a method on every node in the "enemies" group (no-op if missing).
-    get_tree().call_group("enemies", "set_paused", true)
-
-func count_enemies() -> int:
-    return get_tree().get_nodes_in_group("enemies").size()
+    get_tree().call_group("enemies", "set_paused", true)   # skips nodes without the method
 ```
 
-Add a node to a group from code or via the editor's Node > Groups tab:
+### 4. Headless test that a signal reaches its handler once
 
 ```gdscript
-func _ready() -> void:
-    add_to_group("enemies")        # remove_from_group("enemies") to leave
+# res://tests/test_signals.gd
+extends SceneTree
+
+func _initialize() -> void:
+    var level: Node = load("res://level.tscn").instantiate()
+    root.add_child(level)                          # parent _ready() connects the coins
+    await process_frame
+    var coin: Node = get_first_node_in_group("coins")
+    var failed := 0
+    if coin == null or coin.collected.get_connections().size() != 1:
+        failed += 1
+        push_error("coin.collected should have exactly one connection")
+    print("Results: %d failed" % failed)
+    quit(1 if failed > 0 else 0)
 ```
 
-### 4. Await a signal inline
+Run it with `godot --headless --path . --script res://tests/test_signals.gd` and read the
+exit code. To check the handler's effect, emit the signal in the test and assert on the
+state it should change.
 
-```gdscript
-func open_chest() -> void:
-    $AnimationPlayer.play("open")
-    await $AnimationPlayer.animation_finished   # pause until it emits
-    spawn_loot()
-```
-
-## Pitfalls
+## Gotchas
 
 - **3.x connect signature is gone.** `connect("died", self, "_on_died")` →
-  `died.connect(_on_died)`. The target is implied by the Callable. The legacy
-  `Object.connect("died", Callable(self, "_on_died"))` works but the method-name string
-  form does not.
-- **Duplicate connections fire handlers multiple times.** Connecting again in `_ready()`
-  after re-adding a node stacks callbacks. Guard with
-  `if not sig.is_connected(cb): sig.connect(cb)`.
-- **Connecting to a freed node errors.** Godot removes a connection when the emitter or
-  the Callable's owner is freed, but a lambda belongs to the script that created it — one
+  `died.connect(_on_died)`. `Object.connect("died", Callable(self, "_on_died"))` still
+  works; the method-name string form does not. Prefer `died.emit()` over
+  `emit_signal("died")`: a misspelled signal name is then a parse error, not a runtime one.
+- **Connecting the same method twice** prints "Signal '...' is already connected to given
+  callable" and keeps one connection. A new lambda each time is a *different* Callable, so
+  it stacks silently and the handler fires once per connect. Keep the lambda in a variable,
+  or guard with `if not sig.is_connected(cb):`.
+- **A lambda outlives the nodes it captures.** Godot removes a connection when the emitter
+  or the Callable's owner is freed, but a lambda belongs to the script that created it; one
   that captures a node freed later keeps firing and errors. Connect listener methods, or
   disconnect stored lambdas yourself.
-- **Groups are global to the SceneTree**, not per-scene. Two levels using the same group
-  name share membership. Namespace group names if that matters.
-- **`call_group` silently ignores nodes lacking the method.** Typos in the method name
-  fail quietly — prefer a typed signal when the contract matters.
-- **Signal args must match the handlers.** `emit()` does not validate arguments against
-  the `signal` declaration; a handler with a different argument count fails with "Method
-  expected N argument(s)" at emit time. Declare typed params and emit exactly those.
+- **Argument mismatch fails at emit time.** `emit()` does not validate arguments against
+  the `signal` declaration; a handler with a different count logs "Error calling from
+  signal ... Method expected N argument(s)". Declare typed params and emit exactly those.
+- **Groups are global to the SceneTree**, not per scene. Two levels using the same group
+  name share membership; namespace names if that matters.
+- **`call_group` silently ignores nodes lacking the method**, so a typo fails quietly.
+  Prefer a typed signal when the contract matters.
+- **`[connection]` to a method that doesn't exist** is not caught by the checker; Godot
+  prints a "Cannot connect" error when the scene is instantiated, so the smoke run catches
+  it.
+- **Handlers that change the tree during physics** ("flushing queries" errors) → connect
+  with `CONNECT_DEFERRED` or `call_deferred` the change.
 
 ## References
 
-- For connection flags, deferred connections, custom signal arguments, awaiting with
-  timeouts, and signals vs. direct calls trade-offs, read `references/signal-patterns.md`.
+- Read `references/signal-patterns.md` when you need every connection flag, `unbind()`,
+  awaiting a signal with a timeout, safe disconnection and lambda lifetime, the full
+  groups API, an autoload event bus, or a signals-vs-direct-calls decision.
 
 ## Related skills
 
-- `godot-gdscript` — signal/`await` syntax fundamentals.
-- `godot-nodes-scenes` — autoloads for global event buses.
-- `game-ai` — state machines that often drive and consume these events.
+- `godot-gdscript` for signal and `await` syntax.
+- `godot-nodes-scenes` for autoloads used as global event buses, and the checker.
+- `godot-gdscript-headless-testing` to keep Pattern 4 in CI.
+- `game-ai` for state machines that drive and consume these events.
+
+## Version notes
+
+Last verified: 2026-11-11 against Godot 4.7.2-stable (released 2026-08-18).
+
+- Variadic rest parameters (`..._args`), used by the reference's timeout helper, exist
+  since GDScript 4.5.
+- The "already connected" and "Method expected N argument(s)" messages match 4.7.2's
+  `object.cpp` and `variant.cpp`.
+
+Sources: [object.cpp @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/core/object/object.cpp),
+[variant.cpp @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/core/variant/variant.cpp),
+[Signal @ 4.7.2-stable](https://github.com/godotengine/godot/blob/4.7.2-stable/doc/classes/Signal.xml),
+[Using signals](https://docs.godotengine.org/en/stable/getting_started/step_by_step/signals.html).

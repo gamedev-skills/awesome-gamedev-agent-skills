@@ -1,55 +1,48 @@
 ---
 name: threejs-scene-setup
 description: >
-  Stand up a three.js scene: import maps and the three/addons path, the
-  Scene/PerspectiveCamera/WebGLRenderer trio, the setAnimationLoop render loop,
-  responsive resize, OrbitControls, and opting into WebGPURenderer. Use when
-  starting or debugging a three.js app — when the user mentions three.js,
-  THREE.Scene, WebGLRenderer, WebGPURenderer, PerspectiveCamera, the render loop,
-  resizing, or OrbitControls. For models use
-  threejs-gltf-loading; for materials/lights use threejs-materials-lighting.
+  Sets up and debugs a plain three.js r187 game or 3D scene: import maps, Scene, PerspectiveCamera
+  and WebGLRenderer, setAnimationLoop with Timer, resize, OrbitControls and WebGPURenderer. Use on
+  "Failed to resolve module specifier three", a black canvas or nothing animating. Not for GLB
+  loading (`threejs-gltf-loading`), materials (`threejs-materials-lighting`) or React Three Fiber.
 ---
 
-# three.js Scene Setup
+# three.js scene setup
 
-Create the foundation of a three.js app: module loading, the
-scene/camera/renderer trio, the render loop, responsive resizing, and camera
-controls. Patterns target **r187**. Read the installed `three` version before
-changing an existing project because examples and addons move across releases.
+Builds the base every three.js game needs: module loading, the scene, camera and renderer,
+one render loop, resize handling, and a resolution budget. Patterns target **r187**. Read
+the installed `three` version first; addons, defaults and deprecations move every release.
 
 ## When to use
 
-- Use when bootstrapping a three.js scene, fixing a blank/black canvas, making the
-  canvas responsive, setting up the animation loop, or adding `OrbitControls`.
-- Use when `package.json` depends on `three` and code does `import * as THREE from
-  'three'`.
+- Bootstrapping a three.js scene, fixing a black or blank canvas, making the canvas
+  responsive, setting up the loop, adding `OrbitControls`, or choosing between
+  `WebGLRenderer` and `WebGPURenderer`.
+- `package.json` depends on `three`, or code does `import * as THREE from 'three'`.
+- Not for models and animation (`threejs-gltf-loading`), surface look, lights and shadows
+  (`threejs-materials-lighting`), or React Three Fiber (`@react-three/fiber`) components,
+  whose `<Canvas>` owns the renderer and loop. For 2D, use `pixijs-rendering` or Phaser.
 
-**When *not* to use:** loading `.gltf`/`.glb` models or skinned animation →
-`threejs-gltf-loading`. Materials, lights, shadows, environment maps →
-`threejs-materials-lighting`. 2D rendering → `pixijs-rendering`.
+## Workflow
 
-## Core workflow
-
-1. **Load three.js as an ES module with an import map.** Since r137 the bare
-   specifier `'three'` must be resolved by an import map (in HTML) or a bundler;
-   map `'three/addons/'` too. Addons (controls, loaders) live under
+1. **Read `three` from `package.json` or the import map.** An existing project keeps its
+   release unless the user asks to upgrade.
+2. **Resolve `three` and `three/addons/`** with a bundler or an import map; addons live under
    `three/addons/...`.
-2. **Create the trio.** A `Scene` (root of the graph), a `PerspectiveCamera(fov,
-   aspect, near, far)` moved back from the origin, and a `WebGLRenderer` whose
-   `domElement` is in the DOM. Set size and `pixelRatio`.
-3. **Add a mesh.** `new Mesh(geometry, material)` and `scene.add(mesh)`. With a
-   lit material you also need a light (see `threejs-materials-lighting`).
-4. **Drive a render loop with `renderer.setAnimationLoop(fn)`.** It's the modern,
-   WebXR-/WebGPU-safe replacement for hand-rolled `requestAnimationFrame`. Use a
-   `Timer` for delta time (`Clock` is deprecated since r183).
-5. **Handle resize** so the camera aspect and renderer match the canvas; update
-   `camera.aspect`, call `updateProjectionMatrix()`, and `renderer.setSize(...)`.
-6. **Add `OrbitControls`** for orbit/pan/zoom while developing. Confirm something
-   actually renders (a lit cube, the controls responding) before assuming success.
+3. **Create the scene, camera and renderer**, with the camera moved back from the origin and
+   the pixel ratio capped (Pattern 2).
+4. **Prove the pipeline with an unlit mesh first** (`MeshNormalMaterial`). Only then switch
+   to lit materials and add lights.
+5. **Drive everything from `renderer.setAnimationLoop`** with a `Timer` and a clamped delta.
+   Keep game state in plain objects and copy it onto meshes each frame. Meshes then stay a
+   view, and state can be saved and tested without a GPU.
+6. **Handle resize** (aspect, projection matrix, renderer size) and add `OrbitControls`
+   while developing.
+7. **Verify** with [Verify](#verify).
 
 ## Patterns
 
-### 1. HTML import map + module entry (no bundler)
+### 1. Import map (no bundler)
 
 ```html
 <canvas id="c"></canvas>
@@ -64,13 +57,11 @@ changing an existing project because examples and addons move across releases.
 <script type="module" src="./main.js"></script>
 ```
 
-With a bundler (Vite/webpack), skip the import map and just
-`npm i three`; the same `import` statements resolve.
+With Vite or webpack, `npm i three` and the same imports resolve without a map.
 
-### 2. Scene + camera + renderer
+### 2. Scene, camera and renderer
 
 ```js
-// main.js
 import * as THREE from 'three';
 
 const canvas = document.querySelector('#c');
@@ -81,23 +72,17 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101018);
 
-const camera = new THREE.PerspectiveCamera(
-  60,                                   // vertical field of view (degrees)
-  window.innerWidth / window.innerHeight, // aspect
-  0.1,                                  // near
-  100                                   // far
-);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(3, 2, 5);
 camera.lookAt(0, 0, 0);
 
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshNormalMaterial()        // unlit; shows orientation without a light
-);
+const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial());
 scene.add(cube);
+
+Object.assign(window, { renderer, scene }); // for the smoke check and console debugging
 ```
 
-### 3. The render loop (setAnimationLoop + Timer)
+### 3. Render loop with Timer
 
 ```js
 const timer = new THREE.Timer();        // replaces the deprecated THREE.Clock (r183+)
@@ -114,45 +99,35 @@ renderer.setAnimationLoop(() => {
 // timer.dispose();                 // remove visibility listener when tearing down
 ```
 
-In r187 (unchanged from r186), visibility reset samples `performance.now()`. A
-supplied animation-frame timestamp can precede that reset and produce a negative delta. Using `update()`
-keeps the clock source consistent; the lower clamp also protects a fixed-step
-accumulator. Feed the bounded `dt` into simulation, not raw `getDelta()`.
-The 0.1-second upper bound deliberately drops excess time after a stall; tune it
-to the game's catch-up policy rather than using it for real-world deadlines.
+Call `update()` with no argument when the timer is connected. Visibility reset samples
+`performance.now()`, so passing the loop's timestamp can produce a negative delta right after
+a hidden tab returns. The clamp also protects a fixed-step accumulator; the 0.1 s upper bound
+drops time after a stall on purpose, so tune it to the game's catch-up policy.
 
-### 4. Responsive resize
+### 4. Resize
 
 ```js
-function onResize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  camera.aspect = w / h;
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();      // required after changing aspect
-  renderer.setSize(w, h);
-}
-window.addEventListener('resize', onResize);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 ```
 
-### 5. OrbitControls (orbit / pan / zoom)
+### 5. OrbitControls
 
 ```js
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;          // inertial feel
-controls.target.set(0, 0, 0);
-
-renderer.setAnimationLoop(() => {
-  controls.update();                    // needed every frame when damping is on
-  renderer.render(scene, camera);
-});
+controls.enableDamping = true;
+// In the loop, before render: controls.update(); (required every frame with damping)
 ```
 
-### 6. Opting into WebGPURenderer (only when you need it)
+### 6. WebGPURenderer, only when needed
 
-`WebGLRenderer` stays the default choice for compatibility. Switch to
-`WebGPURenderer` when the project needs TSL node materials or compute shaders; it
-falls back to a WebGL 2 backend where WebGPU is unavailable.
+Stay on `WebGLRenderer` by default. Switch when the project needs TSL node materials or
+compute shaders; `WebGPURenderer` falls back to a WebGL 2 backend where WebGPU is missing.
 
 ```js
 // Official WebGPU examples map both "three" and "three/webgpu" to
@@ -168,64 +143,105 @@ await renderer.init();                  // required before direct render()/compu
 renderer.setAnimationLoop(() => renderer.render(scene, camera));
 ```
 
-Scenes, cameras, built-in `Mesh*Material`s, and most addons carry over; custom
-GLSL (`ShaderMaterial`, `onBeforeCompile`) does not.
+Scenes, cameras, built-in `Mesh*Material`s and most addons carry over. Custom GLSL
+(`ShaderMaterial`, `onBeforeCompile`) does not.
 
-### 7. Resolution is a performance budget
+## Verify
 
-A ratio of 2 draws four times as many pixels as 1 at the same CSS size. A cap
-of 2 does nothing on a 2× display. Start games around 1.25–1.5, expose a resolution
-setting, and profile the target device; these are tuning defaults, not an FPS guarantee.
-Lower resolution helps fill-rate bottlenecks, not CPU-bound simulation.
+1. `npm run build` (or `npx tsc --noEmit` with `@types/three` matching the `three` version)
+   passes.
+2. Smoke-test in a headless browser. With the dev server running and `window.renderer`
+   exposed (Pattern 2), run `node smoke.mjs <url>` after `npm i -D playwright` and
+   `npx playwright install chromium`. Without browser automation, ask the user to open the
+   page, then report the console output and whether the cube is visible and turning.
 
-For adaptive resolution, measure several seconds of frame time after assets and
-shader warm-up. Ignore hidden-tab intervals and loading stalls. If sustained
-GPU/fill-rate pressure exceeds the budget, lower the ratio in 0.25 steps to a
-chosen floor (for example 1), never above the device ratio or user setting.
-Use a cooldown and a separate recovery threshold before raising it again to avoid
-oscillation. Reapply the chosen ratio on display/DPR changes and resize render
-targets or postprocessing buffers consistently with the renderer.
+```js
+// smoke.mjs: fails on page errors; checks that frames are drawn and survive a context loss.
+import { chromium } from 'playwright';
 
-## Pitfalls
+const browser = await chromium.launch();
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+await page.goto(process.argv[2]);
+await page.waitForFunction(() => window.renderer?.info.render.calls > 0, null, { timeout: 15000 });
+const state = await page.evaluate(() => ({
+  drawCalls: window.renderer.info.render.calls,
+  triangles: window.renderer.info.render.triangles,
+  geometries: window.renderer.info.memory.geometries,
+  canvas: [window.renderer.domElement.width, window.renderer.domElement.height],
+}));
+await page.screenshot({ path: 'smoke.png' });
+await page.evaluate(async () => {           // WebGLRenderer only: lose and restore the context
+  if (!window.renderer.forceContextLoss) return;
+  window.renderer.forceContextLoss();
+  await new Promise((r) => setTimeout(r, 200));
+  window.renderer.forceContextRestore();
+  await new Promise((r) => setTimeout(r, 500));
+});
+await page.screenshot({ path: 'smoke-restored.png' });
+await browser.close();
+console.log(JSON.stringify({ ...state, errors }, null, 2));
+process.exit(errors.length ? 1 : 0);
+```
 
-- **`Failed to resolve module specifier "three"`** → missing import map (or bundler
-  config). Map both `"three"` and `"three/addons/"`; addon paths must end with `/`.
-- **Black canvas, no errors** → camera is at the origin (inside/behind the object),
-  or you used a lit material (`MeshStandardMaterial`) with no light. Move the camera
-  back; use `MeshNormalMaterial`/`MeshBasicMaterial` to verify geometry first.
-- **Nothing animates** → you never called `renderer.render` inside the loop, or you
-  call `setAnimationLoop` but render outside it.
-- **Stretched / squashed view on resize** → you resized the renderer but didn't
-  update `camera.aspect` + `updateProjectionMatrix()`.
-- **Blurry or slow on HiDPI** → balance sharpness against fill rate with a resolution
-  setting. Start around 1.25–1.5; a cap of 2 still renders 4× the pixels of 1×.
-- **Simulation freezes after restoring a tab** → r186 and r187 can mix a frame timestamp
-  with visibility-reset time. Use `timer.update()` and clamp simulation delta to
-  `[0, 0.1]` as above so a negative delta cannot drain the fixed-step accumulator.
-- **OrbitControls feel dead** → with `enableDamping = true` you must call
-  `controls.update()` every frame.
-- **Old tutorials use `<script src="three.min.js">` or `examples/js/...`** →
-  `examples/js` was removed in r148 and `build/three.min.js` in r161; use
-  `type="module"` + import maps.
-- **`.render() called before the backend is initialized`** (WebGPURenderer) → call
-  `await renderer.init()` before any direct `render()`/`compute()`, or render only
-  from `setAnimationLoop`, which initializes first.
-- **`Material "ShaderMaterial" is not compatible`, or an `onBeforeCompile` patch is
-  ignored** (WebGPURenderer) → it renders node materials only; port the effect to
-  TSL, or stay on `WebGLRenderer`.
+Expect `drawCalls` above 0, a canvas size other than 0 × 0, and no errors. Open both
+screenshots: the second must still show the scene, or something holds GPU objects that the
+restore did not rebuild.
+
+## Gotchas
+
+- **`Failed to resolve module specifier "three"`** → no import map or bundler. Map both
+  `"three"` and `"three/addons/"`; the addons entry must end with `/`.
+- **Black canvas, no errors** → the camera sits inside or behind the object, or a lit
+  material has no light. Move the camera back and test with `MeshNormalMaterial`.
+- **Stretched view after resize** → the renderer was resized but `camera.aspect` and
+  `updateProjectionMatrix()` were not updated.
+- **Slow or hot on HiDPI and phones** → a pixel ratio of 2 draws four times the pixels of 1,
+  so a cap of 2 does nothing on a 2× screen. Start at 1.25 to 1.5 and offer a resolution
+  setting; adaptive resolution is in the reference.
+- **Simulation freezes after the tab returns** → in r186 and r187 a loop timestamp passed to
+  `timer.update(time)` can precede the visibility reset and give a negative delta. Call
+  `update()` with no argument and clamp as in Pattern 3.
+- **`THREE.Clock: This module has been deprecated`** → since r183; use `THREE.Timer`.
+- **Old tutorials use `<script src="three.min.js">` or `examples/js/...`** → `examples/js` was
+  removed in r148 and `build/three.min.js` in r161. Use modules and an import map.
+- **OrbitControls feel dead** → with `enableDamping` on, `controls.update()` must run every
+  frame.
+- **Canvas goes black after a GPU reset or many tabs** → the WebGL context was lost.
+  `WebGLRenderer` handles `webglcontextlost` and rebuilds its own state on restore; code that
+  keeps raw GL objects or skips the loop while lost does not recover. Test with
+  `forceContextLoss()` / `forceContextRestore()` as in Verify.
+- **`.render() called before the backend is initialized`** (WebGPURenderer) → `await
+  renderer.init()` before a direct `render()`/`compute()`, or render only from
+  `setAnimationLoop`, which initialises first.
+- **`Material "ShaderMaterial" is not compatible`, or `onBeforeCompile` is ignored**
+  (WebGPURenderer) → it renders node materials only. Port the effect to TSL or stay on
+  `WebGLRenderer`.
 
 ## References
 
-- Primary sources: [r187 Timer implementation](https://github.com/mrdoob/three.js/blob/r187/src/core/Timer.js)
-  and [r187 responsive rendering manual](https://github.com/mrdoob/three.js/blob/r187/manual/pages/responsive.html).
-
-- For coordinate conventions, the scene-graph (`Group`, parent/child transforms,
-  `Object3D` add/remove), `OrthographicCamera` for 2.5D, and disposing of
-  geometries/materials/textures to avoid leaks, read `references/scene-graph.md`.
+- Read [`references/scene-graph.md`](references/scene-graph.md) for coordinate conventions,
+  parenting with `Group`, `OrthographicCamera` for 2.5D, disposing geometries, materials and
+  textures between levels, stopping the loop, render-on-demand, and adaptive resolution.
 
 ## Related skills
 
-- `threejs-materials-lighting` — give surfaces a lit look (lights, shadows, PBR).
-- `threejs-gltf-loading` — load 3D models and play their animations.
-- `pixijs-rendering` — 2D rendering in the browser.
-- `fps-shooter` — a 3D genre template that composes three.js skills.
+- `threejs-materials-lighting`: lights, shadows, PBR and environment maps.
+- `threejs-gltf-loading`: loading models and playing their animations.
+- `camera-systems`: follow, orbit and first-person camera design.
+- `fps-shooter`: a 3D genre that builds on these skills.
+
+## Version notes
+
+Last verified: 2026-11-11 against three r187 (npm `three@0.187.0`, published 2026-10-30;
+`@types/three@0.187.0`).
+
+- `Timer.update()` is unchanged between r186 and r187, so the negative-delta note holds.
+- The r187 WebGPU examples still map `three` and `three/webgpu` to `build/three.webgpu.js`.
+- Sources: [r187 release notes](https://github.com/mrdoob/three.js/releases/tag/r187),
+  [Migration Guide](https://github.com/mrdoob/three.js/wiki/Migration-Guide),
+  [r187 Timer.js](https://github.com/mrdoob/three.js/blob/r187/src/core/Timer.js),
+  [r187 responsive rendering manual](https://github.com/mrdoob/three.js/blob/r187/manual/pages/responsive.html),
+  [WebGLRenderer.js context handling](https://github.com/mrdoob/three.js/blob/r187/src/renderers/WebGLRenderer.js).

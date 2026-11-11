@@ -1,6 +1,6 @@
-# Best practices & pitfalls — performance, memory, hybrid AI
+# Scaling and debugging: performance, memory, hybrid AI
 
-Depth for `ai-behavior-trees-utility-ai`. How to keep a BT/Utility runtime fast, debuggable, and
+How to keep a BT/Utility runtime fast, debuggable, and
 maintainable at scale (dozens–hundreds of agents), and how to combine the two models well.
 
 ## Memory management
@@ -24,7 +24,8 @@ maintainable at scale (dozens–hundreds of agents), and how to combine the two 
   Monitors, Unreal `stat game`). The usual cost is not the tree walk — it is what the *leaves* do
   (raycasts, pathfinding, `FindObjectsByType`). Cache perception; pathfind on a timer, not per tick.
 - **Tick on a decision cadence, not per frame.** 5–15 Hz is imperceptible for most NPCs and cuts
-  cost 4–10×. Drive the tree from an accumulator (see the guard in `practical-examples.md`).
+  cost 4–10×. Drive the tree from an accumulator that adds frame `dt` and ticks once it passes
+  the decision interval, passing the accumulated time as the tree's `dt`.
 - **Time-slice across frames.** Don't tick every agent on the same frame. Stagger by bucketing
   agents and ticking one bucket per frame, so the cost spreads instead of spiking.
 
@@ -63,7 +64,7 @@ The two models answer different questions — use each where it is strong:
 
 Recommended default: **BT on the outside, Utility on the inside.** The BT decides *engage vs
 disengage vs patrol*; a `UtilitySelectorNode` inside the engage branch decides *which target / which
-attack* (see `practical-examples.md` §3). Keep the utility set small and local to the branch so
+attack*. Keep the utility set small and local to the branch so
 scoring stays cheap, and give the running action hysteresis so the sub-choice doesn't flicker.
 
 Avoid the inverse (utility choosing between whole behavior trees) unless you truly need graded
@@ -81,12 +82,3 @@ top-level behavior — it is harder to debug and easy to make thrash.
 - **Assert the `Reset()` contract.** A common bug is a `Running` action (`Wait`, `Repeat`, cover
   reservation) that isn't reset on completion or when its branch is abandoned. If timed actions
   "finish instantly" after re-entry, a missing `Reset()` is the cause.
-
-## Pitfall quick-reference
-
-- Rebuilding the tree or allocating in `Tick` → GC spikes and lost `Running` state.
-- Ticking every agent every frame → CPU spikes; use cadence + time-slicing + LOD.
-- Un-normalized considerations (mixed 0..1 and 0..100) → one factor dominates; weights meaningless.
-- No hysteresis → jitter on near-ties in both reactive selectors and utility selection.
-- Deep trees with polling conditions → wasted work and laggy reactions; use aborts + events.
-- Expensive work inside conditions (raycasts, pathfinding) → cache it on the blackboard instead.

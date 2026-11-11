@@ -1,7 +1,17 @@
 # three.js scene graph, cameras & cleanup (r150+)
 
 Depth behind the scene-setup skill: coordinate conventions, the `Object3D`
-hierarchy, the orthographic camera, and resource disposal.
+hierarchy, the orthographic camera, resource disposal, and the resolution budget.
+
+Contents:
+
+- Coordinates & conventions
+- The Object3D hierarchy
+- PerspectiveCamera vs OrthographicCamera
+- Disposing of resources (avoiding leaks)
+- Stopping and restarting the loop
+- Render-on-demand
+- Adaptive resolution
 
 ## Coordinates & conventions
 
@@ -120,3 +130,19 @@ renderer.setAnimationLoop(() => {
 ```
 
 This cuts GPU/battery use dramatically for non-animated content.
+
+## Adaptive resolution
+
+Pixel ratio is a fill-rate budget: a ratio of 2 draws four times the pixels of 1 at the same
+CSS size. Lowering it helps when the GPU is the bottleneck, not when the simulation is.
+
+To adapt it at runtime:
+
+- Measure several seconds of frame time after assets load and shaders warm up. Ignore
+  hidden-tab intervals and loading stalls.
+- If sustained GPU pressure exceeds the budget, lower the ratio in 0.25 steps down to a
+  chosen floor (for example 1). Never go above the device ratio or the user's setting.
+- Wait out a cooldown and use a separate, higher recovery threshold before raising it again,
+  or the ratio oscillates.
+- Reapply the chosen ratio when the display or `devicePixelRatio` changes, and resize render
+  targets and post-processing buffers to match the renderer.

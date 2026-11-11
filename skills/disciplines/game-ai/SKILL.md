@@ -1,179 +1,132 @@
 ---
 name: game-ai
 description: >
-  Design NPC and enemy decision-making with finite state machines, behavior
-  trees, steering behaviors, and A* pathfinding — engine-neutral algorithms
-  that pair with the detected engine's navigation API. Use when building enemy
-  AI, an FSM or behavior tree, steering/flocking, or pathfinding, or when the
-  user mentions state machine, behavior tree, blackboard, A*, navmesh, seek, or
-  patrol/chase.
+  Designs engine-neutral enemy and NPC AI: picks FSM, behavior tree, utility or GOAP, and builds
+  perception, steering and A* pathfinding. Use for patrol and chase, "find a path to the player",
+  agents stuck on corners or AI that sees through walls. Not for BT or utility code
+  (`ai-behavior-trees-utility-ai`), Unreal AI (`unreal-behavior-trees`) or Unity NavMesh
+  (`unity-navmesh`).
 ---
 
-# Game AI: decisions, steering, and pathfinding
+# Game AI architecture
 
-Build believable NPC behavior from three separable layers: **decide** (what to
-do), **steer** (how to move there), and **path** (how to route around the map).
-Keep them decoupled — a behavior tree picks a target, the pathfinder produces
-waypoints, steering follows them. This skill teaches the engine-neutral
-algorithms; bind them to your engine via the related skills below.
+Split every agent into layers that pass one small value to the next: **perceive** (facts on a
+Blackboard) → **decide** (an intent such as "go to X", "attack Y") → **path** (waypoints) →
+**steer** (a velocity) → **animate**. Most "dumb AI" bugs are a layer doing another layer's job:
+a state that raycasts, a pathfinder called every frame, steering that ignores the path.
 
 ## When to use
 
-- Use when implementing enemy/NPC logic: patrols, chase/flee, guard states,
-  group movement, or "find a path to the player".
-- Use to choose between an **FSM** (few clear states), a **behavior tree** (many
-  reactive behaviors with priorities), or **steering** (smooth local movement).
-- Use when integrating pathfinding: A* on a grid/graph, or driving an engine
-  navmesh agent.
+- Choose a decision model, or fix one that has grown into flag soup.
+- Build or debug an FSM, perception, steering, A* on a grid or graph, or a flow field.
+- Diagnose agents that get stuck, oscillate, react unfairly fast or see through walls.
 
-**When *not* to use:** for the engine's concrete navmesh/agent API and baking,
-use `unity-navmesh`, `unreal-behavior-trees`, or Godot's `NavigationAgent2D/3D`
-(see that engine skill). For movement/collision feel, use `physics-tuning`. For
-spawning waves along lanes, see the `tower-defense` genre skill.
+**Not this skill:** BT and utility runtimes go to `ai-behavior-trees-utility-ai`; Unreal
+`BehaviorTree`, EQS and StateTree go to `unreal-behavior-trees`; Unity `NavMeshSurface` and
+`NavMeshAgent` go to `unity-navmesh`. Movement and collision feel go to `physics-tuning`.
 
-## Core workflow
+## Pick the decision model
 
-1. **Pick the decision model by complexity.** 2–5 states with obvious
-   transitions → FSM. Many behaviors, priorities, interruption, reuse → behavior
-   tree. Continuous "how strongly do I want each option" → utility scoring.
-2. **Separate decision from motion.** The decision layer outputs an *intent*
-   (target position, action). Steering or pathfinding turns intent into motion.
-3. **Path on the right graph.** Grid tiles, waypoint graph, or a baked navmesh.
-   Fewer nodes = faster A*. Prefer the engine's navmesh for 3D; A* on a grid for
-   tile games.
-4. **Steer along the path**, not straight to the goal — follow the next waypoint,
-   advancing when close, so agents round corners.
-5. **Recompute paths sparingly.** Pathfind on a timer or when the goal moves a
-   tile, not every frame. Cache the path; only the waypoint index advances.
-6. **Verify by observation.** Watch the agent: does it reach the goal, get stuck
-   on corners, oscillate between states? Draw the path and current state on
-   screen while tuning.
+| Situation | Default |
+|---|---|
+| 2-6 states, transitions obvious (door, turret, simple guard) | FSM |
+| Several states share exits (stunned, dead, alerted from anywhere) | Hierarchical FSM: a parent state owns the shared exits |
+| Many prioritized, interruptible behaviors, reused across enemy types | Behavior tree, built with `ai-behavior-trees-utility-ai` |
+| Graded trade-offs (which target, heal or attack, needs) | Utility scoring, same skill; usually inside a BT branch |
+| Multi-step plans with preconditions the designers want to emerge | GOAP; only if a BT cannot express it, because plans are hard to debug |
 
-## Patterns
+Common shipping mix: an FSM for the top mode (Idle, Combat, Dead) with a BT inside Combat.
+Start with the FSM; promote a state to a BT when its transitions stop fitting on one screen.
 
-### 1. Finite state machine (one state object, explicit transitions)
+## Workflow
 
-```gdscript
-# Godot 4.7, one class per file.
-# state.gd: each state is a small object with enter/update/exit.
-class_name State extends RefCounted
-func enter(_agent) -> void: pass
-func update(_agent, _dt: float) -> State: return null   # return a state to transition
-func exit(_agent) -> void: pass
+1. **Read the project first.** Engine, existing AI code, navigation (navmesh, `AStarGrid2D`,
+   a tile grid), and how enemies find the player today. Extend what exists.
+2. **Write perception once.** One sensor per agent writes `target`, `last_known_pos`,
+   `can_see`, `heard_at` to a Blackboard on a timer (5-10 Hz). Decisions read those facts; they
+   never raycast.
+3. **Pick the model** from the table and keep transitions inside states (or a table), not in
+   scattered `if state == ...` checks.
+4. **Path on the coarsest graph that works** (waypoints or a nav grid beats a dense pixel grid),
+   cache the path, and follow the next waypoint with steering.
+5. **Add stuck and fairness guards** (see Gotchas) before tuning numbers.
+6. **Verify with runnable checks**, not just by watching:
+   - A* admissibility: on 50 random grids, the path cost from A* equals Dijkstra's (`h = 0`)
+     cost. Any mismatch means the heuristic or step costs are wrong.
+   - State flicker: log transitions with timestamps during a scripted run; more than about 2
+     transitions per second for one agent means missing hysteresis.
+   - Stuck: run agents through the level headless and fail if any makes less than 0.5 units of
+     progress toward its waypoint in 2 s.
+   Then watch it with the path, current state and sight cone drawn on screen.
 
-# chase.gd: returns Patrol when the player escapes sight range.
-class_name Chase extends State
-func update(agent, dt: float) -> State:
-    if not agent.can_see(agent.target):
-        return Patrol.new()                 # transition by returning the next state
-    agent.move_toward(agent.target.position, dt)
-    return null                             # null = stay in this state
+## Gotchas
 
-# enemy.gd: the agent owns `current` and ticks it once per frame.
-var current: State = Patrol.new()           # call current.enter(self) in _ready()
+**FSM**
+- **The initial state's `enter()` never runs** when the agent assigns `current = Patrol.new()`
+  without calling it. Route the first state through the same `change_state()` as every other.
+- **Changing state from inside `enter()`/`exit()`** re-enters the machine and runs exits twice.
+  Queue the next state and apply it after `update()` returns.
+- **Threshold flicker.** Chase at 10 m and give up at 10 m, and the agent toggles every frame
+  at the boundary. Use separate enter and exit thresholds (chase at 10, give up at 14) and a
+  minimum time in state of about 0.3-0.5 s.
 
-func tick(dt: float) -> void:
-    var next := current.update(self, dt)
-    if next != null:
-        current.exit(self)
-        next.enter(self)
-        current = next
-```
+**Perception**
+- **Check cheap to expensive:** squared distance, then the view cone (`dot(forward, dir) >
+  cos(half_angle)`), then one raycast. Only survivors pay for the ray; stagger rays across frames.
+- **One ray to the target's origin** fails behind low cover (origin at the feet) or passes through
+  a gap at the waist. Cast to two or three points (head, chest) and accept any hit.
+- **Omniscient AI feels like cheating.** Chase the last-known position, then search, instead of
+  reading the player's live position after sight is lost. Delay the first reaction by roughly
+  0.2-0.5 s, or fill an awareness meter faster at close range, so players can react.
 
-Keep transition logic *inside* states (or in a table), never as a growing pile
-of `if` flags. One state owns one behavior; that is what keeps an FSM readable.
+**Steering**
+- **Weighted sums cancel.** Seek plus avoid pointing opposite ways sums to zero and the agent
+  freezes at the wall. Use priority truncation: apply avoidance first and spend the remaining
+  force budget on lower behaviors.
+- **Waypoint radius smaller than one tick of travel** (`speed * dt`) makes agents overshoot and
+  orbit the point. Advance when within `max(radius, speed * dt)`.
+- **Separation over every pair** is O(n²); bucket agents in a spatial hash with cells about the
+  neighbor radius.
+- **Steering and an engine nav agent both moving the body** jitter. Let the agent compute the
+  path and feed its desired velocity into your steering (Godot: `NavigationAgent2D/3D`
+  `velocity` and `velocity_computed` when avoidance is on; Unity: see `unity-navmesh`).
 
-### 2. Behavior tree tick (composite nodes return a status)
-
-```gdscript
-# A node's tick() returns SUCCESS, FAILURE, or RUNNING (still working this frame).
-enum Status { SUCCESS, FAILURE, RUNNING }
-
-# Sequence: run children in order; stop at the first non-SUCCESS (logical AND).
-func sequence_tick(children, agent, dt) -> int:
-    for child in children:
-        var s = child.tick(agent, dt)
-        if s != Status.SUCCESS:
-            return s                 # FAILURE or RUNNING short-circuits the sequence
-    return Status.SUCCESS
-
-# Selector: try children until one succeeds or is RUNNING (logical OR / fallback).
-func selector_tick(children, agent, dt) -> int:
-    for child in children:
-        var s = child.tick(agent, dt)
-        if s != Status.FAILURE:
-            return s                 # SUCCESS or RUNNING stops the search
-    return Status.FAILURE
-```
-
-A guard AI reads top-down: `Selector[ Sequence[CanSeePlayer?, Chase], Patrol ]`
-— chase if visible, otherwise patrol. See `references/behavior-trees.md` for
-leaf nodes, decorators (Inverter, Cooldown), and a blackboard.
-
-### 3. Steering: seek and arrive (smooth, frame-rate independent)
-
-```gdscript
-# Seek: accelerate toward a target at full speed. Steering = desired - current.
-func seek(pos, vel, target, max_speed, max_force) -> Vector2:
-    var desired = (target - pos).normalized() * max_speed
-    return (desired - vel).limit_length(max_force)   # a force, not a teleport
-
-# Arrive: like seek, but ramp speed down inside slow_radius so it stops cleanly.
-func arrive(pos, vel, target, max_speed, max_force, slow_radius) -> Vector2:
-    var offset = target - pos
-    var dist = offset.length()
-    if dist < 0.001: return (-vel).limit_length(max_force)   # already there: brake
-    var ramped = max_speed * min(dist / slow_radius, 1.0)
-    var desired = offset / dist * ramped
-    return (desired - vel).limit_length(max_force)
-
-# Per frame: vel += steering * dt; pos += vel * dt   (always scale by dt)
-```
-
-### 4. A* heuristic must not overestimate (or paths stop being shortest)
-
-```python
-# Match the heuristic to the movement. An ADMISSIBLE heuristic (never larger
-# than the true remaining cost) keeps A* optimal.
-def heuristic(a, b):                 # a, b are (x, y) grid cells
-    dx, dy = abs(a[0] - b[0]), abs(a[1] - b[1])
-    # return dx + dy             # Manhattan: 4-direction grids (no diagonals)
-    return (dx + dy) + (1.414 - 2) * min(dx, dy)   # octile: 8-direction grids
-# f(n) = g(n) + h(n): g = cost from start, h = heuristic to goal.
-# Overestimating h is faster but no longer guarantees the shortest path.
-```
-
-The full A* loop (priority queue, `came_from` reconstruction, grid + waypoint
-graphs) is in `references/pathfinding.md`.
-
-## Pitfalls
-
-- **Pathfinding every frame** tanks the frame rate. Recompute on a timer or only
-  when the target moves to a new tile; follow the cached waypoints in between.
-- **Steering straight to the goal** instead of to the next waypoint makes agents
-  hug walls and corners. Follow the path; advance the waypoint when within radius.
-- **Inadmissible A\* heuristic** (e.g. Euclidean distance scaled up, or Manhattan
-  on a diagonal grid) returns fast but *non-shortest* paths. Pick the heuristic
-  that matches your allowed moves.
-- **Behavior tree leaves that never return RUNNING** for multi-frame actions
-  (walking, playing an animation) cause the tree to restart the action every
-  tick. Return RUNNING until the action completes.
-- **FSM transition spaghetti**: scattering `if state == ...` checks everywhere
-  recreates the mess an FSM exists to prevent. Keep transitions in the state.
-- **No line-of-sight or stuck check** → agents grind into walls forever. Add a
-  timeout that forces a repath or a state change.
+**Pathfinding**
+- **Inadmissible heuristic** returns fast but longer paths: octile assumes diagonal steps cost
+  √2; if diagonals cost 1 use Chebyshev; terrain weights below 1 break every grid heuristic.
+- **Diagonal corner cutting** through wall corners: only allow a diagonal when both orthogonal
+  neighbors are open. Godot `AStarGrid2D` defaults to `DIAGONAL_MODE_ALWAYS`, which cuts
+  corners; set `DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES` (or `NEVER` for 4-way with Manhattan).
+- **Godot `AStarGrid2D.update()` clears every solid point and weight.** Call it after setting
+  `region`/`cell_size`/`offset`, then mark walls. `jumping_enabled` ignores weight scales.
+- **Unreachable goal floods the whole map.** Label connected regions with a flood fill once and
+  reject cross-region requests, or cap node expansions per search.
+- **Repathing every frame.** Repath when the target moves more than a cell (or 1-2 m), or every
+  0.25-0.5 s, staggered, with a per-frame budget of searches. Many agents to one goal: one flow
+  field (Dijkstra from the goal) instead of A* per agent.
+- **Stuck forever.** If progress toward the next waypoint stalls for about 2 s, repath; after two
+  failed repaths, change state (give up, teleport off-screen, or pick a new goal).
 
 ## References
 
-- `references/pathfinding.md` — complete A* (priority queue, reconstruction),
-  grid vs waypoint graphs, when to defer to an engine navmesh.
-- `references/behavior-trees.md` — node taxonomy, leaf/decorator implementations,
-  blackboard, and FSM-vs-BT selection.
+- `references/pathfinding.md`: read when writing A* or a grid adapter by hand, choosing a
+  heuristic, or deciding between hand-rolled A*, `AStarGrid2D` and an engine navmesh.
+- `references/fsm-perception-steering.md`: read when implementing a hierarchical FSM, a
+  sight/hearing sensor or priority-truncated steering.
 
 ## Related skills
 
-- `ai-behavior-trees-utility-ai` — deeper behavior-tree and utility-AI design.
-- `unity-navmesh`, `unreal-behavior-trees` — concrete engine AI/navigation APIs.
-- `physics-tuning` — movement, collision response, and agent radius.
-- `procedural-gen` — generating the graph/level the AI navigates.
-- `tower-defense`, `fps-shooter` — genres that compose this skill.
+- `ai-behavior-trees-utility-ai`: BT and utility runtimes once the model is chosen.
+- `unity-navmesh`, `unreal-behavior-trees`: engine navigation and AI assets.
+- `physics-tuning`: agent radius, movement and collision response.
+- `procedural-gen`: the level graph the AI navigates.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7 `AStarGrid2D`: default `diagonal_mode` is `DIAGONAL_MODE_ALWAYS`, `update()` clears
+  point data, and `jumping_enabled` disables weight scaling
+  (https://docs.godotengine.org/en/4.7/classes/class_astargrid2d.html).
+- Godot 4.7 `NavigationAgent2D`: `avoidance_enabled`, `velocity`, `velocity_computed`
+  (https://docs.godotengine.org/en/4.7/classes/class_navigationagent2d.html).

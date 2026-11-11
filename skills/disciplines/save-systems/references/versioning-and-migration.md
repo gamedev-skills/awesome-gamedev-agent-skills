@@ -1,5 +1,9 @@
 # Save versioning, migration, and robustness
 
+Contents: the version field; the migration chain; backups and rollback; format
+trade-offs; load-time validation checklist; where saves live and cloud sync
+(Godot, Unity, Unreal, Steam Cloud, consoles); what to store vs recompute.
+
 Saves outlive the code that wrote them. A player who saved in v1.0 expects to
 load in v1.4 after an update. Plan for schema evolution from the first release.
 
@@ -119,7 +123,11 @@ root locked to one OS will not sync to other platforms if you add them later.
 Set the per-user byte and file quotas in the app admin panel first; Steam Cloud
 is not active without them. Keep the `.tmp` file out of the synced pattern.
 Games that opt into Dynamic Cloud Sync (Steam Deck suspend) can receive changed
-files mid-session and must reload them.
+files mid-session and must reload them. To test Auto-Cloud before release, ask the
+user to open the Steam console (`steam://open/console`), run
+`testappcloudpaths <AppId>` and `set_spew_level 4 4`, launch the game, save, quit,
+and report the upload lines; Steam also logs to `logs/cloud_log.txt` in its
+install folder.
 
 **Consoles and mobile** have platform save APIs, storage limits and
 certification rules; follow the platform's documentation rather than raw file

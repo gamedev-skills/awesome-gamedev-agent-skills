@@ -81,6 +81,12 @@ path Cline's skills page does not list, so if Cline does not show the skills, co
 > **Cline note.** Discovered skills are enabled by default; each skill has its own on/off toggle
 > in Cline's skills panel.
 
+> **Listing budget.** Agents preload every skill's description within a size limit and cut some
+> descriptions past it. With many skills installed, install the router plus your engine's bundle
+> rather than every skill. In Claude Code the budget is 1% of the context window; raise it with
+> `skillListingBudgetFraction` (for example `0.02`) or `SLASH_COMMAND_TOOL_CHAR_BUDGET`
+> ([docs](https://code.claude.com/docs/en/skills)).
+
 ## Compatibility boundary
 
 A basic skill—`name`, `description`, a Markdown body, and optional `scripts/`, `references/`, and

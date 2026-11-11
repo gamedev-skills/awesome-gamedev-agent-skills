@@ -1,153 +1,131 @@
 ---
 name: visual-novel
 description: >
-  Build a visual novel: a branching script, character and background display, a text box with choices,
-  save/load, backlog, and skip/auto. Use for a VN, dating sim, or branching story game.
+  Builds visual novels and choice-driven stories in Ren'Py or any engine: routes and endings,
+  save-anywhere, backlog, skip-read-only and typewriter text. Use for a VN or dating sim, or loads
+  at the wrong line, skip running through unread text or an unreachable ending. Not for dialogue
+  in a larger game or Ink and Yarn (`dialogue-systems`) or text box widgets (`godot-ui-control`).
 ---
 
-# Visual Novel
+# Visual novel
 
-A playbook for visual novels — the branching script, the presentation (text box, characters,
-backgrounds), choices, and the quality-of-life systems players expect (save anywhere, backlog,
-skip, auto). This is a **compositional** skill: it drives a dialogue engine and a UI layer. It
-does not re-teach the dialogue engine or UI nodes; it defines the script model and the player
-conveniences that make a VN pleasant to read.
+Owns the shape of a branching story and the reading conveniences players expect. The script
+runtime (Ren'Py, Ink, Yarn Spinner) does the stepping; this skill decides routes, flags,
+saves and the reader-facing systems, and checks them.
 
 ## When to use
 
-- Use when the game is **mostly reading branching text** with character art and backgrounds:
-  visual novel, dating sim, branching interactive fiction, story-choice game.
-- Use when designing a choice/route structure, story flags, or VN conveniences (backlog,
-  skip, auto-advance, save-anywhere).
+- The game is mostly reading text with character art, backgrounds and choices.
+- Planning routes and endings, affection systems, save behaviour, backlog, skip and auto, or
+  checking that every ending can be reached.
 
-**When *not* to use:** dialogue as one feature inside a larger game → `rpg` consuming
-`dialogue-systems`. Card/board play → other genres. For the branching-script engine itself,
-use `dialogue-systems` (Ink / Yarn Spinner).
+**When not to use:** NPC conversations inside another genre (`dialogue-systems`, with `rpg`
+for quests); Ink or Yarn integration code (`dialogue-systems`); the text box and choice menu
+widgets (`godot-ui-control`, `game-ui-ux`).
 
-**If the project is Ren'Py** (current stable 8.5.3): the engine already ships save-anywhere,
-rollback, a history (backlog) screen, skip that stops at unseen text by default
-(`preferences.skip_unseen = False`), auto-forward and a text-speed preference. Use and restyle
-those through its screens and preferences; apply this skill's design guidance (routes, flags,
-reactivity) rather than rebuilding the systems in Patterns 2–3.
+## Workflow
 
-## Core loop
+1. **Find the engine.** In Ren'Py (`game/*.rpy`), the engine already has save-anywhere,
+   rollback, history, skip, auto-forward and text speed: restyle its screens and preferences,
+   and spend the effort on routes and flags. Elsewhere, build those systems from refs §4-5.
+2. **Draw the route map** before writing: common route, the lock-in point (often about a
+   third of the way through), each route's endings, and a true ending gated on finishing
+   others if wanted. Write the flags and the thresholds each ending needs next to it.
+3. **Size the script.** Readers average roughly 200-250 words per minute, so 1,000 words is
+   about 4-5 minutes; a 2-hour VN is about 25,000-30,000 words. Give a meaningful choice or
+   reaction every 5-15 minutes of reading, and make at least one later line visibly react to
+   each important choice.
+4. **Track state** as booleans for one-off decisions and counters for affection. For each
+   route, add up the maximum affection the choices can give and set the ending threshold
+   below it, with some slack for missed choices.
+5. **Saves resume the exact line** with all flags, and seen-text data lives in a persistent
+   store shared by all saves (refs §4).
+6. **Check it.** Run what applies and report the output:
+   - Ren'Py: `./renpy.sh <project> lint --error-code` (exit 1 on lint errors), and
+     `./renpy.sh <project> test` for scripted test cases;
+   - Ink: `inklecate -o story.json story.ink` (exit 1 on compile errors; `-s` prints word
+     counts), then a breadth-first walk with inkjs: `Continue()` while `canContinue`, save
+     `state.ToJson()` at each choice, `LoadJson()` and `ChooseChoiceIndex(i)` for each branch,
+     and collect `currentTags` at each end. Tag ending lines (for example `# ending:
+     alice_good`) and assert every planned ending appears. Cap the depth and dedupe states
+     for big scripts;
+   - any engine: save at a choice, quit, load, and confirm the same line and choices appear;
+     enable skip on a fresh profile and confirm it stops at the first unseen line.
 
-**Read a line → advance → (at a branch) make a choice → the story branches on flags/choices →
-read on → reach an ending.** The "game" is the *shape of the branching* and whether choices
-feel consequential; everything else is presentation and convenience.
+## Reader systems
 
-## Must-have systems
+| System | Default | Notes |
+|--------|---------|-------|
+| Text speed | instant or fast by default, with a slider | Ren'Py's own default is instant (`preferences.text_cps = 0`) |
+| Skip | read text only; stops at choices and unseen lines | Ren'Py: `preferences.skip_unseen = False` |
+| Auto-forward | delay scaled by line length; pauses at choices | Ren'Py: `preferences.afm_time = 15` |
+| Backlog | 100-200 lines, with voice replay | rollback in Ren'Py doubles as backlog |
+| Saves | many slots with thumbnail, date and chapter, plus quick save | autosave at chapter starts and before choices |
+| Galleries | CG, music and ending lists unlocked across all saves | Ren'Py `persistent` data |
 
-1. **Branching script** — ordered lines + choices + jumps, with conditions and variables (Ink/Yarn).
-2. **Text box** — speaker name, body text, typewriter reveal, advance on click/key.
-3. **Characters** — sprites with expressions/poses, positions, show/hide transitions.
-4. **Backgrounds + transitions** — scene images, fades/dissolves.
-5. **Choices** — present options, gate some on flags, record the pick.
-6. **Story state** — flags/variables that branch the script and unlock content.
-7. **Save/load (save-anywhere)** — full script position + state; multiple slots; quick save.
-8. **VN conveniences** — backlog/history, skip (read text), auto-advance, text-speed setting.
-9. **Audio** — music per scene, SFX, optional voice clips.
-
-## Design knobs
-
-| Knob | Effect | Notes |
-|------|--------|-------|
-| Text speed / instant | reading comfort | Always allow instant + a skip. |
-| Auto-advance delay | hands-free reading | Tunable; pause on choices. |
-| Skip scope | re-reading | Skip *read* text only by default. |
-| Branch breadth/depth | replay value vs. cost | Branches multiply writing/art work. |
-| Flag-gated content | reactivity | Lines/choices that check past decisions. |
-| Route structure | story shape | Branch-and-merge vs. distinct routes (refs). |
-| Choice visibility | fairness | Show locked choices vs. hide them. |
-| Backlog length | convenience | Keep enough to re-read recent context. |
-
-## Patterns
-
-### 1. Script as data the engine walks
-
-```python
-# Pseudocode. Lines, choices, and jumps as data — usually authored in Ink/Yarn and stepped
-# through by that runtime. The engine asks the script for "the next thing to show".
-node = script.current()
-if node.kind == "line":
-    show_text(node.speaker, node.text)        # wait for advance input
-elif node.kind == "choice":
-    options = [o for o in node.options if condition_met(o.condition, flags)]  # gate by flags
-    show_choices(options)                      # wait for selection
-elif node.kind == "set":
-    flags[node.var] = eval_expr(node.expr, flags)
-script.advance(selected_option_or_none)
-```
-
-### 2. Typewriter reveal + advance (skippable)
+## Pattern 1: typewriter reveal that does not jump
 
 ```python
-# Pseudocode. Lay out the whole line once, then reveal it; a press first completes the line.
-def show_text(speaker, text):
+# Set the full text once, then reveal by visible-character count.
+def show_line(speaker, text):
     name_label.text = speaker
-    body_label.text = text                     # full text set up front: wrapping is decided now
+    body.text = text                         # wrapping decided once, on the full text
     shown = 0.0
-    while shown < visible_length(body_label):  # count displayed characters, not markup tags
-        if advance_pressed():                   # first press: reveal the whole line instantly
-            break
-        shown += chars_per_second * frame_dt()
-        body_label.visible_characters = int(shown)
-        wait_one_frame()
-    show_all_characters(body_label)
-    backlog.append((speaker, text))             # once, when the line is complete
-    wait_for_advance()                          # second press: go to the next line
+    while shown < visible_length(body) and not advance_pressed():
+        shown += cps * frame_dt()
+        body.visible_characters = int(shown)
+        wait_frame()
+    body.visible_characters = -1             # first press completes the line
+    backlog.append((speaker, text)); seen.add(line_id)
+    wait_for_advance()                       # second press moves on
 ```
 
-Reveal with the label's visible-character count, not by slicing the string: slicing cuts
-markup tags in half and re-wraps the text every frame, so a word starts on one line and jumps
-to the next. Godot 4.7: `RichTextLabel.visible_characters` (or `visible_ratio`) with
-`visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING`; the default
-`VC_CHARS_BEFORE_SHAPING` leaves hidden text out of line breaking, so words still jump. Unity 6.3:
-`TMP_Text.maxVisibleCharacters` (TextMeshPro, part of the uGUI package).
+Godot 4.7: `RichTextLabel.visible_characters` with `visible_characters_behavior =
+TextServer.VC_CHARS_AFTER_SHAPING` (the default leaves hidden text out of line breaking, so
+words still jump). Unity 6.3: `TMP_Text.maxVisibleCharacters`.
 
-### 3. Choice sets a flag that branches later content
+## Gotchas
 
-```python
-# Pseudocode. Choices write flags; later conditions read them — that is "reactivity".
-def on_choice(option):
-    if option.set: flags[option.set] = True     # e.g. flags["helped_npc"] = True
-    script.jump(option.target)                   # follow the branch
-
-# Elsewhere, a line/choice/ending checks the flag:
-if flags.get("helped_npc"): play_route("good_ending") else: play_route("neutral_ending")
-```
-
-## Pitfalls / failure modes
-
-- **Save that only stores a checkpoint** → VNs need **save-anywhere**. Persist the exact script
-  position *and* all flags/variables (and seen-text data) so a load resumes the same line. Check
-  what your runtime can restore: Ink saves the exact position, Yarn Spinner only the node
-  (refs §4).
-- **Typewriter text that jumps between lines or shows raw tags** → the reveal slices the string.
-  Set the full text and raise the visible-character count (Pattern 2).
-- **Presentation logic baked into the script** → unmaintainable. Keep *content* (text, choices)
-  in the script and *how it looks* (sprites, transitions) in the engine layer.
-- **No skip/auto/backlog** → readers feel trapped, especially on replays. These are expected
-  baseline features, not extras.
-- **Skipping unread text** → players miss content. Skip should fast-forward **read** text only.
-- **Choices with no consequence** → branches that reconverge instantly feel fake. Set flags that
-  visibly change later lines, choices, or endings.
-- **Combinatorial branch explosion** → unshippable. Prefer branch-and-merge with a few flagged
-  variations over fully distinct trees (refs).
-- **Lost reading context** → no backlog to re-read the last lines. Keep a history buffer.
-- **Hardcoded language** → no localization path. Keep text in data keyed for translation.
-
-## Composition (build it from these skills)
-
-- **Script engine:** `dialogue-systems` (Ink / Yarn Spinner) — branching, conditions, variables, localization hooks.
-- **Presentation:** `game-ui-ux` for text-box/choice-menu layout, scaling, and safe areas; `godot-ui-control` for the concrete text box, choice menu, name plate, and backlog UI.
-- **Persistence:** `save-systems` for save-anywhere slots, seen-text/skip data, and settings.
-- **Audio:** `audio-design` for per-scene music, SFX, and voice playback.
-- **Visuals:** the engine animation/`Tween` skill for sprite/background transitions; `shader-programming` for dissolves.
-- **Process:** `prototype-fast` to test the branch structure in plain text before adding art.
+- **Load resumes at the start of a scene** → only a checkpoint or node name is saved. Ink saves
+  the exact position with `state.ToJson()`; Yarn Spinner restores only the node (refs §4).
+- **Old saves break after an update** → lines moved or edited under a save. Give lines stable
+  IDs, keep released labels, and test loading saves from the previous build.
+- **Ren'Py flag not saved or reset on load** → declared with `define` (meant for constants)
+  instead of `default`. Story state uses `default`.
+- **Skip runs through new text** → seen-text stored per save, or skip set to "all". Store seen
+  line IDs in persistent data shared by all saves.
+- **An ending is unreachable** → thresholds above the maximum the choices can give, or a flag
+  set on one branch and read on another. Run the reachability walk (step 6).
+- **Choices feel fake** → branches merge back immediately with no reaction. Pay each choice
+  off with at least one later line, sprite or option.
+- **Text jumps between lines or shows raw tags** → the reveal slices the string (Pattern 1).
+- **Branch explosion** → fully separate trees for every choice. Branch and merge, with flags
+  that vary lines, and reserve full routes for the big decisions.
+- **Text baked into code or images** → no translation path. Keep strings in the script or a
+  table keyed by line ID, and leave room for 30% longer text in the box.
 
 ## References
 
-- For the branching data model, route structures (branch-and-merge vs. routes), flags/variables,
-  save-anywhere + backlog/skip data, and the content/presentation split, read
-  `references/script-and-flow.md`.
+- `references/script-and-flow.md`: read when designing the script data model, choosing a
+  route structure, picking ending logic from flags, writing save-anywhere data (Ink, Yarn
+  Spinner and Ren'Py specifics), backlog, skip and auto behaviour, staging conventions or
+  localisation.
+
+Related: `dialogue-systems` (Ink and Yarn runtimes), `save-systems` (slots, versioning),
+`game-ui-ux` with `godot-ui-control` (text box, choices, backlog screen), `audio-design`
+(music, voice), `prototype-fast` (test the branch map in plain text first).
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Ren'Py 8.5.3 is the current stable release (8.6.0 is a prerelease, updated 2026-11-01):
+  https://www.renpy.org/latest.html. Preference defaults (`text_cps = 0`, `afm_time = 15`,
+  `skip_unseen = False`): https://www.renpy.org/doc/html/preferences.html. `lint
+  --error-code` and `test`: https://www.renpy.org/doc/html/cli.html.
+- inklecate exits 1 on compile errors and `-s` prints story stats
+  (inklecate/CommandLineTool.cs in https://github.com/inkle/ink, ink 1.2.1).
+- inkjs 2.4.0 typings: `Continue()`, `canContinue`, `currentChoices`, `currentTags`,
+  `ChooseChoiceIndex()`, `state.ToJson()`, `state.LoadJson()`.
+- Yarn Spinner for Unity 3.2.8 is the latest release (GitHub releases).
+- Reading speed and words-per-hour figures are rough design estimates.

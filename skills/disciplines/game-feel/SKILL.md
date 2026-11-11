@@ -1,174 +1,191 @@
 ---
 name: game-feel
 description: >
-  Add "juice" and game feel that makes actions satisfying — screen shake, hit-stop/freeze
-  frames, tweened/eased motion, squash & stretch, knockback, and layered audio-visual
-  feedback — as engine-neutral techniques that pair with the detected engine's tween,
-  particle, and camera APIs. Use when the user mentions game feel, juice, "make it feel
-  good/punchy", screen shake, hit stop, screen freeze, easing, squash and stretch, impact
-  frames, or feedback/polish on hits, jumps, pickups, and deaths.
+  Adds engine-neutral juice to a working mechanic: trauma-based screen shake, hit-stop, eased
+  tweens, squash and stretch, and knockback. Use when the game feels flat, weightless or not
+  punchy, or hits and jumps should feel satisfying. Not for coyote time (`platformer`), input
+  buffering (`input-systems`), camera follow (`camera-systems`) or HUD layout (`game-ui-ux`).
 ---
 
 # Game feel (juice)
 
-The difference between a mechanic that *works* and one that feels *good* is feedback: the
-layered, slightly-exaggerated response an action provokes. This skill covers the engine-
-neutral techniques — screen shake, hit-stop, easing, squash & stretch, knockback, and stacked
-feedback — and tells you how to apply them without burying the underlying simulation. It
-**adds polish on top of** an existing mechanic; it does not implement the mechanic.
+Feedback sells an action: several small, brief, exaggerated responses fired together on one
+event. This skill adds that layer on top of a working mechanic. It never changes the
+simulation, so shake moves the camera and hit-stop scales time; neither moves bodies or stalls
+gameplay logic.
 
 ## When to use
 
-- Use when an action (hit, jump, dash, pickup, death, button press) is mechanically correct
-  but feels weak, weightless, or unsatisfying, and you want it to feel responsive and punchy.
-- Use to add screen shake, hit-stop/freeze frames, eased motion, squash & stretch, knockback,
-  flashes, or to layer multiple feedback channels onto one event.
-- Use to decide *how much* juice is enough and where it crosses into noise.
+- A hit, jump, landing, dash, pickup, death or button press works but feels weak.
+- Adding or tuning shake, hit-stop, easing, squash and stretch, flash, knockback, number pops.
+- Deciding how much juice is enough, and adding reduce-shake and reduce-flash options.
 
-**When *not* to use:** for the raw controller math (jump height, coyote time) use the
-`platformer` genre and the engine movement skill. For camera *follow/deadzone/orbit* framing
-use `camera-systems` (this skill only triggers the shake). For mixing, ducking, and adaptive
-music use `audio-design`. For shader-based dissolves/flashes use `shader-programming` and the
-engine shader skill. For the concrete tween/particle node APIs, use the engine animation skill
-(`godot-animation`, `unity-animation`).
+**Not this skill:** jump controller math (`platformer`), generic input buffering and rebinding
+(`input-systems`), camera follow, deadzones and look-ahead (`camera-systems`, which exposes the
+offset this skill writes), mixing and ducking (`audio-design`), shader dissolves
+(`shader-programming`), tween and particle node APIs (`godot-animation`, `unity-animation`).
 
-## Core principle: feedback is layered and exaggerated
+## Workflow
 
-One satisfying hit is usually **5–8 tiny responses firing together** within ~100 ms: a sound,
-a particle burst, a brief hit-stop, a flash, a knockback, a small screen shake, and a number
-popping up. Each is cheap; stacked, they read as "impact". Two rules keep it from becoming a
-mess: **(1)** exaggerate *briefly* and return to rest (juice is transient, not a new resting
-state); **(2)** scale juice to event importance — a footstep is not a boss death.
+1. **Find the event hooks.** Juice attaches to discrete events (`hit`, `landed`, `picked_up`,
+   `died`). If the mechanic emits none, add signals or C# events first; never poll for them.
+2. **Assign each event a tier** (table below), then fire that tier's bundle from one
+   `feedback(tier, pos)` call so the whole game stays proportional.
+3. **Start with 2-3 channels per event** (sound, particles, shake), play, and add channels
+   until the event reads. Hit-stop and shake are the strongest and most abused; keep them for
+   impacts.
+4. **Ease everything that moves.** Overshoot (`back`) for pops, ease-out for settling,
+   ease-in only for anticipation.
+5. **Decide what runs during hit-stop.** Time scale slows timers, tweens and `_process`/`Update`
+   delta. Shake decay and UI tweens should usually use real time; the frozen pose should not.
+6. **Ship accessibility toggles**: shake strength 0-100 %, reduce flashing, reduce camera motion.
+7. **Verify with a headless check, then by eye.** Fire the event twice 30 ms apart and assert
+   time scale is back to 1.0 after the longer stop, trauma reaches 0 within `1 / decay`
+   seconds, and every scale tween ends at exactly its rest value. Then ask the user to play it
+   and report whether the hit reads, whether anything feels nauseating and whether input still
+   registers during the freeze.
 
-## Core workflow
+## Tiers
 
-1. **Confirm the event hooks exist.** Juice attaches to discrete events: `on_hit`, `on_land`,
-   `on_pickup`, `on_death`, `on_fire`. If the mechanic doesn't emit these, add them first.
-2. **Pick feedback channels per event** from the menu (sound, particles, shake, hit-stop,
-   flash, knockback, tween, number pop). Start with 2–3; add until it reads, then stop.
-3. **Make motion eased, not linear.** Route scale/position/UI changes through a tween with an
-   ease (overshoot for "pop", ease-out for "settle"). Linear motion feels robotic.
-4. **Reserve hit-stop and shake for impact.** They are the strongest, most abusable tools —
-   short durations, scaled to importance, and never on routine actions.
-5. **Keep feedback off the critical simulation.** Shake moves the *camera/visual*, not the
-   body; hit-stop uses time scale or a real-time pause, not a gameplay-logic stall.
-6. **Tune by importance tiers.** Define small/medium/large feedback presets and assign events
-   to a tier, so the whole game's juice stays consistent and proportional.
-7. **Verify by playing and watching.** Trigger the event repeatedly; confirm the feedback
-   fires, returns to rest, and is not nauseating or input-blocking. Report what you observed
-   (does shake decay? does input still register during hit-stop?).
+| Tier | Trauma | Hit-stop | Particles | Extra | Example events |
+|------|:------:|:--------:|:---------:|-------|----------------|
+| small | 0.10-0.20 | none | 0-4 | tick SFX | footstep, coin, UI hover |
+| medium | 0.30-0.50 | 0.04-0.06 s | 6-12 | flash | normal hit, landing, pickup |
+| large | 0.70-1.00 | 0.10-0.15 s | 20-40 | flash, zoom, number | crit, boss hit, death, explosion |
 
 ## Patterns
 
-### 1. Screen shake by decaying "trauma" (smooth, not a random jitter)
+### 1. Screen shake from decaying trauma
 
 ```gdscript
-# Godot 4.7. Store trauma 0..1; shake = trauma^2 so small hits barely move, big hits punch.
-# Drives a Camera2D OFFSET (the visual), never the player body. Decays every frame.
-# Camera2D.ignore_rotation defaults to true, so set it false or the roll does nothing.
-@export var decay := 1.2          # trauma lost per second
+# Godot 4.7 Camera2D script. Shake = trauma^2, so light hits barely move and heavy hits punch.
+# Writes the camera OFFSET (visual only). Uses real time so the shake keeps decaying during
+# hit-stop instead of freezing the camera off-centre.
+# Camera2D.ignore_rotation defaults to true; set it false or the roll does nothing.
+extends Camera2D
+@export var decay := 1.2          # trauma lost per real second
 @export var max_offset := Vector2(12, 8)
 @export var max_roll := 0.1       # radians
+@export var strength := 1.0       # player setting, 0..1
 var trauma := 0.0
 var _t := 0.0
 
 func add_trauma(amount: float) -> void:
-    trauma = clampf(trauma + amount, 0.0, 1.0)   # hits ADD; they don't reset
+    trauma = clampf(trauma + amount, 0.0, 1.0)   # hits add; they don't reset
 
 func _process(dt: float) -> void:
-    if trauma <= 0.0: return
-    trauma = maxf(trauma - decay * dt, 0.0)
-    var shake := trauma * trauma                  # quadratic: gentle low, sharp high
-    _t += dt * 30.0
-    # Smooth pseudo-random via sampled noise/sin, NOT rand each frame (that buzzes).
-    offset = Vector2(max_offset.x * shake * sin(_t * 1.7),
-                     max_offset.y * shake * sin(_t * 2.3))
+    if trauma <= 0.0:
+        return
+    var real_dt := dt / maxf(Engine.time_scale, 0.0001)
+    trauma = maxf(trauma - decay * real_dt, 0.0)
+    var shake := trauma * trauma * strength
+    _t += real_dt * 30.0
+    # Summed sines at unrelated rates: smooth, never a per-frame random buzz.
+    offset = Vector2(max_offset.x * shake * sin(_t * 1.7), max_offset.y * shake * sin(_t * 2.3))
     rotation = max_roll * shake * sin(_t * 1.1)
-# Unity 6.3 LTS: identical model on a CinemachineCamera via CinemachineBasicMultiChannelPerlin
-# (set AmplitudeGain/FrequencyGain from trauma^2); for one-off impacts, CinemachineImpulseSource
-# on the hitter + CinemachineImpulseListener on the camera — see camera-systems.
+    if trauma == 0.0:
+        offset = Vector2.ZERO
+        rotation = 0.0
 ```
 
-### 2. Hit-stop / freeze frame (sell impact by briefly stopping time)
+Unity: drive `CinemachineBasicMultiChannelPerlin` `AmplitudeGain`/`FrequencyGain` from
+`trauma * trauma`, decaying with `Time.unscaledDeltaTime`; for one-off hits use a
+`CinemachineImpulseSource` on the hitter and a `CinemachineImpulseListener` on the camera.
+
+### 2. Hit-stop that survives overlapping hits
 
 ```gdscript
-# Godot 4.7. Drop time scale, then restore after a REAL-TIME delay (unaffected by time_scale).
+# Godot 4.7. Slow time, restore after a REAL-TIME delay; only the newest call restores.
 var _hit_stop_id := 0
 
 func hit_stop(duration := 0.08, slow := 0.05) -> void:
     _hit_stop_id += 1
     var my_id := _hit_stop_id
     Engine.time_scale = slow
-    # 4th arg ignore_time_scale=true → the timer still fires while the game is frozen.
+    # 4th arg ignore_time_scale=true: the timer still fires while the game is slowed.
     await get_tree().create_timer(duration, true, false, true).timeout
-    if my_id == _hit_stop_id:       # a newer hit-stop owns the restore; don't cut it short
+    if my_id == _hit_stop_id:       # a newer hit-stop owns the restore
         Engine.time_scale = 1.0
 ```
 
 ```csharp
-// Unity 6.3 LTS (C#). WaitForSecondsRealtime ignores Time.timeScale, so the timer still elapses.
+// Unity. WaitForSecondsRealtime ignores Time.timeScale; WaitForSeconds never finishes at 0.
+int _hitStopId;
 IEnumerator HitStop(float duration = 0.08f, float slow = 0.05f) {
+    int myId = ++_hitStopId;
     Time.timeScale = slow;
     yield return new WaitForSecondsRealtime(duration);
-    Time.timeScale = 1f;            // RIGHT: real-time wait. WRONG: WaitForSeconds (never resumes at scale 0)
+    if (myId == _hitStopId) Time.timeScale = 1f;
 }
 ```
 
-### 3. Squash & stretch + overshoot via an eased tween (the "pop")
+### 3. Squash, stretch and overshoot
 
 ```gdscript
-# Godot 4.7. Conserve volume: stretch one axis, squash the other, then spring back with overshoot.
+# Godot 4.7. Keep area roughly constant: stretch one axis, squash the other, spring back.
 func pop(node: Node2D) -> void:
-    node.scale = Vector2(1.3, 0.7)                       # instant squash on the event
-    var tw := create_tween()
+    node.scale = Vector2(1.3, 0.7)
+    var tw := node.create_tween()
     tw.tween_property(node, "scale", Vector2.ONE, 0.18) \
-      .set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)   # BACK = overshoots past 1, settles
-# RIGHT: ease back (TRANS_BACK/ELASTIC) for life. WRONG: linear tween → mechanical, dead.
+      .set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)   # overshoots past 1, settles
 ```
 
-### 4. A feedback bundle scaled by importance (keep juice proportional)
+Kill or reuse the previous tween on the same property (`if _tw: _tw.kill()`) when the event can
+retrigger, or two tweens fight and the node ends at the wrong scale.
 
-```gdscript
-# One call per event; the tier decides intensity so the whole game stays consistent.
-func feedback(event_pos: Vector2, tier: String) -> void:
-    match tier:
-        "small":  AudioBus.play("tick");  Camera.add_trauma(0.15)
-        "medium": AudioBus.play("hit");   Camera.add_trauma(0.4);  hit_stop(0.05); spawn_particles(event_pos, 6)
-        "large":  AudioBus.play("boom");  Camera.add_trauma(0.8);  hit_stop(0.12); spawn_particles(event_pos, 30); flash_white(0.06)
-```
+## Gotchas
 
-## Pitfalls
-
-- **Shaking the player/body instead of the camera offset** desyncs collision and aim. Shake
-  the camera (or a visual pivot), never the simulated transform.
-- **Random offset every frame** buzzes like static. Drive shake from sampled noise/sin and a
-  decaying trauma value so it's smooth and self-ending.
-- **Hit-stop with `WaitForSeconds` / a scaled timer** never resumes (at time scale 0 the timer
-  never advances). Use a real-time wait (`WaitForSecondsRealtime`, or Godot's
-  `ignore_time_scale` timer).
-- **Hit-stop on every frame of a held attack** locks the game. Trigger it once per impact.
-- **Overlapping hit-stops** (two hits 30 ms apart) let the first timer restore time scale in
-  the middle of the second freeze. Let only the newest call restore it, as above.
-- **Linear tweens everywhere** feel robotic. Ease almost everything; reserve overshoot
-  (BACK/ELASTIC) for "pop" and ease-out for "settle".
-- **Permanent exaggeration** (scale never returns, shake never decays) becomes the new normal
-  and stops reading as feedback. Juice must return to rest.
-- **Over-juicing routine actions** (full shake + hit-stop on every footstep) causes nausea and
-  hides real impacts. Scale to importance; add a "reduce screen shake"/"reduce flashing"
-  accessibility option.
-- **Feedback that blocks input** (long freeze, un-cancelable animation) hurts responsiveness.
-  Keep juice short and let input buffer through it.
+- **Shaking the body instead of the camera** desyncs collision and aim. Shake the camera offset
+  or a visual-only pivot.
+- **Random offset every frame** buzzes like static. Use noise or summed sines under a decaying
+  trauma value.
+- **Hit-stop never ends**: Unity `WaitForSeconds` or a Godot timer without `ignore_time_scale`
+  does not advance at time scale 0, and barely at 0.05. Wait in real time.
+- **Overlapping hit-stops** (two hits 30 ms apart) let the first timer restore time during the
+  second freeze. Only the newest call restores.
+- **Shake freezes off-centre during hit-stop** when it decays with scaled delta. Decay with real
+  time (Godot `dt / Engine.time_scale`, Unity `Time.unscaledDeltaTime`).
+- **UI and menu tweens crawl during hit-stop.** Godot `Tween.set_ignore_time_scale(true)`; Unity
+  coroutines with `Time.unscaledDeltaTime`.
+- **Time scale does not slow audio** in Godot or Unity, so a long freeze plays the impact sound
+  over a frozen picture. Keep stops short or lower `AudioServer.playback_speed_scale` too.
+- **Hit-stop on every frame of a held or multi-hit attack** locks the game. One per impact, and
+  skip it on hits that land during an active stop.
+- **Juice that never returns to rest** (scale drift, shake that does not decay) stops reading as
+  feedback. Snap to the rest value at the end of every effect.
+- **Over-juicing routine actions** causes nausea and hides real impacts. Footsteps get the small
+  tier or nothing.
+- **Feedback that blocks input.** Long freezes and uncancellable animations feel like lag; keep
+  freezes under about 0.15 s and buffer input through them.
+- **Flashing past the photosensitivity limit.** Large bright flashes must stay at or under three
+  per second (WCAG 2.3.1), and a reduce-flashing option should replace them with a tint.
 
 ## References
 
-- For the trauma-shake math, easing-curve cheat sheet (which ease for pop vs settle), knockback
-  + flash + number-pop recipes, importance-tier presets, and per-engine tween/particle bindings,
-  read `references/feedback-recipes.md`.
+- `references/feedback-recipes.md`: read when you need the easing cheat sheet, an eased pop for
+  Unity without a tween package, flash, knockback, number-pop and particle recipes, or the
+  per-engine binding summary (Godot, Unity, Phaser).
 
 ## Related skills
 
-- `camera-systems` — owns camera follow/deadzone/orbit; this skill only feeds it shake trauma.
-- `godot-animation`, `unity-animation` — concrete tween/AnimationPlayer/particle APIs juice rides on.
-- `audio-design` — the sound layer of every feedback bundle; ducking and SFX variation.
-- `physics-tuning` — knockback forces and the timestep juice must not destabilize.
-- `platformer`, `fps-shooter`, `roguelike` — genres whose moment-to-moment feel this elevates.
+- `camera-systems`: owns follow and framing; this skill only writes the shake offset.
+- `godot-animation`, `unity-animation`: the tween, AnimationPlayer and particle APIs.
+- `audio-design`: the sound layer of each feedback bundle.
+- `physics-tuning`: knockback forces and a stable timestep.
+- `platformer`: jump feel controls that juice sits on top of.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7: `SceneTree.create_timer(time_sec, process_always, process_in_physics,
+  ignore_time_scale)`, `Tween.set_ignore_time_scale()`, `Camera2D.ignore_rotation` (default
+  `true`); `Engine.time_scale` scales `_process`/`_physics_process` delta, `Timer` and
+  `SceneTreeTimer` but not audio (https://docs.godotengine.org/en/4.7/classes/class_engine.html).
+- Unity 6.3 LTS with Cinemachine 3.1 (3.1.7 is the latest release, June 2026):
+  `CinemachineBasicMultiChannelPerlin`, `CinemachineImpulseSource`,
+  `CinemachineImpulseListener` (https://packages.unity.com/com.unity.cinemachine).
+- WCAG 2.2 success criterion 2.3.1, three flashes or below threshold
+  (https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html).
+- Trauma-based shake follows Squirrel Eiserloh's GDC 2016 talk "Math for Game Programmers:
+  Juicing Your Cameras With Math".

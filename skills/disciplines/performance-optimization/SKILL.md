@@ -1,172 +1,222 @@
 ---
 name: performance-optimization
 description: >
-  Find and fix game performance problems methodically — measure with the engine profiler first,
-  reason about the frame-time budget, locate the CPU-vs-GPU bottleneck, then apply the right fix:
-  object pooling, draw-call batching, fewer allocations/GC spikes, and asset budgets. Engine-
-  neutral method that pairs with each engine's profiler. Use when the user mentions performance,
-  optimize, low/dropping FPS, frame drops, stutter, lag, profiler, frame budget, draw calls,
-  batching, garbage collection/GC spikes, object pooling, or "the game runs slow".
+  Finds and fixes game frame-rate problems by measurement in Godot, Unity, Unreal or Roblox: CPU-
+  vs GPU-bound, then the biggest fix (draw calls, pooling, GC spikes). Use for low FPS, stutter, a
+  first-use hitch, or requests to optimize or profile. Not for build size (`unity-build-size`),
+  physics jitter (`physics-tuning`) or network lag (`roblox-networking`, `godot-multiplayer`).
 ---
 
 # Performance optimization
 
-Performance work is a measurement discipline, not a bag of tricks. The method is always the
-same: **profile → find the one bottleneck → fix that → measure again**. This skill teaches that
-loop and the highest-leverage fixes (pooling, batching, allocation control, asset budgets), and
-points you at each engine's profiler. It pairs with `physics-tuning` for simulation cost.
+The loop: **set a budget, measure, find the one bottleneck, fix it, measure again, report the
+numbers.** Guesses usually target the wrong system, so nothing changes until a profiler or a
+frame-time capture says where the time goes. This skill is the cross-engine method and the
+fixes that recur; each engine's profiler is listed below and in the reference.
 
 ## When to use
 
-- Use when the frame rate is low or uneven, the game stutters/hitches, or it must hit a target
-  (60 FPS desktop, 30/60 mobile) and currently doesn't.
-- Use to decide *what* to optimize: profile, read the frame budget, and identify whether the CPU
-  or GPU is the bottleneck before changing any code.
-- Use to apply specific fixes: object pooling, draw-call/batch reduction, removing per-frame
-  allocations and GC spikes, and setting asset budgets.
+- The frame rate is low or uneven, or a target (60 FPS desktop, 30 or 60 on mobile) is missed.
+- Hitches: first-time effects, loading mid-game, periodic GC pauses, big fights.
+- Choosing what to optimize, setting budgets, or adding a performance check to CI.
 
-**When *not* to use:** for physics jitter/tunneling/timestep specifically, use `physics-tuning`.
-For the engine's concrete profiler UI and rendering settings, use that
-engine skill (`godot-export` covers some build settings; engine cores cover the rest). This skill
-is the cross-engine method and the shared fixes.
-
-## The golden rule: measure first, never guess
-
-Most performance "fixes" applied without profiling target the wrong thing and add complexity for
-no gain. **Do not optimize code you have not measured.** Open the profiler, find the single
-biggest cost in a representative scene on representative hardware, and fix that. Re-measure to
-confirm the fix helped before moving on. Profile a **release/optimized build** where it matters —
-editor and debug builds lie (editor overhead, no compiler optimization).
+**Not this skill:** physics stability (`physics-tuning`), install or download size
+(`unity-build-size`), network latency (`roblox-networking`, `godot-multiplayer`), shader maths
+(`shader-programming`).
 
 ## Core workflow
 
-1. **Define the target and reproduce.** State the goal (e.g. 60 FPS = 16.67 ms/frame) and find a
-   repeatable worst-case scene. "Sometimes slow" is unfixable; a reproducible spike is fixable.
-2. **Profile before touching code.** Run the engine profiler and read the frame: total frame
-   time, and the split between CPU (game logic, physics, scripts) and GPU (rendering).
-3. **Find the bottleneck — CPU or GPU.** If GPU time ≫ CPU, attack draw calls/overdraw/shaders/
-   resolution. If CPU time dominates, attack scripts/physics/allocations. Fixing the wrong side
-   does nothing.
-4. **Fix the single biggest cost.** Prefer an **algorithmic** win (do less work, cache, spatial
-   partition, run less often) over micro-optimizing a hot line. Apply the matching shared fix
-   (pooling, batching, allocation removal).
-5. **Re-measure on the same scene/hardware.** Confirm the number moved. Keep or revert based on
-   data, not intuition.
-6. **Set budgets so it stays fixed.** Per-frame ms budgets per subsystem, plus asset budgets
-   (texture sizes, triangle counts, draw-call ceilings); add a perf check to verification.
-7. **Report measured numbers.** State before/after frame time, the bottleneck found, and the fix
-   — never "should be faster". If you could only measure in-editor, say so.
+1. **Turn the complaint into a number.** Target FPS gives the budget: 60 FPS is 16.67 ms, 30 is
+   33.3 ms, 120 is 8.33 ms. Find a repeatable worst-case scene and save it (a test level, a
+   recorded input, a fixed seed).
+2. **Uncap before measuring.** VSync and frame caps hide headroom: a 4 ms frame and a 15 ms
+   frame both show 60 FPS. Godot `--disable-vsync` (and `--max-fps 0`); Unity
+   `QualitySettings.vSyncCount = 0` with `Application.targetFrameRate = -1` on desktop; Unreal
+   `r.VSync 0` and `t.MaxFPS 0`. Then read frame time in ms, not FPS.
+3. **Profile a release-like build on target hardware.** Editor and debug builds add overhead
+   and skip compiler optimization; use a Godot release export, a Unity Development build with
+   the profiler attached, or an Unreal Development or Test build.
+4. **Split CPU from GPU.** Compare main-thread, render-thread and GPU time. The side closest to
+   the frame time is the bottleneck; fixing the other side changes nothing.
+5. **Fix the single biggest cost**, preferring doing less work (cache, partition space, run less
+   often) over polishing a hot line. Then apply the matching fix below.
+6. **Re-measure the same scene on the same machine**, three runs each, and keep or revert on
+   the numbers.
+7. **Set budgets** per subsystem and per asset so the fix stays fixed, and add the frame-time
+   check to CI where the engine allows it.
+8. **Report** the scene, hardware, build type, before and after (average and p95 or p99 frame
+   time), the bottleneck and the fix. Say what was measured headless or in the editor and what
+   still needs the user's device.
 
 ## Patterns
 
-### 1. Frame budget math (turn "feels slow" into a number)
+### 1. Frame budget split
 
 ```text
-target FPS → frame budget:   60 FPS = 16.67 ms   |   30 FPS = 33.3 ms   |   120 FPS = 8.33 ms
-The WHOLE frame (CPU sim + render submit + GPU) must fit the budget; the GPU runs in parallel,
-so the slower of CPU-frame and GPU-frame sets your FPS. Allocate sub-budgets, e.g. @60 FPS:
-  gameplay/scripts ~5 ms · physics ~3 ms · rendering(CPU submit) ~4 ms · UI/other ~2 ms · slack.
-If one subsystem blows its slice, that's your target — not whatever you assumed.
+@60 FPS = 16.67 ms. The slower of CPU frame and GPU frame sets the frame rate.
+Example sub-budgets: gameplay/scripts ~5 ms · physics ~3 ms · render submit ~4 ms · UI ~2 ms · slack.
+Mobile: keep 20-30% headroom so the game survives thermal throttling.
 ```
 
-### 2. Measure with the engine profiler (do this before any fix)
+### 2. Where each engine reports the split
 
 ```text
-Godot 4.7     : Debugger ▸ Profiler (script/physics time), Visual Profiler (CPU vs GPU render time
-                per pass) and Monitors tab (FPS, draw calls, memory).
-                In code: Performance.get_monitor(Performance.TIME_PROCESS) returns SECONDS
-                (× 1000 for ms); Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME for draw calls.
-Unity 6.3 LTS : Profiler window (CPU/GPU/Memory/Rendering modules) + Frame Debugger for draw calls.
-                In code: ProfilerRecorder on "CPU Main Thread Frame Time" / "GPU Frame Time"
-                (release players need Frame Timing Stats enabled in Player Settings).
-Unreal 5.8    : `stat unit` (Frame / Game / Draw / RHIT / GPU ms), `stat fps`,
-                `stat scenerendering` (draw calls); Unreal Insights for deep traces.
-# Read the split: Game = gameplay thread, Draw = render thread (both CPU), GPU = the graphics card.
-# Whichever is closest to Frame is the bottleneck; that decides the fix.
+Godot 4.7     : Debugger > Profiler (script and physics), Visual Profiler (CPU vs GPU render time
+                per pass), Monitors (FPS, draw calls, memory, pipeline compilations).
+                Performance.get_monitor(TIME_PROCESS) is the worst frame of the last second in
+                SECONDS, refreshed once a second; time frames yourself for per-frame spikes.
+Unity 6.3 LTS : Profiler window + Frame Debugger. ProfilerRecorder on "CPU Main Thread Frame Time"
+                and "GPU Frame Time" (release players need Frame Timing Stats in Player Settings).
+Unreal 5.8    : stat unit (Frame / Game / Draw / RHIT / GPU), stat scenerendering (draw calls),
+                Unreal Insights; `csvprofile frames=600` writes a CSV capture you can read.
+Roblox        : MicroProfiler (Ctrl+F6 in Studio and the desktop client; mobile via its web UI).
+# Game and Draw are CPU threads; GPU is the graphics card. Whichever is nearest Frame wins.
 ```
 
-### 3. Object pooling (stop allocating/freeing in hot loops)
+**Roblox:** profile on a mid-range phone, because a capped desktop hides the problem. With
+Studio Assistant, Roblox's built-in `rbx-perf-profiling` (reads MicroProfiler captures) and
+`rbx-scene-analysis` (rendering cost, memory, leaked instances) give real data; use
+`roblox-studio-workflow` to run checks in Studio, `roblox-physics` for assembly and simulation
+cost, and `roblox-networking` when "lag" means network delay rather than frame time.
+
+### 3. Headless CPU frame-time check (Godot)
 
 ```gdscript
-# Bullets, particles, enemies, damage numbers: reuse a fixed set instead of instantiate()/free()
-# every frame — that thrashes memory and (in C#) feeds the GC.
+# tools/frame_stats.gd: CPU frame time of one scene, headless (no GPU work is measured).
+# godot --headless --path . --script res://tools/frame_stats.gd -- res://levels/worst.tscn 600 16.6
+extends SceneTree
+
+func _initialize() -> void:
+    var args := OS.get_cmdline_user_args()
+    var scene_path := args[0] if args.size() > 0 else "res://main.tscn"
+    var frames := int(args[1]) if args.size() > 1 else 600
+    var budget_ms := float(args[2]) if args.size() > 2 else 16.6
+    OS.low_processor_usage_mode_sleep_usec = 0          # headless otherwise sleeps ~6.9 ms a frame
+    root.add_child(load(scene_path).instantiate())
+    for i in 60:                                       # skip loading and first-use spikes
+        await process_frame
+    var ms := PackedFloat64Array()
+    var last := Time.get_ticks_usec()
+    for i in frames:
+        await process_frame
+        var now := Time.get_ticks_usec()
+        ms.append((now - last) / 1000.0)               # whole frame: scripts, physics, engine
+        last = now
+    ms.sort()
+    var avg := 0.0
+    for v in ms:
+        avg += v / ms.size()
+    var p95 := ms[int(ms.size() * 0.95)]
+    var p99 := ms[int(ms.size() * 0.99)]
+    var over := ms.size() - ms.bsearch(budget_ms, false)
+    print("FRAME avg=%.2fms p95=%.2fms p99=%.2fms max=%.2fms over_budget=%d/%d"
+            % [avg, p95, p99, ms[-1], over, ms.size()])
+    quit(1 if p95 > budget_ms else 0)
+```
+
+It exits 1 when p95 exceeds the budget, so it can gate CI for script and physics cost. Headless
+mode has no renderer, so it says nothing about GPU time or draw calls; for those, ask the user to
+run the game with `--disable-vsync --print-fps` or open the Visual Profiler and report the CPU and
+GPU ms for the same scene. A shared or busy machine adds noise, so compare runs on one machine.
+
+### 4. Object pooling (stop allocating and freeing in hot loops)
+
+```gdscript
 var _pool: Array[Node2D] = []                     # Node3D for 3D; both have `visible`
 func acquire() -> Node2D:
     var n: Node2D = _pool.pop_back() if not _pool.is_empty() else bullet_scene.instantiate()
     n.set_process(true); n.visible = true
     return n
 func release(n: Node2D) -> void:
-    n.set_process(false); n.visible = false       # disable + hide; DON'T free
-    _pool.append(n)                                # back to the pool for reuse
-# RIGHT: pre-warm the pool at load; reuse. WRONG: instantiate()/queue_free() per shot.
+    n.set_process(false); n.visible = false       # disable + hide; don't free
+    _pool.append(n)
+# Pre-warm at load. Also reset velocity, timers and signal connections on release.
 ```
 
-### 4. Cut draw calls (the most common GPU-side win)
+### 5. Cut draw calls and state changes
 
 ```text
-Draw calls and render-state changes (material/shader/texture/blend switches) cost CPU submit time;
-thousands of them make the render thread the bottleneck. 2D batchers merge runs of sprites that
-share state (most bind several textures per batch), so ordering and atlasing decide the count.
-- Atlas textures and share materials so sprites/meshes batch into one call.
-- Identical meshes → GPU instancing (Unity; under URP/HDRP the SRP Batcher or GPU Resident Drawer
-  takes precedence), MultiMesh / MultiMeshInstance (Godot), Instanced Static Mesh (Unreal).
-- Static geometry → static batching / baking; mark non-moving objects static.
-- Reduce overdraw: limit large overlapping transparent/particle layers (they re-shade pixels).
-- If fill rate dominates, lower render resolution: 2× pixel ratio means 4× the pixels of 1×.
-  For three.js game defaults and warm-up-aware resolution tuning, read `threejs-scene-setup`.
-- Fewer real-time lights/shadows; bake lighting where it doesn't move.
-Measure draw calls before and after — the count should drop, and so should GPU frame time.
+- Atlas textures and share materials so sprites and meshes batch.
+- Identical meshes: GPU instancing (Unity; under URP/HDRP the SRP Batcher or GPU Resident Drawer
+  takes over), MultiMesh/MultiMeshInstance (Godot), Instanced Static Mesh (Unreal).
+- Static geometry: static batching or baking. Bake lighting that does not move.
+- Overdraw: fewer large overlapping transparent and particle layers.
+- Fill-rate bound: lower render resolution or scale (2x pixel ratio is 4x the pixels).
+Measure draw calls and GPU ms before and after; both should drop.
 ```
 
-### 5. Kill per-frame allocations (GC spikes = stutter)
+### 6. Kill per-frame allocations (GC spikes are periodic hitches)
 
 ```csharp
-// Unity 6.3 LTS (C#). Allocating every frame fills the managed heap; the GC then stalls a frame.
-// WRONG (new array + scene walk every call):
-//   foreach (var e in FindObjectsByType<Enemy>(FindObjectsSortMode.None)) ...  // + LINQ, new[]
-// (FindObjectsOfType is obsolete in Unity 6.3; its replacement still allocates.)
-// RIGHT: cache references once, reuse buffers, avoid LINQ/boxing in Update.
+// Unity 6.3 LTS. Steady state should be 0 B "GC Allocated In Frame".
 void Update() {
     _hits = Physics.RaycastNonAlloc(ray, _hitBuffer);   // reuse a preallocated array
-    for (int i = 0; i < _hits; i++) { /* ... */ }       // no per-frame allocation
+    for (int i = 0; i < _hits; i++) { /* ... */ }
 }   // hit order is undefined and a full buffer may miss the nearest hit: size it, sort if needed
-// Godot/GDScript: avoid building new arrays/dictionaries every frame in _process; reuse them.
+// No LINQ, string building or FindObjectsByType in Update. Cache references once.
+// GDScript: reuse Arrays/Dictionaries instead of building new ones each _process.
 ```
 
-## Pitfalls
+## Gotchas
 
-- **Optimizing without profiling.** The intuitive culprit is usually wrong. Measure first, every
-  time.
-- **Profiling the editor / a debug build.** Editor overhead and unoptimized code mislead. Profile
-  a release build on target hardware for real numbers.
-- **Fixing the wrong side.** Micro-optimizing CPU code when the GPU is the bottleneck (or vice
-  versa) changes nothing. Check the CPU-vs-GPU split first.
-- **Micro-optimizing over algorithm.** Shaving a function when an O(n²) loop or a per-frame
-  full-scene query is the real cost. Reduce the work, don't polish it.
-- **Instantiate/free in hot loops.** Spawning and destroying bullets/particles every frame causes
-  fragmentation and GC spikes. Pool them.
-- **Per-frame allocations / LINQ / boxing in `Update`** (C#) feed the GC → periodic hitches.
-  Cache and reuse.
-- **Draw-call explosion** from unique materials and unbatched sprites/meshes. Atlas, share
-  materials, instance, batch.
+- **Measuring with VSync on.** The frame rate sits at the refresh rate until the frame is
+  already over budget, so fixes look like they did nothing. Uncap, then read ms.
+- **Reading `TIME_PROCESS` every frame in Godot.** It is the worst frame of the last second,
+  updated once a second, so per-frame samples repeat one value. Time frames directly.
+- **Shader and pipeline compile hitches** the first time an effect, enemy or material appears,
+  often gone on the second run because the driver cached it. Godot 4.4+: watch the pipeline
+  compilation monitors, load features early and keep hidden instances of spawned effects in the
+  scene. Unity 6: trace and warm PSOs with `GraphicsStateCollection` (experimental) or warm
+  shader variants on older APIs. Unreal: PSO precaching and a bundled PSO cache.
+- **Thermal throttling on phones**: 60 FPS for two minutes, then a drop. Ask the user to run a
+  15-minute session on the device and report frame time at the start and end; cap the frame rate
+  and keep headroom.
+- **Unity Android and iOS run at 30 FPS by default** (`targetFrameRate = -1`). Set
+  `Application.targetFrameRate` deliberately before calling it a performance problem.
+- **Fixing the wrong side.** CPU micro-optimizations do nothing for a GPU-bound frame, and the
+  reverse.
+- **Instantiate and free in hot loops** cause fragmentation and GC spikes. Pool them.
 - **Unity "Enable GPU Instancing" with no effect** under URP/HDRP: the SRP Batcher takes
   precedence for compatible shaders. Check the Frame Debugger; for many identical meshes use the
   GPU Resident Drawer (Forward+, compute-capable APIs, not OpenGL ES).
-- **Overdraw** from stacked transparents/particles/full-screen effects re-shading pixels.
-- **No budgets.** Without per-subsystem ms and asset ceilings, performance silently regresses;
-  enforce them in your build/CI checks.
-- **Optimizing too early.** Don't contort a prototype for performance before it's fun or measured.
+- **Deep Profile or editor numbers reported as results.** Both distort timings; quote a build.
+- **No budgets.** Without per-subsystem ms and asset ceilings, performance regresses quietly.
+- **Optimizing a prototype** before it is fun or measured adds complexity that may be thrown away.
 
 ## References
 
-- For per-engine profiler walkthroughs, the CPU-vs-GPU triage flowchart, a complete pooling
-  manager, batching/instancing rules per engine, allocation/GC guidance, LOD/culling, and asset
-  budgets (texture sizes, triangle counts, audio, mobile thermals), read
-  `references/profiling-and-budgets.md`.
+- `references/profiling-and-budgets.md`: read when you need a per-engine profiler walkthrough,
+  the CPU-vs-GPU triage steps, a generic pool with prewarm and overflow policy, batching and
+  instancing rules per engine, allocation rules for C# and GDScript, do-less techniques (LOD,
+  culling, time-slicing) or starting asset budgets.
 
 ## Related skills
 
-- `physics-tuning` — simulation cost, fixed-step budget, sleeping bodies, broadphase layers.
-- `godot-export` — release/build settings that affect measured performance.
-- `procedural-gen`, `game-ai` — common CPU hotspots (generation, pathfinding) to budget and defer.
-- `roguelike`, `tower-defense`, `survival-crafting` — entity-heavy genres that need pooling/budgets.
+- `physics-tuning`: fixed-step cost, sleeping bodies, broadphase layers.
+- `shader-programming`: per-pixel cost of an effect; `godot-shaders` for Godot shader compiles.
+- `godot-export`, `unity-build-pipeline`, `unreal-packaging`: building the release build you
+  should profile.
+- `procedural-gen`, `game-ai`: common CPU hotspots (generation, pathfinding) to defer or slice.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Godot 4.7: `TIME_PROCESS` and `TIME_PHYSICS_PROCESS` are per-second maxima set in
+  `main/main.cpp`; headless sleeps `low_processor_usage_mode_sleep_usec` per frame
+  (`core/os/os.cpp`); CLI `--disable-vsync`, `--max-fps`, `--print-fps`. Pipeline
+  precompilation and its monitors arrived in 4.4, the shader baker in 4.5
+  (https://docs.godotengine.org/en/stable/tutorials/performance/pipeline_compilations.html).
+  The frame-time script was run on 4.7.2 headless.
+- Unity 6.3: `targetFrameRate` defaults and the 30 FPS mobile default
+  (https://docs.unity.com/en-us/engine/6000.3/script-reference/unityengine/application/targetframerate);
+  `GraphicsStateCollection` is experimental
+  (https://docs.unity.com/en-us/engine/6000.3/manual/materials-and-shaders/shaders/shader-troubleshooting/shader-reduce-stalling/shader-prevent-stutter/shader-pso-trace-warming/shader-pso-introduction).
+- Unreal: PSO precaching (https://dev.epicgames.com/documentation/unreal-engine/pso-precaching-for-unreal-engine);
+  `csvprofile` (https://docs.unrealengine.com/4.27/en-US/TestingAndOptimization/PerformanceAndProfiling/CSVProfiler).
+- Roblox: MicroProfiler shortcuts and mobile web UI
+  (https://create.roblox.com/docs/performance-optimization/microprofiler.md); built-in
+  Assistant skills `rbx-perf-profiling` and `rbx-scene-analysis`
+  (https://create.roblox.com/docs/assistant/skills.md).
+- RenderDoc 1.47 (2026-10-31), Tracy 0.15.0 (2026-11-05), Unity Project Auditor package 3.2.0
+  (2026-11-03): GitHub releases and the Unity package registry.

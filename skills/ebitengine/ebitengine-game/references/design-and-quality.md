@@ -4,6 +4,15 @@ Use for a new game or substantial redesign. A tiny arcade game can be finished
 through a few deliberate passes. Repeated internal testing is part of one
 delivery; no skill guarantees the first untested implementation will be fun.
 
+## Contents
+
+- [Establish the product before choosing systems](#establish-the-product-before-choosing-systems)
+- [Choose structure from the game](#choose-structure-from-the-game)
+- [Iterate on a representative slice](#iterate-on-a-representative-slice)
+- [Calibrate content to capabilities](#calibrate-content-to-capabilities)
+- [Finish the presentation in context](#finish-the-presentation-in-context)
+- [Verify a complete session](#verify-a-complete-session)
+
 ## Establish the product before choosing systems
 
 Record a short brief in the project with concrete answers:

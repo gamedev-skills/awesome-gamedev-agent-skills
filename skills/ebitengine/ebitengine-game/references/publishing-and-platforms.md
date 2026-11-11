@@ -1,10 +1,19 @@
 # Publishing and platforms
 
 Read for requested packaging/distribution work. These recipes target the
-v2.10.5 starter. Ebitengine's pure-Go desktop backend does not make every game's
+v2.10.6 starter. Ebitengine's pure-Go desktop backend does not make every game's
 SDKs/dependencies portable or establish runtime/store compatibility.
-Build commands: [Project setup](project-and-builds.md). Automation:
-[CI and releases](ci-and-release.md).
+Build commands are in the project-and-builds reference and automation in the
+ci-and-release reference.
+
+## Contents
+
+- [Target selection](#target-selection)
+- [Windows](#windows)
+- [macOS](#macos)
+- [Linux](#linux)
+- [Steamworks boundary](#steamworks-boundary)
+- [Browser, mobile and port readiness](#browser-mobile-and-port-readiness)
 
 ## Target selection
 
@@ -110,7 +119,7 @@ the game's needs and Valve's current documentation.
 Browser packaging needs `index.html` at the archive root, the matching Go
 `wasm_exec.js` and correct WASM HTTP serving. Test actual hosting, loading errors,
 focus, aspect ratios and audio after a gesture. Portal SDK requirements differ;
-implement only the selected portal's integration (see [Monetization](monetization.md)).
+implement only the selected portal's integration (see the monetization reference).
 
 Mobile needs a native host around the `.aar`/`.xcframework`. Forward lifecycle,
 save before background termination and test touch/safe areas/resume on devices.

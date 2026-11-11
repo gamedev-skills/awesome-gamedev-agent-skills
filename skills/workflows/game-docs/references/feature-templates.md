@@ -2,9 +2,9 @@
 
 One folder per feature, `features/<slug>/` in the docs folder. `design.md` comes first and is often all a feature has. `implementation.md` and `testing.md` are added when the feature first gets code (or when the user asks). Text in *italics* is guidance; don't copy it. Leave out any section that doesn't apply.
 
-- [design.md](#designmd-the-feature-note)
-- [implementation.md](#implementationmd-once-code-exists)
-- [testing.md](#testingmd-once-code-exists)
+- `references/design.md`(#designmd-the-feature-note)
+- `references/implementation.md`(#implementationmd-once-code-exists)
+- `references/testing.md`(#testingmd-once-code-exists)
 
 ## design.md: the feature note
 
@@ -69,7 +69,7 @@ Add when it matters: **Flow** (events emitted and consumed, update order, a stat
 
 ## testing.md: once code exists
 
-*Each criterion maps to a rule or number in design.md and ends with its proof, or the reason it has none ([proof annotations](doc-rules.md#proof-annotations)). Unticked means not proven yet, which is useful information.*
+*Each criterion maps to a rule or number in design.md and ends with its proof, or the reason it has none (proof annotations in `references/doc-rules.md`). Unticked means not proven yet, which is useful information.*
 
 ~~~markdown
 # <Feature name>: testing

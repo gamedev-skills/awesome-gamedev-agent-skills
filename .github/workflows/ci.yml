@@ -33,6 +33,11 @@ jobs:
       - name: Validate SKILL.md frontmatter and links
         run: python scripts/validate-skills.py
 
+      # Offline only: checks evals/triggers.json (format, skill names, 3 should + 1
+      # near-miss per skill). Passes while the file does not exist yet.
+      - name: Check trigger evals
+        run: python scripts/run-trigger-evals.py --check --allow-missing
+
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
 

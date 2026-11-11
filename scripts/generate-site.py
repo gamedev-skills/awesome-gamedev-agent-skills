@@ -41,32 +41,32 @@ OUTPUT_MARKER_CONTENT = "awesome-gamedev-agent-skills documentation output v1\n"
 CATEGORIES: dict[str, tuple[str, str]] = {
     "godot": (
         "Godot Agent Skills",
-        "Skills that teach an AI coding agent the Godot 4.x API surface — GDScript, "
-        "the scene tree, TileMapLayer, physics, shaders and exporting.",
+        "Skills that teach an AI coding agent Godot 4.7 — GDScript and C#, the scene "
+        "tree, TileMapLayer, physics, shaders, headless tests and exporting.",
     ),
     "unity": (
         "Unity Agent Skills",
-        "Skills covering Unity 6 (6000.0 LTS) — MonoBehaviour scripting, the Input "
-        "System, physics, Animator controllers, ScriptableObjects and builds.",
+        "Skills covering Unity 6.3 LTS (6000.3) — MonoBehaviour scripting, the Input "
+        "System, 3D and 2D physics, Animator controllers, ScriptableObjects and builds.",
     ),
     "unreal": (
         "Unreal Engine Agent Skills",
-        "Skills for Unreal Engine 5.4+ — Blueprints, C++ gameplay framework, "
-        "Enhanced Input, Behavior Trees, Niagara and packaging.",
+        "Skills for Unreal Engine 5.8 — Blueprints, C++ gameplay framework, Enhanced "
+        "Input, Behavior Trees with EQS and StateTree, Niagara and packaging.",
     ),
     "ebitengine": (
         "Ebitengine Agent Skills",
-        "A skill for playable 2D games in Go with Ebitengine v2.10.5: input, "
+        "A skill for playable 2D games in Go with Ebitengine v2.10.6: input, "
         "rendering, text, audio, gameplay tests and platform builds.",
     ),
     "web-engines": (
         "Web Game Engine Agent Skills",
-        "Skills for browser game engines — Phaser 4, PixiJS v8 and three.js r187.",
+        "Skills for browser game engines — Phaser 4.2, PixiJS 8.22 and three.js r187.",
     ),
     "other-engines": (
         "Bevy, pygame, LÖVE, Defold and Roblox Agent Skills",
-        "Skills for Bevy ECS, pygame, LÖVE, Defold and Roblox Luau, including DataStore "
-        "persistence.",
+        "Skills for Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.1 and Roblox: "
+        "Luau, DataStores, UI, networking, characters, physics, Studio and economies.",
     ),
     "disciplines": (
         "Game Development Discipline Skills",

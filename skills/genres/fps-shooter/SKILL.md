@@ -1,123 +1,141 @@
 ---
 name: fps-shooter
 description: >
-  Build a first-person shooter: move+mouse-look controller, hitscan or projectile shooting, weapons,
-  health, and enemy AI. Use for an FPS, or tuning aim feel, time-to-kill, recoil, or spread.
+  Designs first-person shooter combat in any engine: hitscan vs projectiles, time-to-kill, damage
+  falloff, recoil patterns, ADS sensitivity and lag-compensated hits. Use for a Doom- or
+  Counter-Strike-like, or guns that feel weak or shots that do not register. Not for the camera
+  rig (`camera-systems`), shake and hit-stop (`game-feel`) or raycast APIs (`godot-physics`,
+  `unity-physics`).
 ---
 
-# FPS Shooter
+# FPS shooter
 
-A playbook for first-person shooters — the look/move controller, the shooting model, weapon
-feel, and combat. This is a **compositional** skill: it wires a 3D controller, input, and AI
-into a shooter. It does not re-teach 3D nodes or raycasts; it defines the shooting model and
-the feel knobs (TTK, recoil, spread) that decide whether the guns feel good.
+Owns how shooting works and feels: the shot model, the damage and TTK numbers, recoil and
+spread, fire timing, aim scaling and how enemies fight back. The engine skills supply the
+controller body, raycasts and networking.
 
 ## When to use
 
-- Use when building a first-person game whose core verb is **aim and shoot** — arena shooter,
-  tactical FPS, PvE shooter, boomer-shooter.
-- Use when deciding hitscan vs. projectile, tuning time-to-kill, recoil, spread, or aim feel.
+- First-person games whose core verb is aim and shoot; also third-person shooters for the
+  shot model and numbers.
+- Tuning TTK, recoil, spread, falloff, fire rate or aim feel, or fixing shots that miss.
 
-**When *not* to use:** third-person/2D shooting → reuse the shooting model here but build the
-camera/controller from the relevant genre. Wave survival with towers → `tower-defense`.
-For the camera/character body itself, use `godot-3d-essentials` / `unreal-cpp-gameplay`.
+**When not to use:** camera follow, orbit and look smoothing (`camera-systems`); juice
+(`game-feel`); the raycast API (`godot-physics`, `unity-physics`, `unreal-cpp-gameplay`);
+replication and prediction (engine multiplayer skill, `roblox-networking` on Roblox).
 
-## Core loop
+## Workflow
 
-**Scan → acquire a target → aim and fire → confirm the kill (feedback) → reposition / reload
-/ advance.** The whole experience rests on the *aim-and-fire* micro-loop feeling crisp:
-responsive look, clear hit feedback, and a death that reads instantly.
+1. **Name the reference shooter** and its TTK band: fast (tactical; body kills in about
+   0.3 s, one-shot headshots on rifles), mid (military; about 0.2-0.5 s), slow (arena and hero
+   shooters; about 0.8 s and up, so tracking and movement matter).
+2. **Write every weapon as data** (damage by range band, head and limb multipliers, fire
+   rate, magazine, reload, spread, recoil pattern) and generate a TTK table per weapon against
+   each target HP (Pattern 2). Tune the table, not individual numbers.
+3. **Shot model:** hitscan from the camera for bullets; projectiles for rockets, grenades and
+   anything the target should dodge. Third person: ray from the camera to find the aim point,
+   then from the muzzle to that point so cover in front of the gun still blocks.
+4. **Fire timing on a scheduled clock** (Pattern 1), not "if enough time passed".
+5. **Aim scaling:** expose FOV and sensitivity; scale sensitivity when zoomed (below).
+6. **Enemies (PvE):** a reaction delay before the first shot, telegraphed attacks and
+   deliberate early misses (refs §7).
+7. **Check it.** Write and run tests and report the numbers:
+   - the TTK table for every weapon and HP value, flagging weapons outside the chosen band;
+   - fire 10 s of full-auto at a simulated 30, 60 and 144 FPS; the round counts must match
+     `fire_rate * 10` within 1;
+   - a shot fired from inside the player's own collider at a wall 1 m away hits the wall;
+   - a shot through a trigger volume (pickup, zone) still hits the target behind it;
+   - ADS sensitivity: a mouse movement that turns X degrees at hip turns X * ratio when zoomed.
 
-## Must-have systems
+## Numbers that matter
 
-1. **First-person controller** — move (WASD/stick) + mouse/stick look, gravity, jump/crouch.
-2. **Camera** — eye-height view, configurable FOV and sensitivity, recoil kick.
-3. **Shooting model** — hitscan raycast and/or projectile spawn; one impact path for feedback.
-4. **Weapons + ammo** — damage, fire rate, magazine, reload, switching.
-5. **Health + damage** — HP, hit/headshot multipliers, death; player and enemy share the model.
-6. **Enemy AI** — perceive → alert → attack → search; cover and reaction delays (`game-ai`).
-7. **Feedback** — hitmarkers, impact decals/particles, hit sounds, screen shake, kill confirms.
-8. **Objectives** — what you do besides shoot: clear, capture, survive, escort.
+| Knob | Start here | Notes |
+|------|-----------|-------|
+| Headshot multiplier | 2-4x | Valorant's Vandal: 160 head, 40 body, 34 legs, no falloff, 9.75 rounds/s |
+| Falloff | full to 20-30 m, floor 50-70% by 50-60 m (rifles) | shotguns and SMGs fall off much earlier |
+| First-shot spread | near zero | taps must feel exact; spread grows per shot and with movement |
+| Recoil | fixed pattern, mostly up then sideways, resets after ~0.3-0.5 s of no fire | learnable beats random |
+| Pitch clamp | ±89° | stops the view flipping |
+| FOV | 90° horizontal on PC, 70-80° on TV | Godot `Camera3D.fov` (default 75) and Unity `Camera.fieldOfView` are vertical by default |
+| Enemy reaction | 0.3-0.6 s before the first shot after spotting the player | human reaction is about 0.2-0.25 s |
+| Lag compensation window | cap the rewind | Source's `sv_maxunlag` defaults to 1 s |
 
-## Design knobs
+Worked TTK: the Vandal against 150 HP kills in 4 body shots, so `(4 - 1) / 9.75 = 0.31 s`,
+or one headshot at any range.
 
-| Knob | Effect | Sane default |
-|------|--------|--------------|
-| Time-to-kill (TTK) | lethality, forgiveness | Tune dmg × fire-rate × HP together (refs). |
-| Hitscan vs projectile | aim skill type | Hitscan = flick; projectile = lead/dodge. |
-| Damage falloff | range limiting | Full to ~20 m, floor by ~60 m. |
-| Headshot multiplier | skill reward | ~1.5–2.0×. |
-| Recoil pattern | learnable kick | Fixed pattern > pure random. |
-| Spread (bloom) | suppress laser-accuracy | First shot accurate; grows while firing. |
-| Fire rate / magazine / reload | rhythm, downtime | Reload = vulnerability window. |
-| Mouse sensitivity / FOV | comfort, readability | Always expose both as options. |
-| Aim assist (pad) | controller parity | Magnetism/slowdown near targets. |
+**Vertical and horizontal FOV:** `h = 2 * atan(tan(v / 2) * aspect)`. Godot's default
+vertical 75° is about 107.5° horizontal at 16:9. Store the player's FOV setting as horizontal
+at a reference aspect and convert, or ultrawide players get a zoomed-in view.
 
-## Patterns
+**ADS sensitivity:** multiply look speed by `tan(ads_fov / 2) / tan(hip_fov / 2)` (both the
+same axis). The crosshair then moves across targets at the same rate on screen near the centre.
 
-### 1. Hitscan shot (instant ray, the workhorse)
-
-```python
-# Pseudocode. Cast from the camera; first hit takes damage scaled by range + headshot.
-direction = apply_spread(camera.forward, current_spread)   # cone sample, see refs §4
-hit = raycast(camera.world_position, direction, max_dist=RANGE, mask=SHOOTABLE, exclude=[shooter])
-if hit:
-    dmg = base_damage * falloff(hit.distance)
-    if hit.is_head: dmg *= HEADSHOT_MULT
-    hit.actor.take_damage(dmg)
-    spawn_impact_fx(hit.point, hit.normal)        # decal + sound + hitmarker
-```
-
-### 2. Projectile shot (dodgeable, leads the target)
-
-```python
-# Pseudocode. Spawn a moving body; it deals damage on its own collision.
-p = spawn(projectile_scene, at=muzzle.world_position)
-p.velocity = camera.forward * PROJECTILE_SPEED
-p.on_hit   = lambda other, point: (other.take_damage(base_damage), explode_fx(point))
-p.lifetime = RANGE / PROJECTILE_SPEED             # despawn so shots don't live forever
-```
-
-### 3. Time-to-kill (balance the trio together)
+## Pattern 1: fire rate that survives low FPS
 
 ```python
-# Pseudocode. TTK falls out of HP, per-shot damage, and fire rate — tune as one system.
-shots_to_kill = ceil(target_hp / damage_per_shot)
-ttk_seconds   = (shots_to_kill - 1) / fire_rate_per_second   # first shot at t=0
+# Pseudocode, per frame. Schedule shots on a clock; never reset the timer to "now".
+interval = 1.0 / FIRE_RATE                     # 9.75 rounds/s -> 0.1026 s
+if trigger_held and ammo > 0:
+    if next_shot_time < now - interval:        # idle gap: do not bank shots
+        next_shot_time = now
+    while next_shot_time <= now and ammo > 0:  # several shots in one long frame
+        fire(spread_for(shot_index)); ammo -= 1; shot_index += 1
+        next_shot_time += interval
 ```
 
-## Pitfalls / failure modes
+Resetting with `last_shot = now` throws away the remainder each frame, so a 600 rpm gun fires
+at about 450-600 rpm depending on frame rate.
 
-- **Look tied to frame rate or unscaled by `dt`** → sensitivity changes with FPS. Look should
-  be driven by raw mouse delta (never multiplied by `dt`); movement integration uses `dt`
-  (see `physics-tuning`). Clamp pitch to about ±89° so the view cannot flip over.
-- **Shots that "do nothing"** → the ray hits the shooter's own collider, misses hitboxes built
-  from trigger/area volumes, or stops on an invisible trigger zone. Exclude the shooter and set
-  the trigger rule explicitly per engine (refs §2 table).
-- **Recoil recovery fights the player's aim** → recoil was written into the look angle. Keep it
-  as a separate offset that decays to zero (refs §4).
-- **Pure random recoil/spread** → feels uncontrollable and unfair. Use a learnable recoil
-  pattern; keep the first shot accurate.
-- **Hitscan with no falloff** → pistols snipe across the map. Add range-based damage falloff.
-- **No hit feedback** → players can't tell if shots land. Always show hitmarkers, impact FX, and
-  a distinct kill confirm.
-- **Mismatched TTK** → too low feels twitchy/unfair; too high feels spongy. Tune damage,
-  fire rate, and HP as one system (Pattern 3).
-- **Trusting the client in multiplayer** → cheating and "I shot first" disputes. Keep authority
-  server-side; use lag compensation (refs) and defer netcode to the engine multiplayer skill.
-- **No FOV / sensitivity options** → motion sickness and accessibility failures. Always expose them.
+## Pattern 2: TTK table
 
-## Composition (build it from these skills)
+```python
+def ttk(hp, dmg_per_shot, rate):               # first shot at t = 0
+    shots = ceil(hp / dmg_per_shot)
+    return shots, (shots - 1) / rate
 
-- **Controller + camera:** `godot-3d-essentials` (Godot) or `unreal-cpp-gameplay` / `unreal-blueprints`; Unity uses `unity-physics` + a character controller.
-- **Input:** `input-systems` (or `unreal-enhanced-input`) for look/move, rebinding, and gamepad aim assist.
-- **Shooting physics:** `godot-physics` / `unity-physics` for raycasts and projectile collision.
-- **Enemies:** `game-ai` with `unity-navmesh` / `unreal-behavior-trees` / Godot navigation.
-- **Camera & feel:** `camera-systems` for FOV/recoil kick and look smoothing; `game-feel` for hit-stop, screen shake, and impact juice.
-- **Polish:** `audio-design` for weapon/impact sound; `shader-programming` for muzzle/impact VFX.
-- **Process:** `prototype-fast` to validate aim feel before building content.
+for w in weapons:
+    for hp in TARGET_HPS:                      # e.g. 100, 150 (armour), boss values
+        for zone, mult in (("head", w.head), ("body", 1.0), ("legs", w.legs)):
+            print(w.id, hp, zone, *ttk(hp, w.damage(range_band) * mult, w.rate))
+```
+
+## Gotchas
+
+- **Fire rate lower at low FPS** → timer reset to "now" each shot (Pattern 1).
+- **Shots do nothing** → the ray hits the shooter, ignores hitboxes built from trigger or area
+  volumes, or stops on an invisible trigger zone. Exclude the shooter and set the trigger rule
+  per engine (refs §2 table).
+- **Sensitivity changes with frame rate** → mouse delta multiplied by `dt`. Mouse delta is
+  already a distance; only stick input is a rate that needs `dt`.
+- **Recoil recovery fights the player** → recoil written into the look angle. Keep it as an
+  offset that decays to zero (refs §4).
+- **Square spread pattern** → yaw and pitch randomised independently. Sample a disc (refs §4).
+- **Zoomed aim feels too fast** → sensitivity not scaled with FOV (formula above).
+- **Ultrawide players see less** → vertical FOV setting treated as horizontal, or the reverse.
+- **"I shot first"** → client-side hit authority. The server rewinds targets to the shooter's
+  view time, capped (refs §6), and decides.
+- **Enemies feel like aimbots** → instant reaction and perfect first shots. Add reaction delay,
+  telegraphs and early misses.
 
 ## References
 
-- For hitscan vs. projectile trade-offs, damage falloff, recoil/spread, TTK math, hit
-  registration/lag compensation, and enemy AI states, read `references/shooting-and-feel.md`.
+- `references/shooting-and-feel.md`: read when comparing hitscan and projectiles, writing the
+  ray query per engine (shooter exclusion, triggers, start-inside rules), falloff, disc spread
+  and recoil offset code, TTK trade-offs, lag compensation, or the PvE enemy state machine.
+
+Related: `camera-systems`, `game-feel`, `input-systems` (rebinding, aim assist input),
+`game-ai` (enemy decisions), `audio-design` (weapon and hit sounds), `godot-3d-essentials`,
+`unreal-cpp-gameplay`, `unity-physics`.
+
+## Version notes
+
+Last verified: 2026-11-11.
+
+- Valorant Vandal damage (160/40/34, no falloff) and 9.75 rounds/s:
+  https://playvalorant.com/en-us/news/dev/valorant-data-drop-phantom-vs-vandal and
+  https://valohub.co/weapons/compare. Weapon numbers change with patches.
+- Source `sv_maxunlag` default and maximum 1 s:
+  https://developer.valvesoftware.com/wiki/Lag_Compensation.
+- Godot 4.7.2 `Camera3D.fov` default 75, vertical under the default `keep_aspect`
+  (doc/classes/Camera3D.xml).
+- TTK bands, falloff and reaction ranges are design starting points.

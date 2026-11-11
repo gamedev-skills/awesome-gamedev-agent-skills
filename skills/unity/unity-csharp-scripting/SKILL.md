@@ -1,163 +1,159 @@
 ---
 name: unity-csharp-scripting
 description: >
-  Write Unity 6.3 LTS C# gameplay scripts: the MonoBehaviour lifecycle
-  (Awake/OnEnable/Start/Update/FixedUpdate/LateUpdate), GameObject and component
-  access, coroutines, and Inspector serialization. Use when creating or editing .cs
-  scripts in a Unity project, or when the user mentions MonoBehaviour, Start/Update,
-  GetComponent, SerializeField, coroutines, or "Unity script".
+  Writes and fixes Unity 6.3 LTS C# gameplay scripts: MonoBehaviour lifecycle, serialization,
+  .meta/GUID discipline and command-line tests. Use for new or renamed .cs files, "Missing script"
+  or a field missing from the Inspector. Not for physics (`unity-physics`), input
+  (`unity-input-system`), data assets (`unity-scriptableobjects`) or builds
+  (`unity-build-pipeline`).
 ---
 
 # Unity C# Scripting (MonoBehaviour)
 
-Write correct, idiomatic gameplay scripts in Unity 6. Get the lifecycle, component
-access, serialization, and coroutines right so behaviour is deterministic and the
-Inspector stays useful. Targets **Unity 6.3 LTS (6000.3)**, C# / .NET Standard 2.1.
+Write correct gameplay scripts for Unity 6.3 LTS (6000.3), C# 9 on .NET Standard 2.1, keep the
+project's `.meta` files intact, and prove the result compiles and behaves without opening the
+Editor by hand.
 
 ## When to use
 
-- Use when authoring or fixing a `MonoBehaviour`: choosing the right lifecycle callback,
-  reading/caching components, exposing fields to the Inspector, or running timed logic
-  with coroutines.
-- Use when the project has `*.cs` files, an `Assembly-CSharp` or `*.asmdef`, and a
-  `ProjectSettings/` folder.
+- Authoring or fixing a `MonoBehaviour`: lifecycle callbacks, component references,
+  serialized fields, coroutines, `async` with `Awaitable`.
+- Creating, moving, renaming or deleting scripts and assets from the file system.
+- Compiling or testing a Unity project from a terminal or CI, for any Unity skill.
+- The project has `Assets/`, `ProjectSettings/` and `*.cs` files.
 
-**When *not* to use:** moving rigidbodies / collision response → `unity-physics`; reading
-player input → `unity-input-system`; shared data assets / config → `unity-scriptableobjects`;
-Animator parameters → `unity-animation`. This skill owns the *script lifecycle and C#
-plumbing*, not those subsystems.
+**When not to use:** rigidbodies and collision response → `unity-physics`; reading player
+input → `unity-input-system`; shared data assets and config → `unity-scriptableobjects`;
+Animator parameters → `unity-animation`; building players → `unity-build-pipeline`.
 
-## Core workflow
+## Workflow
 
-1. **Pick the callback by purpose, not habit.** `Awake` (cache references, runs once on
-   load), `OnEnable` (subscribe to events), `Start` (init that depends on other objects'
-   `Awake`), `Update` (per-frame logic/input polling), `FixedUpdate` (physics), `LateUpdate`
-   (camera follow after movement), `OnDisable`/`OnDestroy` (unsubscribe/cleanup).
-2. **Cache stable component references in `Awake`** when they are reused frequently.
-   Judge lookup cost by call frequency, object count and profiler evidence.
-3. **Expose tunables with `[SerializeField] private`**, not public fields, so other code
-   can't mutate them but designers can edit them in the Inspector.
-4. **Scale per-frame values by `Time.deltaTime`** in `Update` (and `Time.fixedDeltaTime`
-   semantics are automatic in `FixedUpdate`).
-5. **Use coroutines for time-sequenced logic** (delays, tweens, "do X then wait then Y");
-   start them with `StartCoroutine` and stop them deterministically.
-6. **Verify in Play mode**: check the Console for null-reference exceptions, confirm values
-   in the Inspector update as expected, and watch the Profiler if `Update` is hot.
-7. **Check `.meta` files before you finish.** When you create, move, rename or delete
-   scripts or assets outside the Editor, always move a file together with its `.meta`
-   (a new `.meta` means a new GUID and broken references). Then run
-   `python scripts/check_unity_project.py <project-dir>` (`--json` for machine-readable
-   output), fix every `ERROR` (duplicate or malformed GUIDs, files moved without their
-   `.meta`, missing script references) and re-run until it exits 0. A missing `.meta` on a
-   brand-new file is only a warning; Unity creates it on the next import. Run the script
-   path relative to this skill directory, or resolve the installed skill path first. It
-   needs Python 3.10+ and nothing else, reads only text-serialized assets, and does not
-   replace opening the project in Unity.
+1. **Read the project's versions first.** `ProjectSettings/ProjectVersion.txt` gives the
+   Editor version; `Packages/manifest.json` the packages; any `*.asmdef` files tell you which
+   assembly a new script lands in. Keep the project's version unless asked to upgrade.
+2. **Pick the callback by purpose.** `Awake` caches references to its own components;
+   `OnEnable`/`OnDisable` subscribe and unsubscribe; `Start` wires things that depend on other
+   objects' `Awake`; `FixedUpdate` is physics; `LateUpdate` follows movement (cameras).
+3. **Expose tunables with `[SerializeField] private`** so designers can edit them and other
+   code cannot. A plain class needs `[System.Serializable]` to show up.
+4. **Move every file with its `.meta`.** A `.meta` holds the asset's GUID; a new `.meta` means
+   a new GUID and every reference to the old one shows "Missing script". A brand-new file needs
+   no `.meta`: Unity writes one on the next import. Keep each `MonoBehaviour` or
+   `ScriptableObject` class in a file of the same name.
+5. **Run the checker:** `python scripts/check_unity_project.py <project-dir>` (`--json` for
+   machine-readable output). Fix every `ERROR` (duplicate or malformed GUIDs, files moved
+   without their `.meta`, missing script references) and re-run until it exits 0. Run it from
+   this skill's directory or resolve the installed path first; it needs Python 3.10+ only,
+   reads text-serialized assets and never writes. `--help` lists the checks and exit codes.
+6. **Compile.** With the Unity CLI and a ready Editor, `unity recompile --project-path
+   <project>`; otherwise a batch-mode import and `grep -E "error CS[0-9]{4}"` on its log.
+7. **Prove the behavior** with an EditMode or PlayMode test, or by reading the value back from
+   the running Editor with `unity command script eval`. Read
+   `references/agent-checks.md` for the exact commands, the test `.asmdef` and how to read the
+   results. Report which checks ran and which could not.
 
 ## Patterns
 
-### 1. Lifecycle + cached components (the canonical skeleton)
+### 1. Serialized fields that survive refactors
 
 ```csharp
 using UnityEngine;
+using UnityEngine.Serialization;
 
-[RequireComponent(typeof(Rigidbody))]      // auto-adds the dependency, prevents null refs
-public class PlayerController : MonoBehaviour
+public class Turret : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 6f;   // editable in Inspector, private in code
-    private Rigidbody _rb;                            // cached, not fetched per frame
+    [SerializeField, Range(0.1f, 5f)] private float fireInterval = 0.5f;
 
-    private void Awake() => _rb = GetComponent<Rigidbody>();  // cache once on load
+    // Renamed from "range": without this attribute every scene and prefab loses the value.
+    [FormerlySerializedAs("range")]
+    [SerializeField] private float maxRange = 12f;
 
-    private void Update()
-    {
-        // Per-frame, non-physics work. Scale by deltaTime so it is frame-rate independent.
-        transform.Rotate(0f, 90f * Time.deltaTime, 0f);
-    }
+    [System.Serializable]
+    public class Stats { public int hp = 100; public int armor = 0; }
 
-    private void FixedUpdate()
-    {
-        // Physics work belongs here (fixed timestep). See the unity-physics skill.
-        _rb.MovePosition(_rb.position + transform.forward * moveSpeed * Time.fixedDeltaTime);
-    }
+    [SerializeField] private Stats stats = new();
 }
 ```
 
-### 2. Safe component access with `TryGetComponent`
+### 2. A coroutine you can stop exactly
 
 ```csharp
-// Avoids allocating a null and is clearer than GetComponent + null check.
-if (other.TryGetComponent<Health>(out var health))
-    health.Apply(-10);
-```
+private Coroutine _spawnLoop;
 
-### 3. Serialization that shows up correctly in the Inspector
+private void OnEnable()  => _spawnLoop = StartCoroutine(SpawnLoop());
+private void OnDisable() { if (_spawnLoop != null) StopCoroutine(_spawnLoop); }
 
-```csharp
-[SerializeField, Range(0f, 1f)] private float volume = 0.8f;  // slider
-[SerializeField] private string playerName = "Hero";          // private but serialized
-
-[System.Serializable]                 // REQUIRED for a plain class to serialize/show
-public class Stats { public int hp = 100; public int mana = 50; }
-
-[SerializeField] private Stats stats = new();  // nested struct-like data in the Inspector
-```
-
-### 4. Coroutines for time-sequenced logic
-
-```csharp
-private void Start() => StartCoroutine(FlashThenHide());
-
-private System.Collections.IEnumerator FlashThenHide()
+private System.Collections.IEnumerator SpawnLoop()
 {
-    yield return new WaitForSeconds(0.5f);   // wait half a second of game time
-    GetComponent<Renderer>().enabled = false;
-    yield return null;                       // resume next frame
+    var wait = new WaitForSeconds(1f);   // allocate once, reuse
+    while (true) { Spawn(); yield return wait; }
 }
+
+private void Spawn() { }
 ```
 
-## Pitfalls
+For `async`/`await` with `Awaitable`, the full execution order and custom yield
+instructions, read `references/lifecycle-and-coroutines.md`.
 
-- **Repeated component lookups in hot paths** — many `GetComponent` calls across many objects
-  can add CPU cost. Cache stable references in `Awake`/`Start`; profile before treating an
-  occasional lookup as a bottleneck, and refresh the cache if components change at runtime.
-- **Physics in `Update`** — moving a `Rigidbody` with forces or `MovePosition` outside
-  `FixedUpdate` causes jitter and timestep-dependent behaviour. Read input in `Update`,
-  apply physics in `FixedUpdate`.
-- **Relying on `Start` order across objects** — `Start` runs after *all* `Awake`s, but order
-  among `Start`s is undefined. Do cross-object wiring in `Start`, self-setup in `Awake`.
-- **`public` fields just to show them in the Inspector** — that also lets any script mutate
-  them. Use `[SerializeField] private` instead.
-- **`gameObject.tag == "Enemy"`** allocates a string and is slower; use
-  `gameObject.CompareTag("Enemy")`.
-- **Coroutines stop when the GameObject is disabled** — a disabled object's coroutines are
-  killed; re-`StartCoroutine` in `OnEnable` if it must survive toggling. Setting only the
-  script's `enabled = false` does *not* stop them.
-- **Obsolete warnings on `FindObjectOfType` / `FindObjectsOfType`** — Unity 6 replaced them.
-  Use `FindFirstObjectByType` (old behaviour), `FindAnyObjectByType` (faster, any match) or
-  `FindObjectsByType(FindObjectsSortMode.None)`; all are slow, so cache the result. From
-  Unity 6.4, `FindFirstObjectByType` and the `FindObjectsSortMode` overloads are obsolete too:
-  use `FindAnyObjectByType` and `FindObjectsByType<T>()` there.
-- **An `async` method keeps running after its object is destroyed** — `await` is not tied to
-  the GameObject the way a coroutine is. Pass `destroyCancellationToken` to the
-  `Awaitable` waits (they then throw `OperationCanceledException`), and never await the same
-  `Awaitable` instance twice: instances are pooled.
-- **`Update` never runs before `Start`, but the *first* `Update` can run on the same
-  frame as `Start`** — guard against not-yet-initialised fields if you split setup oddly.
+## Gotchas
+
+- **`?.` and `??` on a destroyed object.** Unity overrides `==` so a destroyed object equals
+  `null`, but `?.`, `??` and `is null` skip that override and see a live reference. Use
+  `if (target)` or `target == null` for anything derived from `UnityEngine.Object`.
+- **Renaming a serialized field wipes its saved values.** Add `[FormerlySerializedAs("old")]`
+  (namespace `UnityEngine.Serialization`) when you rename.
+- **"Missing script" after a refactor.** The `.meta` stayed behind, was regenerated, or the
+  class name no longer matches the file name. The checker reports all three.
+- **Physics in `Update`.** Forces or `MovePosition` outside `FixedUpdate` jitter and depend on
+  frame rate. Read input in `Update`, apply it in `FixedUpdate`.
+- **Order between objects.** All `Awake` calls finish before any `Start`, but the order among
+  `Awake`s (and among `Start`s) is undefined unless Script Execution Order is set. Do
+  cross-object wiring in `Start`.
+- **Coroutines stop when the GameObject is deactivated.** `SetActive(false)` kills them;
+  setting only the component's `enabled = false` does not. Restart in `OnEnable` if needed.
+- **An `async` method keeps running after its object is destroyed.** Pass
+  `destroyCancellationToken` to `Awaitable` waits (they then throw
+  `OperationCanceledException`), and await each `Awaitable` instance only once: they are
+  pooled.
+- **Obsolete warnings on `FindObjectOfType`/`FindObjectsOfType`.** Use `FindAnyObjectByType`
+  or `FindObjectsByType(FindObjectsSortMode.None)` on 6.3. From 6.4, `FindFirstObjectByType`
+  and the `FindObjectsSortMode` overload are obsolete too: use `FindAnyObjectByType` and
+  `FindObjectsByType<T>()`. All of them scan the scene; cache the result.
+- **Repeated `GetComponent` in hot paths.** Cache stable references in `Awake`, and profile
+  before treating an occasional lookup as the bottleneck.
+- **The first `Update` can run in the same frame as `Start`.** Guard fields that other objects
+  set later.
 
 ## References
 
-- For the full event-execution-order table, advanced coroutine patterns (custom
-  `CustomYieldInstruction`, stopping by handle, `WaitUntil`/`WaitWhile`) and the `Awaitable`
-  equivalents of coroutine waits, read `references/lifecycle-and-coroutines.md`.
-- `scripts/check_unity_project.py` — read-only `.meta`/GUID and missing-script checker;
-  `--help` lists every check and the exit codes.
-- Primary docs: Unity Manual "Event function execution order"
-  (`https://docs.unity.com/en-us/engine/6000.3/manual/scripting/managing-update-order/execution-order`), `ScriptReference/MonoBehaviour`,
-  and the Manual page "Asynchronous programming with the Awaitable class".
+- Read `references/agent-checks.md` before compiling or testing a project from the command
+  line: Unity CLI commands, batch-mode commands, test assembly files, log locations and how to
+  read NUnit results.
+- Read `references/lifecycle-and-coroutines.md` when ordering matters across callbacks, or
+  for coroutine yield instructions, `CustomYieldInstruction` and the `Awaitable` equivalents
+  of coroutine waits.
+- `scripts/check_unity_project.py`: run it (step 5); treat it as a black box and use `--help`
+  instead of reading the source.
 
 ## Related skills
 
-- `unity-physics` — `Rigidbody`, collisions, and `FixedUpdate` motion.
-- `unity-input-system` — reading player input into these scripts.
-- `unity-scriptableobjects` — sharing data/config between scripts without singletons.
+- `unity-physics`: `Rigidbody`, collisions and `FixedUpdate` motion.
+- `unity-input-system`: reading player input into these scripts.
+- `unity-scriptableobjects`: sharing data between scripts without singletons.
+
+## Version notes
+
+Last verified: 2026-11-11, against Unity 6000.3.28f1.
+
+- `FindObjectsOfType` is obsolete in 6.3; `FindFirstObjectByType` and
+  `FindObjectsByType(FindObjectsSortMode)` become obsolete in 6.4. Source: Unity C# reference
+  source, `Runtime/Export/Scripting/UnityEngineObject.bindings.cs` at tags 6000.3.28f1 and
+  6000.4.12f1 (https://github.com/Unity-Technologies/UnityCsReference).
+- `?.`/`??` caveat: Scripting API `Object` page
+  (https://docs.unity.com/en-us/engine/6000.3/script-reference/unityengine/object).
+- Event order: https://docs.unity.com/en-us/engine/6000.3/manual/scripting/managing-update-order/execution-order
+- Unity CLI 1.0.0-beta.17 and `com.unity.pipeline` 1.0.0-pre.1 are pre-release. Exit codes:
+  https://docs.unity.com/en-us/unity-cli/reference/output-formats. Commands:
+  https://docs.unity3d.com/Packages/com.unity.pipeline@1.0/manual/index.html
+- Test runner command line (`-runTests` does not support `-quit`):
+  https://docs.unity.com/en-us/engine/6000.3/manual/programming-environment/test-framework-introduction/reference-command-line

@@ -4,6 +4,17 @@ Depth on the Arcade `Body` and the collision system. The `SKILL.md` covers the
 common path; reach for this when tuning feel, shaping hitboxes, or filtering
 collisions.
 
+Contents:
+
+- Dynamic vs static bodies
+- Movement properties (table)
+- Custom hitboxes
+- Colliders, overlaps, and callbacks
+- Contact state (`touching`, `blocked`, `wasTouching`)
+- World bounds
+- Collision categories & masks
+- Debugging
+
 ## Dynamic vs static bodies
 
 - **Dynamic** (`this.physics.add.sprite`, `image`, `group`): moved by velocity,

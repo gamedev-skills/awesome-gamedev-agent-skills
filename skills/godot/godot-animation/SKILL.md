@@ -1,74 +1,70 @@
 ---
 name: godot-animation
 description: >
-  Animate in Godot 4.7 three ways: AnimationPlayer for keyframed clips (incl. Call
-  Method tracks), AnimationTree with state machines and blend spaces for
-  character animation, and Tween for short procedural/UI tweens via create_tween().
-  Use when working with AnimationPlayer/AnimationTree nodes in a .tscn, blending
-  character states, sprite-sheet animation, or code-driven Tweens.
+  Godot 4.7 animation APIs: AnimationPlayer, AnimationTree state machines, AnimatedSprite2D and
+  create_tween() Tweens, with a headless state test. Use when travel() does nothing, an animation
+  will not play, a tween snaps back or the log says "Animation not found". Not for easing choices
+  (`game-feel`), sprite art (`create-game-assets`) or Unity (`unity-animation`).
 ---
 
 # Godot Animation (4.x)
 
-Choose and drive the right animation tool: `AnimationPlayer` (clips), `AnimationTree`
-(blending/state machines), or `Tween` (short procedural moves). Targets **Godot 4.7**.
+Drive clips, blends and tweens the way Godot expects, then prove the names and states with a
+headless test. Targets **Godot 4.7**; check `config/features` in `project.godot` first.
 
-## When to use
+## Workflow
 
-- Use when playing keyframed animations, blending walk/run/idle states, animating a
-  sprite sheet, or tweening UI/objects in code.
-
-**When *not* to use:** the movement *logic* that decides which state to play →
-`godot-2d-movement`; UI layout (vs. UI tweening) → `godot-ui-control`; shader-driven
-effects → `godot-shaders`.
-
-## Core workflow
-
-1. **Pick the tool:**
-   - `AnimationPlayer` — author keyframed clips (transforms, properties, method calls,
-     audio, even other animations). The source of truth for clip data.
-   - `AnimationTree` — blend and transition between those clips at runtime with a state
-     machine and/or blend spaces. Needs an `AnimationPlayer` to pull clips from.
-   - `Tween` — fire-and-forget procedural interpolation in code (`create_tween()`); ideal
-     for UI pops, fades, and one-off moves.
-2. **For 2D sprite sheets:** use `AnimatedSprite2D` + `SpriteFrames`, or keyframe the
-   `frame` property in an `AnimationPlayer`.
-3. **For characters:** build clips in `AnimationPlayer`, then add an `AnimationTree`
-   (`active = true`), set its `anim_player`, and design an `AnimationNodeStateMachine` or
-   `AnimationNodeBlendSpace2D` as the tree root.
-4. **Drive transitions from code** via the playback object (`travel`) or by setting blend
-   parameters.
-5. **React to clip events** with the `animation_finished` signal and Call Method tracks.
+1. **Pick one owner per property.** `AnimationPlayer` stores keyframed clips. An active
+   `AnimationTree` plays those clips and owns their tracks, so code talks to the tree.
+   `Tween` is for short code-driven moves (UI pops, fades, one-off motion).
+2. **Characters:** clips in an `AnimationPlayer`, then an `AnimationTree` with `anim_player`
+   pointing at it, `active = true`, and an `AnimationNodeStateMachine` or blend space as
+   `tree_root`. Sprite sheets: `AnimatedSprite2D` + `SpriteFrames`, or key `frame` in a clip.
+3. **Drive from gameplay state**, not input: pick the state from velocity and floor checks
+   each physics tick and call `travel()`; set blend positions through `parameters/` paths.
+4. **Events:** `animation_finished` for non-looping clips, Call Method tracks for frame-exact
+   hits and footsteps.
+5. **Verify before you finish** (paths are relative to this skill's folder):
+   - If `godot-nodes-scenes` is installed, run `python3 ../godot-nodes-scenes/scripts/check_godot_project.py <project>`
+     after editing `.tscn` files; it catches broken resource paths and `parent=` node paths.
+     The headless test below covers `anim_player`.
+   - Run the scene headless and read the log, because Godot exits 0 after these errors:
+     `godot --headless --path <project> --quit-after 300 res://player.tscn > run.log 2>&1`, then
+     `grep -nE "SCRIPT ERROR|^ERROR:" run.log`. "Animation not found", "No such node" (bad
+     `travel()` target) and "started with no Tweeners" all land there.
+   - Copy `assets/test_animation_states.gd` to `res://tests/`, list the clip and state names
+     the code uses, and run it with `godot --headless --path <project> --script res://tests/test_animation_states.gd`.
+     Exit 0 means every clip exists, the tree is active and wired, and each state is
+     reachable. CI wiring: `godot-gdscript-headless-testing`.
+   - Timing and look need eyes: ask the user to play the scene and report anything that
+     pops, slides or plays at the wrong moment.
 
 ## Patterns
 
-### 1. AnimationPlayer: play a clip and await it
+### 1. Play a clip and continue when it ends
 
 ```gdscript
 @onready var anim: AnimationPlayer = $AnimationPlayer
 
 func attack() -> void:
-    anim.play("attack")
-    await anim.animation_finished     # resume after the clip ends
+    anim.play("attack")                 # must not loop, or the signal never comes
+    await anim.animation_finished
     anim.play("idle")
 ```
 
-### 2. AnimationTree state machine: travel between states
+### 2. State machine: travel between states
 
 ```gdscript
 @onready var tree: AnimationTree = $AnimationTree
+@onready var playback: AnimationNodeStateMachinePlayback = tree.get("parameters/playback")
 
-func _ready() -> void:
-    tree.active = true                # the tree drives animation; AnimationPlayer is the source
-
-func set_state(state: StringName) -> void:
-    # The playback object controls an AnimationNodeStateMachine root.
-    var sm: AnimationNodeStateMachinePlayback = tree.get("parameters/playback")
-    sm.travel(state)                  # transitions using the graph's connections
-
-func _physics_process(_d: float) -> void:
-    set_state(&"run" if velocity.length() > 5.0 else &"idle")
+func _physics_process(_delta: float) -> void:
+    var moving := velocity.length() > 5.0
+    playback.travel(&"run" if moving else &"idle")   # follows the graph's transitions
 ```
+
+`travel()` walks the shortest path of enabled transitions; `start(&"state")` jumps there at
+once. Calling `travel()` every tick with the state it is already in does not restart it.
 
 ### 3. Blend space: blend run direction by a 2D parameter
 
@@ -80,52 +76,70 @@ func update_locomotion(input_dir: Vector2) -> void:
 # its parameter is "parameters/Move/blend_position".
 ```
 
-### 4. Tween: fade and scale a UI element (code-driven)
+### 4. Tween: pop a UI element in
 
 ```gdscript
 func pop_in(node: Control) -> void:
+    node.pivot_offset = node.size / 2                 # scale from the centre
     node.scale = Vector2.ZERO
     node.modulate.a = 0.0
-    var tw := create_tween()                          # bound to this node's tree
-    tw.set_parallel(true)                             # run the two tweens together
+    var tw := create_tween().set_parallel(true)
     tw.tween_property(node, "scale", Vector2.ONE, 0.2) \
-      .set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+        .set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
     tw.tween_property(node, "modulate:a", 1.0, 0.2)   # sub-property via ":"
 ```
 
-## Pitfalls
+## Gotchas
 
-- **`AnimationTree.active` left false** → nothing animates and `travel()` appears to do
-  nothing. Set `active = true` and assign the `anim_player` path.
-- **Wrong parameter path.** Root parameters start at `"parameters/"` (e.g.
-  `"parameters/blend_position"` or `"parameters/playback"`). Nested nodes add their names,
-  e.g. `"parameters/Move/blend_position"`; match the actual tree hierarchy.
-- **AnimationPlayer and AnimationTree fighting.** When an `AnimationTree` is active, don't
-  also call `AnimationPlayer.play()` for the same tracks — let the tree own playback.
-- **3.x Tween node is gone.** There is no `Tween` node to add in 4.x; create tweens in
-  code with `create_tween()` (which returns a `Tween`). They auto-start and free themselves.
-- **Tween stalls when its node leaves the tree.** `node.create_tween()` pauses while that
-  node is outside the tree and dies when it is freed. Use `get_tree().create_tween()` for a
-  tween that must keep running while the node is out of the tree.
-- **Scale/rotation tween on a child of a `Container` snaps back** → the container resets
-  child transforms whenever it re-sorts. In 4.7+ set `offset_transform_enabled = true` and
-  tween `offset_transform_scale` / `offset_transform_rotation` / `offset_transform_position`
-  instead (visual only by default).
-- **Reusing a finished tween.** A tween is one-shot; call `create_tween()` again for a new
-  animation. Use `set_loops()` for repetition.
-- **`yield`/`yield(anim, "...")` is gone.** Use `await anim.animation_finished`.
-- **Sub-property tweens** use a colon: `"modulate:a"`, `"position:x"`. Tweening the whole
-  property instead overwrites siblings.
+- **Nothing animates and `travel()` does nothing** → `AnimationTree.active` is false or
+  `anim_player` is empty or points at the wrong node.
+- **`await anim.animation_finished` never returns** → the clip loops; looping clips do not
+  emit it. Await a non-looping clip, or use a Call Method key at the end of the loop.
+- **`play("run")` does not restart the clip** → playing the clip that is already playing
+  continues from the current position. Call `stop()` first or `seek(0.0, true)` to restart.
+- **The tree and code fight** → while an `AnimationTree` is active, `AnimationPlayer.play()`
+  on the same clips is overridden. Change states through the tree.
+- **Wrong parameter path** → root parameters start at `parameters/`
+  (`parameters/playback`, `parameters/blend_position`); a named child adds its name
+  (`parameters/Move/blend_position`). The tree's Inspector lists them under Parameters.
+- **`Tween (bound to ...): started with no Tweeners`** → `create_tween()` was called and
+  nothing was added that frame, often in a branch that returns early. Create the tween right
+  before adding steps.
+- **`Infinite loop detected` and the tween dies** → `set_loops()` (0 = forever) on a tween
+  whose steps take no time, such as only `tween_callback()`. Add a `tween_interval()`.
+- **A tween stalls** → `node.create_tween()` pauses while that node is outside the tree and
+  dies when it is freed; `get_tree().create_tween()` is unbound. Tweens are one-shot: create
+  a new one for each animation and `kill()` the old one so two do not fight.
+- **Scale or rotation tween on a `Container` child snaps back** → containers reset child
+  transforms. In 4.7+ set `offset_transform_enabled = true` and tween
+  `offset_transform_scale`/`_rotation`/`_position`, which are visual only.
+- **Tweening `modulate` overwrites the other channels** → tween `"modulate:a"` instead.
+- **3.x code** → there is no `Tween` node and no `yield`; use `create_tween()` and
+  `await anim.animation_finished`.
 
 ## References
 
-- For state machine transitions/conditions, root motion, one-shot/blend nodes, method &
-  call tracks, `SpriteFrames`/`AnimatedSprite2D`, and Tween easing/chaining/callbacks,
-  read `references/animation-tree-and-tween.md`.
+- Read `references/animation-tree-and-tween.md` for transitions and advance conditions, root
+  motion, one-shot and blend-tree nodes, Call Method tracks, `SpriteFrames`, and the full
+  Tween API including the 4.7 `tween_await()`.
+- `assets/test_animation_states.gd` is the headless test used in step 5.
 
 ## Related skills
 
-- `godot-2d-movement` — supplies the velocity/state that selects animations.
-- `godot-ui-control` — UI that Tweens animate.
-- `godot-3d-essentials` — 3D character scenes driven by AnimationTree.
-- `game-ai` — state machines that mirror animation states.
+- `godot-2d-movement`: the velocity and floor state that choose animations.
+- `game-feel`: which easing, squash and timing to use.
+- `godot-ui-control`: the UI that tweens animate.
+- `godot-3d-essentials`: 3D character scenes driven by AnimationTree.
+- `godot-gdscript-headless-testing`: running the animation test in CI.
+
+## Version notes
+
+Last verified: 2026-11-11 against the Godot 4.7.2 class reference and a 4.7.2 headless run.
+
+- Godot 4.7.2 (August 2026) is the current stable release; 4.8 is in beta.
+- New in 4.7: `Tween.tween_await()` with `AwaitTweener.set_timeout()`, and the Control
+  `offset_transform_*` properties.
+- Sources: [Godot releases](https://github.com/godotengine/godot/releases),
+  [Godot 4.7 release page](https://godotengine.org/releases/4.7),
+  [AnimationTree](https://docs.godotengine.org/en/stable/classes/class_animationtree.html),
+  [Tween](https://docs.godotengine.org/en/stable/classes/class_tween.html).
