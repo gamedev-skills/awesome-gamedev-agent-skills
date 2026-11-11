@@ -35,15 +35,17 @@ Set `AnimationTree.tree_root` to one of:
   **advance conditions** (booleans you set: `tree.set("parameters/conditions/is_dead", true)`)
   or an advance expression.
 - `AnimationNodeBlendSpace1D` / `BlendSpace2D` — place clips at points; set
-  `"parameters/<name>/blend_position"` to blend between them (e.g. directional locomotion).
+  `"parameters/blend_position"` when the blend space is the root, or
+  `"parameters/<name>/blend_position"` for a named child (e.g. directional locomotion).
 - `AnimationNodeBlendTree` — a graph of blend/add/one-shot nodes with named outputs.
 - `AnimationNodeOneShot` — fire a one-off (e.g. a hit reaction) over a base animation:
   ```gdscript
   tree.set("parameters/Shot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
   ```
 
-Parameter path rule: `"parameters/" + node_name + "/" + property`. The playback for the
-root state machine is always `"parameters/playback"`.
+Parameter paths start at `"parameters/"`, then add each named child along the path and
+the property. The root itself adds no name: root blend position is
+`"parameters/blend_position"`; root state-machine playback is `"parameters/playback"`.
 
 ## Root motion
 

@@ -14,7 +14,7 @@ description: >
 
 Create the foundation of a three.js app: module loading, the
 scene/camera/renderer trio, the render loop, responsive resizing, and camera
-controls. Patterns target **r186**. Read the installed `three` version before
+controls. Patterns target **r187**. Read the installed `three` version before
 changing an existing project because examples and addons move across releases.
 
 ## When to use
@@ -56,8 +56,8 @@ changing an existing project because examples and addons move across releases.
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
   }
 }
 </script>
@@ -114,8 +114,8 @@ renderer.setAnimationLoop(() => {
 // timer.dispose();                 // remove visibility listener when tearing down
 ```
 
-In r186, visibility reset samples `performance.now()`. A supplied animation-frame
-timestamp can precede that reset and produce a negative delta. Using `update()`
+In r187 (unchanged from r186), visibility reset samples `performance.now()`. A
+supplied animation-frame timestamp can precede that reset and produce a negative delta. Using `update()`
 keeps the clock source consistent; the lower clamp also protects a fixed-step
 accumulator. Feed the bounded `dt` into simulation, not raw `getDelta()`.
 The 0.1-second upper bound deliberately drops excess time after a stall; tune it
@@ -199,7 +199,7 @@ targets or postprocessing buffers consistently with the renderer.
   update `camera.aspect` + `updateProjectionMatrix()`.
 - **Blurry or slow on HiDPI** → balance sharpness against fill rate with a resolution
   setting. Start around 1.25–1.5; a cap of 2 still renders 4× the pixels of 1×.
-- **Simulation freezes after restoring a tab** → r186 can mix a frame timestamp
+- **Simulation freezes after restoring a tab** → r186 and r187 can mix a frame timestamp
   with visibility-reset time. Use `timer.update()` and clamp simulation delta to
   `[0, 0.1]` as above so a negative delta cannot drain the fixed-step accumulator.
 - **OrbitControls feel dead** → with `enableDamping = true` you must call
@@ -216,8 +216,8 @@ targets or postprocessing buffers consistently with the renderer.
 
 ## References
 
-- Primary sources: [r186 Timer implementation](https://github.com/mrdoob/three.js/blob/r186/src/core/Timer.js)
-  and [r186 responsive rendering manual](https://github.com/mrdoob/three.js/blob/r186/manual/pages/responsive.html).
+- Primary sources: [r187 Timer implementation](https://github.com/mrdoob/three.js/blob/r187/src/core/Timer.js)
+  and [r187 responsive rendering manual](https://github.com/mrdoob/three.js/blob/r187/manual/pages/responsive.html).
 
 - For coordinate conventions, the scene-graph (`Group`, parent/child transforms,
   `Object3D` add/remove), `OrthographicCamera` for 2.5D, and disposing of

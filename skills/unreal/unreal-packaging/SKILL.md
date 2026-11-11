@@ -104,8 +104,10 @@ RunUAT BuildCookRun -project="C:/Path/MyGame.uproject" -noP4 \
 - **`Saved/Cooked/<Platform>` has no `.uasset`/`.uexp` files** — in UE 5.8 Zen Server is the
   cooked output store by default (unless the project turned it off in Packaging settings). The
   folder only holds a small `ue.projectstore` marker and the data lives in the Zen data
-  directory. Staging still writes `.pak`/`.utoc`/`.ucas` to the staging folder; ship that
-  folder, not `Saved/Cooked`. For team and CI machines Epic recommends
+  directory. Staging with `-pak` still writes `.pak`/`.utoc`/`.ucas` to the staging folder; ship
+  that folder, not `Saved/Cooked`. Staging to loose files (no `-pak`) copies no cooked data, only
+  a `ue.projectstore` that streams content from your Zenserver, so that build is not
+  distributable. For team and CI machines Epic recommends
   `LimitProcessLifetime=false` under `[Zen.AutoLaunch]` in `DefaultEngine.ini` so `zenserver`
   is not started and stopped on every step; make sure your build automation tolerates that
   long-running process.

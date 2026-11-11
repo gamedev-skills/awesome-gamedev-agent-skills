@@ -114,6 +114,17 @@ class ValidatorTests(unittest.TestCase):
 
         self.assertTrue(any("does not resolve" in error for error in errors))
 
+    def test_link_like_code_in_fences_is_not_a_link(self) -> None:
+        path = self.write_skill(
+            "disciplines",
+            "test-skill",
+            body="# Test\n\n```lua\nif screen[name] then screen[name](screen, ...) end\n```\n\n[Missing](missing.md)\n",
+        )
+
+        errors, _ = validate_skills.validate_file(path)
+
+        self.assertEqual(errors, ["skills/disciplines/test-skill/SKILL.md: local resource link does not resolve: 'missing.md'"])
+
     def test_openai_ui_metadata_is_checked(self) -> None:
         path = self.write_skill("disciplines", "test-skill")
         agents = path.parent / "agents"

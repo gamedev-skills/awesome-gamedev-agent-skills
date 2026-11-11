@@ -14,6 +14,7 @@ right skill for whatever you're building.**
 [![Skills](https://img.shields.io/badge/skills-78%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
+[![Sponsor](https://img.shields.io/badge/sponsor-this%20project-ea4aaa)](#sponsors)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
 needs them. This repo gives your agent **78 game-dev skills** and a **router** that picks the
@@ -27,6 +28,24 @@ task skills before it writes code.
 - **Built to trust.** Every skill is written from primary docs, version-pinned to a stated
   engine release, and checked by a [validator](scripts/validate-skills.py). Current baselines and
   upgrade policy live in [version support](docs/VERSION-SUPPORT.md).
+
+## Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="280">
+      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
+        <b>Your product here</b>
+      </a>
+      <br>
+      <sub>Monthly sponsor slot</sub>
+    </td>
+  </tr>
+</table>
+
+Want to reach game developers who build with AI coding agents? Email
+[abhishekbarali6969@gmail.com](mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills).
+Sponsored entries are labelled as sponsored and have no effect on which skills the router picks.
 
 ## Contents
 
@@ -176,7 +195,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 |-------|-------|
 | [`ebitengine-game`](skills/ebitengine/ebitengine-game/SKILL.md) | Playable Go 2D games: update/draw contracts, input, rendering, text, audio, gameplay tests, optional starter and platform builds |
 
-#### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r186
+#### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r187
 
 | Skill | Scope |
 |-------|-------|
@@ -243,7 +262,7 @@ primitives.
 | [`survival-crafting`](skills/genres/survival-crafting/SKILL.md) | Resource gathering, inventory, crafting, needs, base building |
 | [`puzzle`](skills/genres/puzzle/SKILL.md) | Grid/board state, match/rule resolution, undo, level progression |
 
-### Workflows — 4 ([`skills/workflows/`](skills/workflows/))
+### Workflows — 5 ([`skills/workflows/`](skills/workflows/))
 
 | Skill | Scope |
 |-------|-------|
@@ -251,6 +270,7 @@ primitives.
 | [`prototype-fast`](skills/workflows/prototype-fast/SKILL.md) | Greybox a playable vertical slice quickly; cut scope; validate the fun |
 | [`steam-publish`](skills/workflows/steam-publish/SKILL.md) | Steamworks onboarding: app/depots, store page, builds, release checklist |
 | [`itch-publish`](skills/workflows/itch-publish/SKILL.md) | Publish/update on itch.io: project page, channels, `butler` uploads |
+| [`game-docs`](skills/workflows/game-docs/SKILL.md) | One-page GDD with a feature index and short per-feature notes, kept in sync with the code |
 
 ## Agent compatibility
 

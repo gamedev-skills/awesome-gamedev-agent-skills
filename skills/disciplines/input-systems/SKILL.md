@@ -82,8 +82,12 @@ Actions` + `Input Mapping Contexts`.
 # Raw sticks never rest at exactly zero. Apply a RADIAL deadzone (on the vector
 # length), not per-axis, so diagonals aren't clipped into the axes.
 func apply_deadzone(stick: Vector2, dead := 0.2, curve := 1.0) -> Vector2:
+    # dead == 1 cannot be rescaled; report invalid settings before stopping movement.
+    if not (dead >= 0.0 and dead < 1.0 and curve > 0.0):
+        push_error("apply_deadzone requires 0 <= dead < 1 and curve > 0.")
+        return Vector2.ZERO
     var mag := stick.length()
-    if mag < dead:
+    if mag <= dead:
         return Vector2.ZERO                      # inside deadzone -> no movement
     # Rescale so motion ramps from 0 at the edge of the deadzone, not from `dead`.
     var scaled := minf((mag - dead) / (1.0 - dead), 1.0)  # some pads report > 1 on diagonals
@@ -92,7 +96,9 @@ func apply_deadzone(stick: Vector2, dead := 0.2, curve := 1.0) -> Vector2:
 ```
 
 Keep the response curve (exponent) separate from sensitivity (a plain gain on
-the result, usually a camera turn rate) and expose both. Godot's `get_vector`
+the result, usually a camera turn rate) and expose both. Settings require
+`0 <= dead < 1` and `curve > 0`; invalid settings report an error and return zero movement.
+Godot's `get_vector`
 already does the deadzone and rescale above, using the average of the four
 actions' deadzones (0.2 by default per action) unless you pass one.
 

@@ -62,6 +62,8 @@ Add `AudioEffect*` resources to a bus (editor or `add_bus_effect`):
 ## Positional audio (2D/3D)
 
 - `AudioStreamPlayer2D`: `max_distance`, `attenuation`, `panning_strength`, `area_mask`.
+  Since 4.7 `area_mask` defaults to `0` on both positional players, so an `Area2D`/`Area3D`
+  audio bus override is ignored until you tick the area's layer in the player's mask.
   Without a current `AudioListener2D` the hearing point is the centre of the screen; add one
   and call `make_current()` to hear from somewhere else.
 - `AudioStreamPlayer3D`: `unit_size`, `max_distance`, `attenuation_model`

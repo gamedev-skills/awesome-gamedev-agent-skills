@@ -169,7 +169,7 @@ private void Shoot() { }
   bindings as JSON, and **local multiplayer** with `PlayerInputManager`, read
   `references/rebinding.md`.
 - Primary docs: Unity Manual "Input System"
-  (`https://docs.unity3d.com/Manual/com.unity.inputsystem.html`) and the package manual
+  (`https://docs.unity.com/en-us/engine/6000.3/manual/packages-list/packages-all/pack-safe/com-unity-inputsystem`) and the package manual
   (`https://docs.unity3d.com/Packages/com.unity.inputsystem@1.20/manual/index.html`),
   including "About project-wide actions".
 

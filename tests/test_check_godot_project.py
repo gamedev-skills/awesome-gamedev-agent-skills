@@ -219,6 +219,52 @@ class GodotProjectCheckerTests(unittest.TestCase):
         self.assertEqual(self.run_checker(str(self.root)).returncode, 0)
         self.assertEqual(self.run_checker(str(self.root), "--strict").returncode, 1)
 
+    def test_source_controls_are_escaped_in_text_but_preserved_in_json(self) -> None:
+        for source, value, escaped in (
+            (r"\n", "\n", r"\n"), (r"\r", "\r", r"\r"), (r"\t", "\t", r"\t"),
+            ("\x1b", "\x1b", r"\x1b"), ("\x01", "\x01", r"\x01"), ("\x9b", "\x9b", r"\x9b"),
+        ):
+            with self.subTest(control=escaped):
+                scene = MAIN_SCENE.replace(
+                    'uid="uid://icon00000001" path="res://icon.svg"',
+                    f'path="res://missing{source}AUDIT_MARKER.svg"',
+                )
+                self.write("main.tscn", scene)
+                result = self.run_checker(str(self.root))
+                code, payload = self.report()
+                self.assertEqual((result.returncode, code), (1, 1))
+                self.assertEqual((payload["error_count"], payload["warning_count"]), (1, 0))
+                self.assertIn(f"missing{value}AUDIT_MARKER.svg", payload["errors"][0]["message"])
+                self.assertIn(f"missing{escaped}AUDIT_MARKER.svg", result.stdout)
+                self.assertEqual(len(result.stdout.splitlines()), 3, result.stdout)
+                self.assertTrue(result.stdout.startswith("ERROR main.tscn:5: "), result.stdout)
+
+    @unittest.skipIf(os.name == "nt", "Windows filenames cannot contain these control characters")
+    def test_filename_and_fix_controls_stay_inside_diagnostic_lines(self) -> None:
+        controls = "\n\r\t\x1b\x9b\u2028\u2029"
+        escaped = r"\n\r\t\x1b\x9b\u2028\u2029"
+        self.write(f"art/{controls}icon.svg", "<svg/>")
+        self.write(f"{controls}\x85check.gd", 'extends Node\nvar s = load("res://nothing.tscn")\n')
+        # A missing scene resource with the same basename makes its fix name the real file.
+        self.edit("main.tscn", 'uid="uid://icon00000001" path="res://icon.svg"',
+                  f'path="res://missing/\\n\\r\\t\x1b\x9b\u2028\u2029icon.svg"')
+        result = self.run_checker(str(self.root))
+        code, payload = self.report()
+        self.assertEqual((result.returncode, code), (1, 1))
+        self.assertIn(f"art/{controls}icon.svg", payload["errors"][0]["fix"])
+        self.assertIn(f"art/{escaped}icon.svg", result.stdout)
+        self.assertEqual(payload["warnings"][0]["file"], f"{controls}\x85check.gd")
+        self.assertIn(f"WARNING {escaped}\\x85check.gd:2:", result.stdout)
+        self.assertTrue(all(line.startswith(("ERROR ", "WARNING ", "  fix: ", "Summary: "))
+                            for line in result.stdout.splitlines()), result.stdout)
+
+    def test_invalid_cli_target_controls_are_escaped(self) -> None:
+        target = str(self.root / "missing\n\r\t\x1b\x85target")
+        result = self.run_checker(target)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(len(result.stderr.splitlines()), 1, result.stderr)
+        self.assertIn(r"missing\n\r\t\x1b\x85target", result.stderr)
+
     def test_not_a_project_exits_2(self) -> None:
         empty = Path(self.temp_dir.name) / "empty"
         empty.mkdir()

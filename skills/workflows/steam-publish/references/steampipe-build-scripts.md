@@ -71,11 +71,15 @@ Notes:
 
 ```bash
 # Windows
-tools\ContentBuilder\builder\steamcmd.exe +login <account> <password> +run_app_build ..\scripts\app_build_1000.vdf +quit
+tools\ContentBuilder\builder\steamcmd.exe +login <account> +run_app_build ..\scripts\app_build_1000.vdf +quit
 
 # Linux / macOS (bootstrap once, then build)
-./tools/ContentBuilder/builder_linux/steamcmd.sh +login <account> <password> +run_app_build ../scripts/app_build_1000.vdf +quit
+./tools/ContentBuilder/builder_linux/steamcmd.sh +login <account> +run_app_build ../scripts/app_build_1000.vdf +quit
 ```
+
+On first use, enter credentials at the interactive prompts. Keep passwords out of argv,
+shell history and logs. For unattended runs, provision and protect the login token as
+described in section 4 rather than adding a password to these commands.
 
 macOS first-run bootstrap: `cd tools/ContentBuilder/builder_osx`, `chmod +x steamcmd`,
 `bash ./steamcmd.sh`, then `exit` once it reaches the `Steam>` prompt.

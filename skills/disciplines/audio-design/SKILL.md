@@ -126,8 +126,11 @@ func make_footsteps(samples: Array[AudioStream]) -> void:
     $Footsteps.max_polyphony = 4              # overlapping steps without new players
 ```
 
-Unity 6.3 LTS has no built-in randomizer: keep an array of clips, pick one that differs from the
-last, set `pitch` in a small range, and call `PlayOneShot` on a pooled `AudioSource`.
+Unity 6.3 LTS: put the takes in an **Audio Random Container** asset (Random or Shuffle playback,
+Avoid Repeating Last, volume and pitch randomization) and assign it to the `AudioSource`'s
+Audio Resource (`AudioSource.resource`); with Manual trigger each `Play()` picks a new take. For
+full script control, keep an array of clips, pick one that differs from the last, set `pitch` in
+a small range, and call `PlayOneShot` on a pooled `AudioSource`.
 
 ### 4. Beat-synced events (quantize to the music grid)
 
@@ -143,11 +146,15 @@ func song_time() -> float:
             - AudioServer.get_output_latency())
 
 func current_beat() -> int:
-    return int(song_time() / SECONDS_PER_BEAT)
+    return floori(song_time() / SECONDS_PER_BEAT)  # negative means beat 0 is not audible yet
 
 # Quantize an action to the NEXT beat boundary instead of firing immediately.
 func time_until_next_beat() -> float:
-    return SECONDS_PER_BEAT - fmod(song_time(), SECONDS_PER_BEAT)
+    var time := song_time()
+    if time < 0.0:
+        return -time                             # pre-roll: wait for the first audible beat
+    return SECONDS_PER_BEAT - fposmod(time, SECONDS_PER_BEAT)
+# At an exact non-negative beat boundary, NEXT means one full beat later.
 ```
 
 Unity 6.3 LTS: read `AudioSettings.dspTime` and schedule with `AudioSource.PlayScheduled(dspTime)`

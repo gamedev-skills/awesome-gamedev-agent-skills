@@ -133,7 +133,8 @@ editing the `IMC_` asset:
    RegisterInputMappingContext(IMC)`, or pass `FModifyContextOptions` with
    `bNotifyUserSettings = true` to `AddMappingContext`.
 4. Remap with `UEnhancedInputUserSettings::MapPlayerKey` (an `FMapPlayerKeyArgs` naming the
-   mapping, slot and new key), reset with `UnmapPlayerKey`, and persist with `SaveSettings`.
+   mapping, slot and new key), reset with `UnMapPlayerKey` (capital M), and persist with
+   `SaveSettings`.
 
 The settings object belongs to the `UEnhancedInputLocalPlayerSubsystem` (one per local player),
 so it exists only while that local player does.

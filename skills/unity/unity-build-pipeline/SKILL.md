@@ -162,7 +162,7 @@ public static class ProfileBuild
   the Manual pages "Editor command line arguments" and "Manage scenes in a build", and Unity
   Manual build sections (player settings, managed code stripping). For the forward-looking
   CoreCLR backend, see the experimental note at
-  `https://docs.unity3d.com/6000.7/Documentation/Manual/scripting-backends-coreclr.html`.
+  `https://docs.unity.com/en-us/engine/6000.7/manual/programming-environment/scripting-backends/coreclr`.
 
 ## Related skills
 

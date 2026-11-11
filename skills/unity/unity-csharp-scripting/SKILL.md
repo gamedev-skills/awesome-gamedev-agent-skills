@@ -33,7 +33,8 @@ plumbing*, not those subsystems.
    load), `OnEnable` (subscribe to events), `Start` (init that depends on other objects'
    `Awake`), `Update` (per-frame logic/input polling), `FixedUpdate` (physics), `LateUpdate`
    (camera follow after movement), `OnDisable`/`OnDestroy` (unsubscribe/cleanup).
-2. **Cache component lookups in `Awake`** — never call `GetComponent` every frame.
+2. **Cache stable component references in `Awake`** when they are reused frequently.
+   Judge lookup cost by call frequency, object count and profiler evidence.
 3. **Expose tunables with `[SerializeField] private`**, not public fields, so other code
    can't mutate them but designers can edit them in the Inspector.
 4. **Scale per-frame values by `Time.deltaTime`** in `Update` (and `Time.fixedDeltaTime`
@@ -117,8 +118,9 @@ private System.Collections.IEnumerator FlashThenHide()
 
 ## Pitfalls
 
-- **`GetComponent` in `Update`** — it searches every frame and tanks performance. Cache the
-  reference in `Awake`/`Start`.
+- **Repeated component lookups in hot paths** — many `GetComponent` calls across many objects
+  can add CPU cost. Cache stable references in `Awake`/`Start`; profile before treating an
+  occasional lookup as a bottleneck, and refresh the cache if components change at runtime.
 - **Physics in `Update`** — moving a `Rigidbody` with forces or `MovePosition` outside
   `FixedUpdate` causes jitter and timestep-dependent behaviour. Read input in `Update`,
   apply physics in `FixedUpdate`.
@@ -133,7 +135,9 @@ private System.Collections.IEnumerator FlashThenHide()
   script's `enabled = false` does *not* stop them.
 - **Obsolete warnings on `FindObjectOfType` / `FindObjectsOfType`** — Unity 6 replaced them.
   Use `FindFirstObjectByType` (old behaviour), `FindAnyObjectByType` (faster, any match) or
-  `FindObjectsByType(FindObjectsSortMode.None)`; all are slow, so cache the result.
+  `FindObjectsByType(FindObjectsSortMode.None)`; all are slow, so cache the result. From
+  Unity 6.4, `FindFirstObjectByType` and the `FindObjectsSortMode` overloads are obsolete too:
+  use `FindAnyObjectByType` and `FindObjectsByType<T>()` there.
 - **An `async` method keeps running after its object is destroyed** — `await` is not tied to
   the GameObject the way a coroutine is. Pass `destroyCancellationToken` to the
   `Awaitable` waits (they then throw `OperationCanceledException`), and never await the same
@@ -149,7 +153,7 @@ private System.Collections.IEnumerator FlashThenHide()
 - `scripts/check_unity_project.py` — read-only `.meta`/GUID and missing-script checker;
   `--help` lists every check and the exit codes.
 - Primary docs: Unity Manual "Event function execution order"
-  (`https://docs.unity3d.com/Manual/execution-order.html`), `ScriptReference/MonoBehaviour`,
+  (`https://docs.unity.com/en-us/engine/6000.3/manual/scripting/managing-update-order/execution-order`), `ScriptReference/MonoBehaviour`,
   and the Manual page "Asynchronous programming with the Awaitable class".
 
 ## Related skills

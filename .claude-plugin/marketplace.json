@@ -89,7 +89,8 @@
         "./skills/workflows/game-jam",
         "./skills/workflows/prototype-fast",
         "./skills/workflows/steam-publish",
-        "./skills/workflows/itch-publish"
+        "./skills/workflows/itch-publish",
+        "./skills/workflows/game-docs"
       ]
     },
     {
@@ -169,7 +170,7 @@
       "name": "web-engines",
       "source": "./",
       "strict": false,
-      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r186.",
+      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r187.",
       "skills": [
         "./skills/web-engines/phaser-core",
         "./skills/web-engines/phaser-arcade-physics",
@@ -243,12 +244,13 @@
       "name": "workflows",
       "source": "./",
       "strict": false,
-      "description": "Process and shipping skills: game jam, fast prototyping, Steam, itch.io.",
+      "description": "Process and shipping skills: game jam, fast prototyping, Steam, itch.io, game design docs.",
       "skills": [
         "./skills/workflows/game-jam",
         "./skills/workflows/prototype-fast",
         "./skills/workflows/steam-publish",
-        "./skills/workflows/itch-publish"
+        "./skills/workflows/itch-publish",
+        "./skills/workflows/game-docs"
       ]
     }
   ]

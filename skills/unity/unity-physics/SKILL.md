@@ -28,8 +28,10 @@ right. Targets **Unity 6.3 LTS (6000.3)**.
 **When *not* to use:** 2D physics (`Rigidbody2D`, `Collider2D`) is a separate API — adapt the
 concepts but the types differ. Unity 6.3 also has a separate low-level 2D API
 (`UnityEngine.LowLevelPhysics2D`: `PhysicsWorld`, `PhysicsBody`) with its own isolated worlds;
-it is not the `Rigidbody2D` system. Cross-engine *feel* tuning (timestep, jitter, tunnelling) →
-`physics-tuning`. Reading input that drives movement → `unity-input-system`.
+it is not the `Rigidbody2D` system. Unity 6.5 renamed it Physics Core 2D, namespace
+`Unity.U2D.Physics` (the API Updater rewrites old scripts). Cross-engine *feel* tuning
+(timestep, jitter, tunnelling) → `physics-tuning`. Reading input that drives movement →
+`unity-input-system`.
 
 ## Core workflow
 

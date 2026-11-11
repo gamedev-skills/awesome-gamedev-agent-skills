@@ -119,8 +119,10 @@ func _on_screen_shown() -> void:
 # RIGHT: HUD reacts to a signal; it updates only when health actually changes.
 func _ready() -> void:
     player.health_changed.connect(_on_health_changed)     # emitted by gameplay
+    _on_health_changed(player.hp, player.max_hp)           # signals do not replay initial state
 func _on_health_changed(current: int, max_health: int) -> void:
-    $HealthBar.value = float(current) / max_health
+    # ratio maps 0..1 to the bar's configured range (default value range is 0..100).
+    $HealthBar.ratio = clampf(float(current) / max_health, 0.0, 1.0) if max_health > 0 else 0.0
 # WRONG: func _process(dt): $HealthBar.value = player.hp / player.max_hp  # polls every frame,
 # couples UI to the player's internals, and runs work even when nothing changed.
 ```
