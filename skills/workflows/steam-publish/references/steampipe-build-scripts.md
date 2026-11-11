@@ -4,6 +4,16 @@ Depth for `steam-publish`. Read this when one depot and a single `app_build.vdf`
 enough — multiple platforms/languages, file filtering, beta branches, automated uploads, or
 a build that won't go through. All file formats are Valve **KeyValues (VDF)**. Verify against
 the primary doc: Steamworks → SDK → [Uploading to Steam](https://partner.steamgames.com/doc/sdk/uploading).
+Last verified 2026-11-11.
+
+Contents:
+1. App build script with separate depot scripts
+2. Running builds (per platform)
+3. Branches (betas)
+4. CI/CD upload (token-based login)
+5. Patch-size hygiene
+6. Steam Deck and Steam Machine compatibility review
+7. Troubleshooting table
 
 ## 1. App build script with separate depot scripts
 
@@ -187,6 +197,7 @@ implies Verified on Machine.
 | `Failed to get application info for app NNNNN` | Wrong App ID, account doesn't own the app, or config never published | Verify App ID in the script; confirm ownership; **Publish** the app config in App Admin |
 | `ERROR! Failed 'DepotBuild …' status = 6` | Build account lacks permission, or `ContentRoot`/`LocalPath` is wrong/empty | Grant *Edit App Metadata* + *Publish App Changes*; check paths are relative to the script and contain files |
 | `Account Login Denied` in steamcmd | Steam Guard blocking automated login | `set_steam_guard_code <code>` then retry; preserve `config.vdf` for future runs |
+| Run ends with `Successfully finished AppID NNNNN build preview` and no BuildID appears | `"Preview" "1"` is still in the app build script, so nothing was uploaded | Remove `Preview` (or set it to `0`) and run the build again |
 | Build uploaded but players don't get it | Build not set live, or set live only on a beta branch | Set live on the correct branch (default = manual) via the Builds page |
 | Windows installs, Mac/Linux install no files | OS depots not added to the package | Add every depot to the package on *Associated Packages & DLC* |
 | "Invalid content configuration" at launch | No build set live on the selected branch, bad launch options, or your account doesn't own the depots | Set a build live; verify *Installation* launch options; add the depots to the Developer Comp package |
