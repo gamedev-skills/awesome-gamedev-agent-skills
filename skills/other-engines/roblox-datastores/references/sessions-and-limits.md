@@ -1,30 +1,77 @@
-# Roblox DataStores: sessions, limits & metadata (current engine)
+# Roblox DataStores: sessions, limits and metadata
 
-Depth behind the DataStores skill: session locking, versioning/metadata, ordered-
-store pagination, request limits, and compliance.
+Read this before shipping save code, or when debugging rollbacks, duplicated items, or throttling.
 
-## Session locking (preventing duplicate / clobbered data)
+Contents:
+- Session locking (with a lease sketch)
+- Versioning and metadata
+- Ordered stores: full pagination
+- Request budgets and throttling
+- Right to be forgotten (RTBF)
+- Open Cloud (out-of-game access)
 
-Players can occasionally be in two servers briefly (teleports, rejoin races). Two
-servers loading and later saving the same key can lose writes. A *session lock*
-makes a key owned by one server at a time:
+## Session locking
 
-1. On load, `UpdateAsync` the key to stamp it with this server's `JobId` and a
-   timestamp, but only if it's unlocked or its lease has expired. Set the lease duration
-   to accommodate the save/refresh interval and expected shutdown delays.
-2. If it's locked by a live server, retry a few times, then either kick the player
-   or load read-only.
-3. On every save, verify the stored owner inside the callback and refresh its lease
-   together with the data. Cancel the write if ownership was lost; a stale server must
-   not resume saving. Keep ownership across periodic saves, then release it atomically
-   with the final save when the player leaves.
+A player can briefly be in two servers (teleports, rejoin races). Two servers that load and later
+save the same key lose writes. A session lock makes one server the owner of a key at a time:
 
-`UpdateAsync` is the right primitive because its callback sees the current value, so
-the check-and-set is atomic per request. (Production code often uses a vetted
-open-source profile/session library that implements this correctly; if you roll your
-own, test the teleport and rapid-rejoin cases.)
+1. On load, `UpdateAsync` the key to stamp it with this server's session ID and a timestamp, but
+   only if it is unlocked or its lease has expired. Make the lease longer than the periodic save
+   interval plus shutdown time.
+2. If a live server holds it, retry a few times with backoff, then kick the player with a clear
+   message or load read-only.
+3. On every save, check inside the callback that this server still owns the key, refresh the
+   lease together with the data, and cancel the write if ownership was lost. Release the lock in
+   the same write as the final save on leave.
 
-## Versioning & metadata
+```lua
+local HttpService = game:GetService("HttpService")
+local SESSION_ID = HttpService:GenerateGUID(false)  -- game.JobId is "" in Studio, so not unique
+local LEASE_SECONDS = 600
+
+local function claim(store, key): (boolean, any)
+    local claimed, loaded = false, nil
+    local ok, err = pcall(function()
+        store:UpdateAsync(key, function(record)
+            record = record or {}
+            local lock = record.lock
+            local now = os.time()
+            claimed = false                       -- the callback can run more than once
+            if lock and lock.owner ~= SESSION_ID and now - lock.at < LEASE_SECONDS then
+                return nil                        -- someone else owns it: cancel the write
+            end
+            record.lock = { owner = SESSION_ID, at = now }
+            claimed, loaded = true, record.data
+            return record
+        end)
+    end)
+    if not ok then warn("claim failed", key, err) end
+    return ok and claimed, loaded
+end
+
+local function save(store, key, data, release: boolean)
+    return pcall(function()
+        store:UpdateAsync(key, function(record)
+            if not record or not record.lock or record.lock.owner ~= SESSION_ID then
+                return nil                        -- lost ownership: never write a stale snapshot
+            end
+            record.data = data
+            record.lock = if release then nil else { owner = SESSION_ID, at = os.time() }
+            return record
+        end)
+    end)
+end
+```
+
+The sketch stores `{ data = ..., lock = ... }` at the key. Keys saved earlier as plain data need a
+one-time migration on first claim; decide that rule explicitly instead of guessing the shape.
+
+`UpdateAsync` is the right primitive because its callback sees the current value, so the
+check-and-set is atomic per request. A vetted open-source profile library implements the same
+idea with more edge cases covered; if you write your own, test the teleport and rapid-rejoin
+cases with two servers.
+
+## Versioning and metadata
 
 Regular `DataStore` keys support versioning and metadata; `OrderedDataStore` does
 not (`DataStoreKeyInfo` is always `nil` there).
@@ -84,40 +131,28 @@ up to 100 keys in one request with `boards:BatchGetAsync(keys)`. It is supported
 ordered stores, returns a dictionary of `key → { value = n }`, omits missing keys, and
 each requested key counts against the ordered read budget.
 
-## Request limits & throttling
+## Request budgets and throttling
 
-- Requests draw on two tiers of per-minute budget, both refreshed continuously: an
-  EXPERIENCE-level (game-wide) budget that scales with total concurrent users across the
-  whole experience, and a per-SERVER budget that scales with the players in that one
-  server. Since 2026-07-29 the in-game (game server) and Open Cloud APIs SHARE the
-  experience-level budget, so heavy external Open Cloud traffic can throttle in-game
-  requests and vice versa. Experience limits start at a 300/min baseline plus a per-CCU
-  multiplier per request type (reads scale fastest, lists slowest); `UpdateAsync` spends
-  from BOTH the read and write budgets on every call. Exceeding a budget queues requests
-  (each queue holds ~30) and then drops them with a 301-306 error. Per-server defaults are
-  configurable via `DataStoreService:SetRateLimitForRequestType`; check current headroom
-  with `GetRequestBudgetForRequestType`.
-- Storage is a GAME-level limit, not per-key: total = 500 MB + 1 MB x lifetime user count
-  (any user who has ever joined), measured on the compressed latest version of each key.
-  Superseded versions and deleted keys do not count toward it. Store plain data; Roblox
-  compresses it, so pre-compressing only adds CPU cost.
-- Per entry: store, key, and scope names are at most 50 characters; a value is at most
-  4,194,304 characters of serialized JSON (measure with `HttpService:JSONEncode`).
-  Per key across all servers: about 25 MB/minute of reads and 4 MB/minute of writes,
-  rounded up to the next KB per request. A hot shared key throttles as `KeyThrottled`
-  even when the experience budget has room.
-- A failed write call does not prove the write was not applied; verify with an uncached
-  read before retrying a non-idempotent operation.
-- `GetAsync` results are cached for about four seconds — an immediate re-read returns the
-  cached value, not necessarily the freshest. For a verification read after a write, pass
-  a `DataStoreGetOptions` with `UseCache = false` (it costs a real request).
-- Practical rules: save on leave / `BindToClose` and on a periodic timer (e.g. every
-  60–120s), **not** on every value change. Coalesce many small changes into one
-  write. Use `UpdateAsync` with a merge policy or verified session ownership; returning
-  a stale snapshot unchanged can still overwrite another writer's progress.
-- Treat every Async call as fallible: `pcall` + bounded retry with backoff. See
-  `https://create.roblox.com/docs/cloud-services/data-stores/error-codes-and-limits`
-  for the exact current numeric limits, which change over time.
+Current numbers are in the SKILL.md Version notes; the design rules below do not change with them.
+
+- Requests draw on two budgets refreshed every minute: one for the whole experience (scales with
+  total concurrent users and is shared with Open Cloud traffic) and one per server (scales with the
+  players in that server). `UpdateAsync` spends from both the read and the write budget.
+- Over budget, requests queue (each queue holds 30) and then fail with a 301-306 error.
+  `DataStoreService:GetRequestBudgetForRequestType()` shows the current server's headroom, and
+  `SetRateLimitForRequestType()` changes a server's share.
+- A hot shared key throttles on its own per-key throughput limit (`KeyThrottled`) even when the
+  experience budget has room. Shard read-heavy shared records across several keys only after
+  removing unnecessary requests.
+- Error-message names tell you which budget ran out: `...ExperienceThrottled` is the shared
+  experience budget, `...GameServerThrottled` is this server's limit or a full queue.
+- Storage is an experience-wide limit measured on the compressed latest version of each key.
+  Superseded versions and deleted keys do not count. Store plain data; pre-compressing only adds
+  CPU cost.
+- Save on leave, in `BindToClose`, and on a periodic timer. Coalesce small changes into one write.
+- A failed write call does not prove the write was not applied; verify with an uncached read
+  (`DataStoreGetOptions.UseCache = false`, which costs a real request) before retrying a
+  non-idempotent operation.
 
 ## Right to be forgotten (RTBF)
 

@@ -55,15 +55,27 @@ Run at least two clients where possible and capture server/client Output:
 | unreliable cosmetic load | losses/reordering do not corrupt gameplay state |
 
 Repeat the timing-sensitive cases (spam, simultaneous players, unreliable load, prediction) with
-added latency and packet loss. Studio's Network Simulator (Device Simulator toolbar) provides this for
-playtest connections; record the profile or settings used.
+added latency and packet loss. Studio's Network Simulator adds latency, jitter and loss to playtest
+connections; record the profile or settings used.
 
-Do not weaken production validation just to inject malformed calls. Use a Studio-only test harness
-or Command Bar fixture that calls the same pure validator/handler boundary, and remove it after the
-test. Record unexecuted cases explicitly.
+Do not weaken production validation just to inject malformed calls. Keep the validator a pure
+function of `(player state, arguments)` so a harness can call it directly: from the Command Bar,
+from the Studio MCP `execute_luau` tool on the `Server` datamodel during play, or from a
+Studio-only script. Remove the harness after the test.
+
+Ways to get more than one client:
+
+- Server & Clients in Studio (up to eight clients). When you cannot drive it, ask the user to run
+  it with two clients and paste the server and each client's Output.
+- `StudioTestService:ExecuteMultiplayerTestAsync(numPlayers, args)` from a plugin script starts
+  a server with 1-8 clients and returns the value the server passes to `EndTest`, which makes the
+  matrix repeatable. It is Studio-only and plugin-only.
+
+Record every case as executed (with Output), prepared but not run, or unverified.
 
 ## Primary references
 
 - `https://create.roblox.com/docs/scripting/security/client-server-boundary`
 - `https://create.roblox.com/docs/reference/engine/classes/UnreliableRemoteEvent`
 - `https://create.roblox.com/docs/studio/testing-modes`
+- `https://create.roblox.com/docs/reference/engine/classes/StudioTestService`
