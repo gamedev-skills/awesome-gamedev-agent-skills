@@ -52,8 +52,20 @@ bundletool get-size total --apks=MyGame.apks
 4. **Compression Method: leave Default.** On Android the default is ZIP, which compresses slightly
    better than LZ4HC
    ([Compression Method row](https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/windows/standalone-binaries)).
-5. **Minify** (Publishing Settings → Minify → Release) trims Java/Kotlin code; small, but free.
-6. **Code size** (Strip Engine Code, Managed Stripping Level, IL2CPP Code Generation) belongs to
+5. **Minify** (Publishing Settings → Minify → Release) trims Java/Kotlin code, usually by only a
+   few MB. R8 can strip classes that plugins (ads, IAP, analytics) reach by reflection, and that
+   shows up only as a crash at runtime, so turn it on only with the plugins' keep rules in place
+   and test on a device.
+6. **Debug symbols**: symbols included in the bundle make the `.aab` file bigger; they are there
+   for Play's crash reports. When the limit is on the `.aab` file itself (a CI cap, an upload
+   tool), export them as a separate zip instead
+   ([Android symbols](https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/android/developing/testing-and-debugging/symbols),
+   [native symbols](https://developer.android.com/build/include-native-symbols)).
+7. **Videos** in `StreamingAssets` ship byte for byte. Re-encode them to H.264 at the size you
+   show, with `ffmpeg -i in.mov -c:v libx264 -crf 23 -pix_fmt yuv420p -c:a aac out.mp4`: 8-bit
+   4:2:0 is what Android hardware decoders play
+   ([Android media formats](https://developer.android.com/media/platform/supported-formats)).
+8. **Code size** (Strip Engine Code, Managed Stripping Level, IL2CPP Code Generation) belongs to
    `unity-build-pipeline`; go there when the native libraries top the APK.
 
 ## Prove it

@@ -1,11 +1,10 @@
 ---
 name: unity-build-pipeline
 description: >
-  Build and ship Unity 6.3 LTS players: build settings and scenes, player/quality settings, the
-  IL2CPP vs Mono scripting backend, managed code stripping, scripted BuildPipeline.BuildPlayer,
-  and CI/headless builds. Use when configuring or automating a build, choosing a scripting
-  backend, trimming managed code with stripping, or when the user mentions Unity build, player
-  settings, IL2CPP, code stripping, or Addressables.
+  Builds and ships Unity 6.3 LTS players: Build Profiles, IL2CPP vs Mono, managed stripping with
+  link.xml, scripted BuildPlayer, Addressables and CI or headless builds. Use when automating a
+  Unity build or MissingMethodException appears only in the player. Not for a build that is too
+  big (`unity-build-size`) or store uploads (`steam-publish`, `itch-publish`).
 ---
 
 # Unity Build Pipeline

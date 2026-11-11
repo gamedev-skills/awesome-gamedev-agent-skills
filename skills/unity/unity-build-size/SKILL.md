@@ -1,17 +1,11 @@
 ---
 name: unity-build-size
 description: >
-  Find and shrink what makes a Unity 6 player build too big, then prove the smaller build runs.
-  Reads the Editor log Build Report, scans the project for uncompressed or oversized textures,
-  glTF/GLB models whose embedded images glTFast ships uncompressed, PCM audio and Resources or
-  StreamingAssets bloat, and applies per-platform levers (Web Brotli and Disk Size with LTO,
-  Android ARM64 and asset packs, iOS app thinning, desktop LZ4HC, Steam patches). Use when a
-  Unity build, APK, AAB, IPA, WebGL build, zip or Steam depot is too big or over a store, jam or
-  host size limit, when sharedassets*.assets.resS or the .data file is huge, or when the user
-  asks why their Unity build is so large or how to shrink it, even if they only say the download
-  is too big. Not for runtime memory or frame rate (performance-optimization), build scripts, CI
-  or stripping errors (unity-build-pipeline), store uploads (steam-publish, itch-publish), or
-  Godot and Unreal exports.
+  Finds and shrinks what makes a Unity 6.3 LTS build too big: Build Report reading, uncompressed
+  textures, glTFast models, PCM audio and per-platform levers. Use when an APK, AAB, WebGL build
+  or Steam depot is over a size limit or the download is too big. Not for frame rate
+  (`performance-optimization`), build scripts or stripping (`unity-build-pipeline`) or store
+  uploads (`steam-publish`).
 ---
 
 # Unity build size

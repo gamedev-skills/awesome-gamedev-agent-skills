@@ -28,10 +28,15 @@ Scripted builds pass `BuildOptions.CompressWithLz4HC`.
 - **Steam: leave it on Default.** Steam already compresses everything it uploads and downloads,
   and Valve advises against compression that crosses asset boundaries, because one change then
   spreads across many 1 MB chunks
-  ([Uploading to Steam](https://partner.steamgames.com/doc/sdk/uploading)). Unity users report a
-  one-line code change turning into a 600 MB patch with LZ4
-  ([Unity Discussions](https://discussions.unity.com/t/build-lz4-compression-results-in-unreasonably-sized-steam-updates/827980)).
+  ([Uploading to Steam](https://partner.steamgames.com/doc/sdk/uploading)). With LZ4 or LZ4HC,
+  Unity packs the player data into one `data.unity3d` file in 128 KB compressed chunks
+  ([BuildOptions.CompressWithLz4](https://docs.unity.com/en-us/engine/6000.3/script-reference/unityeditor/buildoptions/compresswithlz4)),
+  so a small change shifts everything after it and most of that file looks new to SteamPipe.
   Use LZ4HC on Steam only when installed size matters more than patch size, and say so.
+- **Prove what changed before blaming compression.** Build twice with one small change and hash
+  every file in both folders (`sha256sum` or PowerShell `Get-FileHash`). Files that differ when
+  nothing in them changed (a `data.unity3d`, one large `resources.assets`, or AssetBundles
+  rebuilt with new hashes in their names) are what make the patch big.
 
 ## Leave the debug folders out
 

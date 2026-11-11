@@ -39,11 +39,18 @@ ls -l path/to/WebBuild/Build/
    It is a user build setting kept under `Library/`, not in `ProjectSettings/` (Unity's own
    `optimize-web` skill notes the same), so a CI machine does not inherit it from your Editor: set
    it in the build script that makes the release.
-4. **Code size**: Strip Engine Code on, Enable Exceptions = None (or Target WebAssembly 2023 for
-   exceptions without the overhead), API Compatibility Level = .NET Standard
+4. **Code size**: Strip Engine Code on and API Compatibility Level = .NET Standard. Enable
+   Exceptions = None saves the most, but then any thrown exception aborts the player, so use it
+   only when the game and its plugins never rely on catching exceptions; otherwise keep
+   Explicitly Thrown Exceptions Only (or Target WebAssembly 2023 for exceptions without the
+   overhead)
    ([Recommended Player settings](https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/building-distribution/web-optimization/player)).
    Managed Stripping Level and `link.xml` breakage belong to `unity-build-pipeline`.
-5. **Assets**: the main workflow (checker, glTF, textures, audio) applies unchanged. Texture
+5. **Assets**: the main workflow (checker, glTF, textures, audio) applies, with one audio
+   difference: Web encodes every clip to AAC whatever format you pick, and supports only the
+   Compressed In Memory and Decompress On Load load types, not Streaming
+   ([Audio in Web](https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/webgl/develop/audio)).
+   Lower the Quality slider for music to shrink it. Texture
    compression on Web has a per-build subtarget (DXT for desktop browsers, ASTC or ETC2 for mobile;
    Build Profiles → Texture Compression). A build for mobile browsers with DXT textures ships them
    decompressed at runtime, so pick the subtarget for your audience
