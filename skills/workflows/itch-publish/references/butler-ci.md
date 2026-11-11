@@ -3,6 +3,14 @@
 Depth for `itch-publish`. Read this for automated uploads, the complete `butler push` flag
 set, and notifying players of updates. Verify against the primary docs:
 [the butler manual](https://itch.io/docs/butler) (installing, login, pushing).
+Last verified 2026-11-11 against butler v15.32.0 (the latest release).
+
+Contents:
+1. Authentication for CI (`BUTLER_API_KEY`)
+2. Installing a reviewed butler release in CI
+3. GitHub Actions example
+4. `butler push` flag reference
+5. Notify players of updates
 
 ## 1. Authentication for CI (`BUTLER_API_KEY`)
 
@@ -104,7 +112,8 @@ Related commands:
 | `butler version` | Print butler's version (confirms install + PATH). |
 | `butler which` | Print the full path to the running butler binary. |
 | `butler status <user>/<game>` | List channels and their latest builds/versions. |
-| `butler push-preview <dir> <user>/<game>:<ch>` | Show `NEW/MODIFIED/DELETED/SAME` vs the last build; add `--changes-only` to hide unchanged. Uploads nothing. |
+| `butler push-preview <dir> <user>/<game>:<ch>` | Show `NEW/MODIFIED/DELETED/SAME` vs the last build; add `--changes-only` to hide unchanged. Needs login; uploads nothing. |
+| `butler validate <dir>` | Check a build folder and its `.itch.toml` manifest, if any. Offline. |
 | `butler upgrade` | Update butler itself to the latest version. |
 
 Notes:
