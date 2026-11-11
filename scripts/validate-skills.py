@@ -222,7 +222,10 @@ def skill_warnings(path: Path, text: str, description: str) -> list[str]:
     """Authoring-guide checks that warn instead of failing (unless --strict)."""
     rel = _display(path)
     warnings: list[str] = []
-    if description and not NOT_FOR_RE.search(description):
+    # The router is the entry point for every game-dev request, so it has no neighbour to
+    # name in a "Not for" clause; its boundaries live in its body.
+    is_router = path.resolve() == (REPO_ROOT / "router" / "SKILL.md").resolve()
+    if description and not is_router and not NOT_FOR_RE.search(description):
         warnings.append(f"{rel}: description has no 'Not for ...' clause naming the neighbouring skill")
     if not GOTCHAS_RE.search(_without_fenced_code(text)):
         warnings.append(f"{rel}: no '## Gotchas' heading")

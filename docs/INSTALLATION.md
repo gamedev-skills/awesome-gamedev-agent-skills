@@ -88,6 +88,13 @@ them in the project's settings and share them with your team. To pick up a new r
 `claude plugin marketplace update awesome-gamedev-agent-skills`, then
 `claude plugin update gamedev@awesome-gamedev-agent-skills` (or the plugin you installed).
 
+**Many skills installed?** Claude Code lists skill descriptions within a budget of 1% of the
+context window and cuts some descriptions when the list is longer. Install `router` plus your
+engine's bundle instead of `gamedev`, or raise the budget with the `skillListingBudgetFraction`
+setting (for example `0.02`) or the `SLASH_COMMAND_TOOL_CHAR_BUDGET` environment variable (a
+character count). See [Claude Code skills](https://code.claude.com/docs/en/skills). Other agents
+have similar limits, so the smaller install helps there too.
+
 ## Claude Code (manual copy)
 
 Prefer to copy files instead of using the plugin system:

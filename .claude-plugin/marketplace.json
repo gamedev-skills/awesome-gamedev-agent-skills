@@ -104,7 +104,7 @@
       "name": "godot",
       "source": "./",
       "strict": false,
-      "description": "Godot 4.7 engine skills (GDScript, nodes, physics, shaders, export, C#).",
+      "description": "Godot 4.7 engine skills (GDScript, C#, scenes, signals, 2D and 3D, physics, UI, shaders, multiplayer, export, headless tests).",
       "skills": [
         "./skills/godot/godot-gdscript",
         "./skills/godot/godot-nodes-scenes",
@@ -128,7 +128,7 @@
       "name": "unity",
       "source": "./",
       "strict": false,
-      "description": "Unity 6.3 LTS engine skills (C#, input, physics, animation, build).",
+      "description": "Unity 6.3 LTS engine skills (C#, Input System, 3D and 2D physics, animation, ScriptableObjects, tilemaps, NavMesh, builds).",
       "skills": [
         "./skills/unity/unity-csharp-scripting",
         "./skills/unity/unity-input-system",
@@ -144,7 +144,7 @@
       "name": "unreal",
       "source": "./",
       "strict": false,
-      "description": "Unreal Engine 5.8 skills (Blueprints, C++ gameplay, input, AI, Niagara, packaging).",
+      "description": "Unreal Engine 5.8 skills (Blueprints, C++ gameplay, Enhanced Input, Behavior Trees with EQS and StateTree, Niagara, packaging).",
       "skills": [
         "./skills/unreal/unreal-blueprints",
         "./skills/unreal/unreal-cpp-gameplay",
@@ -158,7 +158,7 @@
       "name": "ebitengine",
       "source": "./",
       "strict": false,
-      "description": "Ebitengine v2.10.5 skills for 2D games in Go: input, rendering, audio, testing and builds.",
+      "description": "Ebitengine v2.10.6 skill for 2D games in Go: input, rendering, text, audio, testing and builds.",
       "skills": [
         "./skills/ebitengine/ebitengine-game"
       ]
@@ -181,7 +181,7 @@
       "name": "other-engines",
       "source": "./",
       "strict": false,
-      "description": "Bevy, pygame, LÖVE, Defold, and production-focused Roblox engine skills.",
+      "description": "Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.1, and Roblox skills (Luau, DataStores, UI, networking, characters, physics, Studio, simulator economy).",
       "skills": [
         "./skills/other-engines/bevy-ecs",
         "./skills/other-engines/pygame-core",
@@ -201,7 +201,7 @@
       "name": "disciplines",
       "source": "./",
       "strict": false,
-      "description": "Cross-engine concepts: visual assets, AI, procedural gen, dialogue, saves, audio, shaders, physics, level design, and input.",
+      "description": "Cross-engine concepts: game art, AI and behavior trees, procedural generation, dialogue, saves, audio, shaders, physics tuning, level design, input, game feel, cameras, HUD and menus, performance.",
       "skills": [
         "./skills/disciplines/create-game-assets",
         "./skills/disciplines/game-ai",

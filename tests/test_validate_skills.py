@@ -252,6 +252,20 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(len(warnings), 1)
         self.assertIn("no 'Not for ...' clause", warnings[0])
 
+    def test_router_needs_no_not_for_clause(self) -> None:
+        router = self.repo_root / "router" / "SKILL.md"
+        router.parent.mkdir()
+        router.write_text(
+            "---\nname: router\ndescription: Routes fixtures. Use when selecting a test skill.\n---\n\n"
+            "# Router\n\n## Gotchas\n\n- A fixture gotcha.\n",
+            encoding="utf-8",
+        )
+
+        errors, warnings = validate_skills.validate_file(router)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
+
     def test_not_for_clause_matches_any_case(self) -> None:
         path = self.write_skill(
             "disciplines",

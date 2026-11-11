@@ -1,7 +1,7 @@
 # Unity skills
 
 Eight Agent Skills targeting Unity 6.3 LTS—C# scripting, the Input System,
-physics, animation, ScriptableObjects, 2D Tilemap, AI Navigation, and builds.
+3D and 2D physics, animation, ScriptableObjects, 2D Tilemap, AI Navigation, and builds.
 
 Each subdirectory is one skill. Existing projects keep the version in
 `ProjectSettings/ProjectVersion.txt`; see [`VERSION-SUPPORT.md`](../../docs/VERSION-SUPPORT.md).
