@@ -1,11 +1,11 @@
 ---
 name: platformer
 description: >
-  Designs and tunes 2D platformer jumping in any engine: coyote time, jump buffering, variable
-  jump height, fall gravity, corner correction and wall jumps. Use for a Mario- or Celeste-like,
-  or a jump that feels floaty or laggy or presses eaten at ledges. Not for the Godot
-  CharacterBody2D API (load `godot-2d-movement` too), generic input buffering (`input-systems`) or
-  juice (`game-feel`).
+  Designs 2D platformers in any engine: jump feel (coyote time, jump buffering, variable height,
+  fall gravity, corner correction), wall jumps, hazards, checkpoints and one-way platforms. Use
+  for a Mario- or Celeste-like, or a jump that feels floaty or laggy. Pair with the engine skill
+  (`godot-2d-movement`, `phaser-arcade-physics`). Not for generic input buffering (`input-
+  systems`) or juice (`game-feel`).
 ---
 
 # Platformer

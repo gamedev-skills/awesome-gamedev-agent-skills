@@ -2,9 +2,10 @@
 name: godot-3d-essentials
 description: >
   Godot 4.7 3D scene setup: Camera3D, lights, WorldEnvironment (sky, ambient, tonemap, fog),
-  StandardMaterial3D and GridMap, with a headless scene check. Use when a 3D scene renders black,
-  grey or washed out, differs from the editor, or a mesh is invisible. Not for spatial shaders
-  (`godot-shaders`), bodies and raycasts (`godot-physics`) or camera feel (`camera-systems`).
+  StandardMaterial3D, GridMap and local vs global transforms, with a headless scene check. Use
+  when a 3D scene renders black or washed out, a mesh is invisible, or a child rotates on the
+  wrong axis. Not for spatial shaders (`godot-shaders`), bodies and raycasts (`godot-physics`) or
+  camera feel (`camera-systems`).
 ---
 
 # Godot 3D Essentials (4.x)
