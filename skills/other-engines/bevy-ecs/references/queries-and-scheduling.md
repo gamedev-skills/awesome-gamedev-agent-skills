@@ -1,8 +1,21 @@
 # Bevy queries & scheduling detail (0.20)
 
 Depth behind the ECS skill: query filters and access, schedules and ordering,
-states, change detection, and the `Commands` lifecycle. Verify any borderline API
-against the docs for your pinned Bevy version — minor releases move things.
+states, change detection, and the `Commands` lifecycle. The 0.20-specific snippets were
+compiled against Bevy 0.20.1; for any other pinned release, check its docs and migration
+guide.
+
+## Contents
+
+- [Query anatomy](#query-anatomy): filters, `single()`, `iter_many` results
+- [Avoiding conflicting access](#avoiding-conflicting-access): disjoint filters,
+  `ParamSet`, resource entities
+- [Schedules and ordering](#schedules-and-ordering): built-in schedules, weak ordering,
+  system sets, run conditions, schedule shuffling
+- [States](#states): `OnEnter`/`OnExit`, `set_if_different`, `DespawnOnExit`
+- [Change detection](#change-detection): `Changed`/`Added`, summary ticks
+- [Commands lifecycle](#commands-lifecycle): sync points, `despawn_all`, `&mut World`
+- [Messages and observers (0.20)](#messages-and-observers-020)
 
 ## Query anatomy
 

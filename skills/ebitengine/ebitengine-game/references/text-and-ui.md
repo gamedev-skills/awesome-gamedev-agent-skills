@@ -1,6 +1,6 @@
 # Text and UI
 
-API baseline: Ebitengine v2.10.5, package
+API baseline: Ebitengine v2.10.6, package
 `github.com/hajimehoshi/ebiten/v2/text/v2`. Snippets illustrate patterns to adapt;
 they are not a complete text-layout or localization library.
 The font examples use outline fonts. Keep a suitable existing bitmap font or
@@ -8,6 +8,17 @@ glyph-atlas renderer when it fits the art and shipped scripts; these examples
 do not require replacing it.
 
 Contents: [Fonts](#fonts) · [Drawing and alignment](#drawing-and-alignment) · [Wrapping](#wrapping) · [Readability](#readability) · [Simple UI](#simple-ui) · [UI states](#ui-states-attention-and-ownership) · [Localization](#localization) · [Accessibility](#accessibility)
+
+## Contents
+
+- [Fonts](#fonts)
+- [Drawing and alignment](#drawing-and-alignment)
+- [Wrapping](#wrapping)
+- [Readability](#readability)
+- [Simple UI](#simple-ui)
+- [UI states, attention and ownership](#ui-states-attention-and-ownership)
+- [Localization](#localization)
+- [Accessibility](#accessibility)
 
 ## Fonts
 
@@ -120,7 +131,7 @@ for broad script support rather than inventing a code-point threshold.
 ## Simple UI
 
 - Buttons and menus: rectangles hit-tested with the logical cursor (see
-  `input.md`), a focus index moved by keys/pad for non-mouse play, and the
+  the input reference), a focus index moved by keys/pad for non-mouse play, and the
   same "confirm" action for click, Enter and the pad's bottom face button.
 - Lay UI out in logical coordinates relative to the screen edges you get from
   `Layout`, so it survives window resizes when `Layout` returns a fixed size.
@@ -285,13 +296,13 @@ func DesktopLocale() string {
 Browser builds read the language from JavaScript
 (`js.Global().Get("navigator").Get("language").String()`) in a `//go:build js`
 file; Steam builds can obtain the reported language through their store adapter
-([Publishing/platforms](publishing-and-platforms.md)).
+(publishing-and-platforms reference).
 
 ## Accessibility
 
 Options that cost little in Ebitengine and widen the audience:
 
-- **Remapping** required actions for the supported devices (`input.md`), including
+- **Remapping** required actions for the supported devices (input reference), including
   one-handed layouts where practical. Provide alternatives for required rapid
   tapping or simultaneous presses ("hold to repeat", toggle instead of hold).
 - **Text size**: a UI scale option (draw UI into a layer scaled by 1–2×), and a
@@ -299,7 +310,7 @@ Options that cost little in Ebitengine and widen the audience:
 - **Colour**: never encode meaning by colour alone; add shapes, icons or
   patterns. Check palettes with a colour-blindness simulator.
 - **Motion and flashes**: options to reduce screen shake (scale the offset to 0,
-  `gameplay-systems.md`) and disable flashing effects. A frequency rule alone
+  gameplay-systems reference) and disable flashing effects. A frequency rule alone
   does not establish flash safety; brightness, contrast and affected screen area
   also matter. Avoid unnecessary high-contrast flashes.
 - **Audio**: separate music, effects and voice volumes; captions or on-screen
@@ -315,7 +326,7 @@ Options that cost little in Ebitengine and widen the audience:
 
 Collect these in an options scene and save them with the save data.
 Choose the relevant options from the game's supported inputs and intended audience;
-see [Design and quality](design-and-quality.md).
+see the design-and-quality reference.
 
-Source contracts: [text layout and measurement](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/text/v2/text.go)
-and [font source and size behavior](https://github.com/hajimehoshi/ebiten/blob/v2.10.5/text/v2/gotext.go).
+Source contracts: [text layout and measurement](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/text/v2/text.go)
+and [font source and size behavior](https://github.com/hajimehoshi/ebiten/blob/v2.10.6/text/v2/gotext.go).

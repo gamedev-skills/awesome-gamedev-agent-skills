@@ -41,7 +41,7 @@ formats; do not inherit a provider-specific claim that all models require chroma
 - Store actual frame count, grid dimensions and duration/markers. A partial final
   row must not animate through empty cells. For a grid sheet, cell coordinates
   come from `column = i % columns`, `row = i / columns`; the simple `NewAnim`
-  example in [Rendering](rendering.md) assumes a horizontal strip.
+  example in the rendering reference assumes a horizontal strip.
 - Choose sheet dimensions and frame count from motion/readability and target
   memory/texture constraints. A long strip can exceed the target's limits; split
   clips or pack a grid as needed. More nearly identical frames can add cost or

@@ -1,8 +1,15 @@
 # Tiled maps
 
-API baseline: Ebitengine v2.10.5. Read only when the game uses Tiled.
+API baseline: Ebitengine v2.10.6. Read only when the game uses Tiled.
 The illustrative loader below handles a constrained subset; prefer an existing
 maintained loader when the map requires more of Tiled's format.
+
+## Contents
+
+- [Finite orthogonal JSON subset](#finite-orthogonal-json-subset)
+- [Loader](#loader)
+- [Using the loader](#using-the-loader)
+- [Integration notes](#integration-notes)
 
 ## Finite orthogonal JSON subset
 
@@ -21,6 +28,8 @@ It does not implement tile animation, tile properties, image-collection
 tilesets, rotated/tile/polygon objects, or nested groups. The checks below
 reject those cases instead of silently displaying a different level. Use an
 established loader or explicitly extend this subset when the project needs more.
+
+## Loader
 
 ```go
 package game
@@ -370,6 +379,8 @@ func TileGeoM(gid uint32, w, h float64) ebiten.GeoM {
 }
 ```
 
+## Using the loader
+
 Use it with an embedded directory and `image.Decode` (import `_ "image/png"`):
 
 ```go
@@ -382,6 +393,8 @@ m, err := LoadTiledMap(maps, "maps/level1.tmj", func(r io.Reader) (image.Image, 
 })
 ```
 
+## Integration notes
+
 - Collision: read a layer named `collision` into the
   rules package's grid at load time; do not test collisions against images.
 - Spawns, triggers, doors: object layers. Points have `point: true`; tile
@@ -389,7 +402,7 @@ m, err := LoadTiledMap(maps, "maps/level1.tmj", func(r io.Reader) (image.Image, 
 - Infinite maps store chunks instead of `data`; turn "Infinite" off in Tiled or
   extend the loader. zstd compression needs an extra package; pick zlib.
 - Large static layers: consider bounded chunk caches instead of a whole-map GPU
-  image (`rendering.md`).
+  image (rendering reference).
 - `github.com/lafriks/go-tiled` is a fuller loader that reads the XML `.tmx`
   format.
 

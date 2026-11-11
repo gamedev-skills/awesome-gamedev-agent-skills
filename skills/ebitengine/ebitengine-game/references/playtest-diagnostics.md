@@ -42,7 +42,7 @@ visible meter is stale, and a correct-looking frame can hide a rule failure.
 The starter supplies `-demo` and `-shot`; it does **not** supply a state-JSON or
 general input-script flag. Add a small project-specific diagnostic when needed,
 or use the pinned engine's opt-in VM tooling described in
-[Architecture/testing](architecture-and-testing.md). A scripted action dispatch
+the architecture-and-testing reference. A scripted action dispatch
 tests rules/flow; actual device or VM input also tests the device-to-action path.
 Run graphics checks under Xvfb on Linux, not the user's desktop.
 

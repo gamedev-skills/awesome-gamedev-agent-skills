@@ -1,19 +1,28 @@
-# Build and run with Bob (Defold 1.14.0)
+# Build and run with Bob (Defold 1.14.1)
 
-Bob (`bob.jar`) is Defold's command-line builder. Everything here was run with Bob 1.14.0
-(sha1 `d295ed4edff2e49072719835713e625f409849f1`) on Linux x86_64; commands, flags and the
-error messages quoted are from those runs or from the official
+Bob (`bob.jar`) is Defold's command-line builder. Everything here was run with Bob 1.14.1
+(sha1 `ee283d4dad9fa451dd6399d83602e1dc25133681`) and OpenJDK 25 on Linux x86_64; commands,
+flags and the error messages quoted are from those runs or from the official
 [Bob manual](https://defold.com/manuals/bob/) and
 [automated testing manual](https://defold.com/manuals/automated-testing/).
 
+## Contents
+
+- [Get the tools](#get-the-tools): Java, `bob.jar`, version check
+- [Commands](#commands): build, bundle, build report, platforms, variants, `--settings`
+- [Smoke test a running game](#smoke-test-a-running-game): test bootstrap, run under a
+  timeout, judge the log
+- [Ports and parallel runs](#ports-and-parallel-runs)
+- [Beyond the core](#beyond-the-core): GUI, sprites, tilemaps, physics manuals
+
 ## Get the tools
 
-- **Java:** Bob 1.14.0 needs OpenJDK 25. On Java 21 it fails at once with
+- **Java:** Bob 1.14.x needs OpenJDK 25. On Java 21 it fails at once with
   `UnsupportedClassVersionError … class file version 69.0`.
 - **bob.jar:** use the release the project is built with. Current stable release info is at
   [d.defold.com/stable/info.json](https://d.defold.com/stable/info.json) (version and sha1).
   Download by version from the GitHub release assets
-  (`https://github.com/defold/defold/releases/download/1.14.0/bob.jar`) or by sha1
+  (`https://github.com/defold/defold/releases/download/1.14.1/bob.jar`) or by sha1
   (`https://d.defold.com/archive/stable/<sha1>/bob/bob.jar`).
 - **Check it:** `java -jar bob.jar --version` prints the version, sha1 and channel.
 
@@ -45,7 +54,8 @@ java -jar bob.jar --root . --archive --build-report-json ../report.json resolve 
 - The bundle lands in a folder named after `project.title`, with the executable named after
   the title without spaces (`Defold Core Example/DefoldCoreExample.x86_64`).
 - Bob exits 1 on a build error. The useful line starts with `ERROR`; Java stack traces follow
-  as `SEVERE` lines. See `file-formats.md` for tracing errors that name a generated file.
+  as `SEVERE` lines. Errors that name a generated file are traced in the file-formats
+  reference that `SKILL.md` links.
 
 ## Smoke test a running game
 
@@ -140,15 +150,17 @@ the headless bundle above when you need a documented path.
 
 ## Ports and parallel runs
 
-A debug or headless engine starts an engine service on port 8001, a log server on a random
-port and the Remotery profiler (`ws://127.0.0.1:17815`). A second engine started at the same
+A debug or headless engine starts an engine service on port 8001 (since 1.14.1 it logs an
+`OpenAPI: http://…:8001/openapi.json` line describing that service), a log server on a
+random port and the Remotery profiler (`ws://127.0.0.1:17815`). A second engine started at the same
 time logs `ERROR:PROFILER: Failed to initialize Remotery`. Run one engine per test job, always
 under a timeout, and make sure it has exited before the next run.
 
 ## Beyond the core
 
-The headless engine has no input devices and draws nothing, so check input, rendering and
-layout in the editor (Project ▸ Build) or a desktop bundle. For the next subsystems, read the
+The headless engine has no input devices and draws nothing, so for input, rendering and
+layout ask the user to run the editor (**Project ▸ Build**) or a debug bundle for their
+platform (for example `--platform x86_64-win32 --variant debug`) and report what they see. For the next subsystems, read the
 official manuals:
 
 - GUI scenes and `.gui_script`: [GUI](https://defold.com/manuals/gui/) — a GUI script uses

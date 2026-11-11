@@ -3,6 +3,15 @@
 Depth behind the pygame-core skill: group variants, pixel-perfect collision,
 spritesheets, animation, and audio/text.
 
+## Contents
+
+- [Group variants](#group-variants): `GroupSingle`, `LayeredUpdates`, `RenderUpdates`
+- [Collision functions](#collision-functions): rect, circle, ratio and "any" tests
+- [Pixel-perfect collision with masks](#pixel-perfect-collision-with-masks)
+- [Slicing a spritesheet](#slicing-a-spritesheet) and
+  [simple frame animation](#simple-frame-animation)
+- [Audio](#audio) and [text](#text)
+
 ## Group variants
 
 `pygame.sprite` ships several containers; pick by need:
