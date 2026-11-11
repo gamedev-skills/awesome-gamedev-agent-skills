@@ -1,8 +1,15 @@
-# Profiling & budgets — depth for `performance-optimization`
+# Profiling and budgets
 
-Detail the body defers here: per-engine profiler walkthroughs, the CPU-vs-GPU triage flow, a
-pooling manager, batching/instancing rules, allocation/GC guidance, LOD/culling, and asset
-budgets. Targets **Godot 4.7**, **Unity 6.3 LTS**, **Unreal 5.8**.
+Targets Godot 4.7, Unity 6.3 LTS and Unreal 5.8.
+
+Contents:
+1. CPU-vs-GPU triage
+2. Per-engine profiler quick start (Godot, Unity, Unreal, external tools)
+3. Pooling manager
+4. Batching and instancing rules
+5. Allocation and GC guidance
+6. Do-less techniques
+7. Asset budgets and mobile thermals
 
 ## 1. CPU-vs-GPU triage (decide before you fix)
 
@@ -28,10 +35,11 @@ the change. Faster scripts alone usually won't help a frame limited by GPU work.
 - Editor: **Debugger ▸ Profiler** (per-function script + physics time, frame time), **Debugger ▸
   Visual Profiler** (CPU and GPU time spent on rendering — the Profiler tab does not show GPU cost),
   and the **Monitors** tab (FPS, draw calls, video/static memory, object/node counts).
-- Code: `Performance.get_monitor(Performance.TIME_PROCESS)` (frame process time in **seconds**;
-  multiply by 1000 for ms), `Performance.TIME_PHYSICS_PROCESS`,
+- Code: `Performance.get_monitor(Performance.TIME_PROCESS)` (the slowest process frame of the
+  last second, in **seconds**, refreshed once a second), `Performance.TIME_PHYSICS_PROCESS`,
   `Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME`, `Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME`,
-  `Performance.MEMORY_STATIC`.
+  `Performance.MEMORY_STATIC`, and the `PIPELINE_COMPILATIONS_*` monitors (4.4+) for shader
+  hitches: a jump in the Surface or Draw counts outside a loading screen is a first-play stutter.
 - Visual debugging: 3D viewport **View Information / View Frame Time** overlays.
 - Native-code traces: an engine built from source with `scons profiler=tracy` (or `perfetto`,
   `instruments`) streams engine zones to that profiler.
@@ -55,10 +63,10 @@ the change. Faster scripts alone usually won't help a frame limited by GPU work.
 - **Unreal Insights** for full timeline traces; `ProfileGPU` (Ctrl+Shift+,) for a GPU breakdown.
 
 **External tools (engine-agnostic)**
-- **RenderDoc** (1.47 at last check): GPU frame capture for Vulkan, D3D11/12 and OpenGL/ES on
+- **RenderDoc**: GPU frame capture for Vulkan, D3D11/12 and OpenGL/ES on
   Windows, Linux and Android; no Metal. On Apple platforms use the Xcode Metal debugger and
   Instruments; on Windows D3D12, PIX.
-- **Tracy** (0.15.0 at last check): instrumented CPU/GPU timeline for native code; keep the
+- **Tracy**: instrumented CPU/GPU timeline for native code; keep the
   client library and the viewer on the same release, because the network protocol can change.
 
 ## 3. Pooling manager (generic)
@@ -124,5 +132,7 @@ decide an overflow policy (grow, or recycle the oldest).
 | Real-time lights | a few | 1–2 + baked | bake the rest |
 | Audio | streamed music, short SFX in memory | same | don't decompress everything at load |
 
-Mobile adds **thermal throttling**: a game that hits 60 FPS for 2 minutes then drops is
-overheating — target headroom, cap frame rate, and reduce sustained GPU load.
+Mobile adds **thermal throttling**: a game that hits 60 FPS for two minutes and then drops is
+overheating. Keep headroom, cap the frame rate and reduce sustained GPU load. The agent cannot
+feel a device heat up, so ask the user to play 15 minutes on the target phone and report the
+frame time (or FPS counter) in the first and last minute.
