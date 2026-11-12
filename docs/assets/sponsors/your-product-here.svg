@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img" aria-label="Your product here. Monthly sponsor slot.">
+  <rect x="6" y="6" width="948" height="468" rx="28" fill="none" stroke="#8b949e" stroke-width="4" stroke-dasharray="18 14"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" fill="#8b949e" text-anchor="middle">
+    <text x="480" y="200" font-size="96" font-weight="300">+</text>
+    <text x="480" y="280" font-size="56" font-weight="700">Your product here</text>
+    <text x="480" y="340" font-size="30">Monthly sponsor slot for game-dev and AI tools</text>
+  </g>
+</svg>
