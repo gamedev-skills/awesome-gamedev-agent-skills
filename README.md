@@ -42,21 +42,32 @@ task skills before it writes code.
 
 ## Sponsors
 
+<!-- Two sponsors per row. Banners are 960x480 PNGs in docs/assets/sponsors/. -->
 <table>
   <tr>
-    <td align="center" width="280">
-      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
-        <b>Your product here</b>
+    <td align="center" width="50%">
+      <a href="https://www.infistar.cc/register?aff=59SNHZD6&amp;ref_source=link">
+        <img src="docs/assets/sponsors/infistar.png" width="380"
+             alt="Infistar: one API key for Claude, GPT, Gemini, Grok, DeepSeek and more">
       </a>
       <br>
-      <sub>Monthly sponsor slot</sub>
+      <sub>Sponsored · <a href="https://www.infistar.cc/register?aff=59SNHZD6&amp;ref_source=link">Infistar</a></sub>
+    </td>
+    <td align="center" width="50%">
+      <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">
+        <img src="docs/assets/sponsors/your-product-here.svg" width="380"
+             alt="Your product here: monthly sponsor slot">
+      </a>
+      <br>
+      <sub>Open slot · <a href="mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills">Become a sponsor</a></sub>
     </td>
   </tr>
 </table>
 
 Want to reach game developers who build with AI coding agents? Email
 [abhishekbarali6969@gmail.com](mailto:abhishekbarali6969@gmail.com?subject=Sponsoring%20awesome-gamedev-agent-skills).
-Sponsored entries are labelled as sponsored and have no effect on which skills the router picks.
+Sponsor slots are monthly. Sponsored entries are labelled as sponsored and have no effect on which
+skills the router picks.
 
 ## Contents
 
