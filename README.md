@@ -93,6 +93,11 @@ later. The same `SKILL.md` files load
 natively in Claude Code, Cursor, Windsurf, Cline, Codex, Gemini CLI, GitHub Copilot, Kiro, and
 [dozens more](docs/COMPATIBILITY.md) — there's nothing to convert.
 
+**Agent plugins marketplace.** The same bundles are listed for any agent in
+[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json). Claude Code can install
+from the marketplace commands below; Codex uses [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json)
+and the shared `.agents/skills` path.
+
 **Claude Code plugin (alternative).** This repo is also a Claude Code plugin marketplace, so you
 can install it with Claude's own commands:
 
