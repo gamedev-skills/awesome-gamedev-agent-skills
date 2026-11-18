@@ -7,7 +7,7 @@
        alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 79 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**Make games with your AI coding agent, in the engine you already use.** 79 skills for 12
+**Make games with your AI coding agent, in the engine you already use.** 80 skills for 12
 engines: say what you're building, and a router loads the right 2 or 3 skills before your agent
 writes code.
 
@@ -19,13 +19,13 @@ npx skills add gamedev-skills/awesome-gamedev-agent-skills
 [![skills.sh installs](https://skills.sh/b/gamedev-skills/awesome-gamedev-agent-skills)](https://skills.sh/gamedev-skills/awesome-gamedev-agent-skills)
 [![Engines checked](https://img.shields.io/badge/engines%20checked-2026--11--11-brightgreen)](docs/VERSION-SUPPORT.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-79%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-80%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 [![Sponsor](https://img.shields.io/badge/sponsor-this%20project-ea4aaa)](#sponsors)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **79 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **80 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -81,7 +81,7 @@ skills the router picks.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 79 skills into the right place:
+coding agent you already use and installs the router plus all 80 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -168,7 +168,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-79 skills across 9 categories — each links to its `SKILL.md` below.
+80 skills across 9 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -235,11 +235,12 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | glTF/GLB loading with DRACO, Meshopt and KTX2, `AnimationMixer` cross-fades, `SkeletonUtils` clones |
 | [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Standard, physical and unlit materials, lights, shadows, HDR environments, tone mapping |
 
-#### Other engines — 12 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
+#### Other engines — 13 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
 
 | Skill | Scope |
 |-------|-------|
 | [`bevy-ecs`](skills/other-engines/bevy-ecs/SKILL.md) | Bevy ECS: components, `Query`/`Commands` systems, schedules, States, observers, headless tests (Bevy 0.20) |
+| [`bevy-video-capture`](skills/other-engines/bevy-video-capture/SKILL.md) | Record a Bevy scene frame by frame to MP4/GIF/WebP: fixed animation clock, one screenshot in flight, 2x output, seamless loops, frame checker (Bevy 0.20) |
 | [`pygame-core`](skills/other-engines/pygame-core/SKILL.md) | pygame-ce event-update-draw loop, delta time, `Surface`/`Rect`, sprite groups, headless tests (pygame-ce 2.5.8) |
 | [`love2d-core`](skills/other-engines/love2d-core/SKILL.md) | LÖVE callbacks, `conf.lua`, fixed steps, crisp pixel-art scaling, `love.filesystem` saves (LÖVE 11.5) |
 | [`defold-core`](skills/other-engines/defold-core/SKILL.md) | Defold collections, game objects, input focus, `msg.post`, factories, collection proxies, Bob builds (Defold 1.14.1) |
@@ -373,7 +374,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        79 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        80 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template

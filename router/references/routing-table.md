@@ -90,6 +90,7 @@ When two skills both match, the router's ownership table (§3c) decides who lead
 | Skill | Pick it when |
 |-------|--------------|
 | `bevy-ecs` | "Bevy", ECS components/systems/`Query`/`Commands`, schedules, States, observers, B0001 query conflict, pre-0.20 code (`EventReader`, `SpriteBundle`); `Cargo.toml` dep `bevy` |
+| `bevy-video-capture` | "record my Bevy game", frame-by-frame export, Bevy scene to MP4/GIF/WebP, README GIF or looping clip, trailer footage, captured frames black/missing/doubled, `Screenshot::primary_window`; `Cargo.toml` dep `bevy` |
 | `pygame-core` | "pygame", pygame-ce, event-update-draw loop, delta time, Sprite groups, "not responding" window, pygame vs pygame-ce conflict; `import pygame` |
 | `love2d-core` | "LÖVE", "love2d", `love.update(dt)`, `conf.lua`, blue error screen, blurry pixel art, speed tied to frame rate; `main.lua`/`conf.lua`/`*.love` |
 | `defold-core` | "Defold", collection/game object, `msg.post`, `on_input` never fires, `acquire_input_focus`, `factory.create`, collection proxy never loads, "could not be found when dispatching message", `bob.jar`; `game.project` + `*.collection`/`*.go`/`*.script` (target Defold 1.14.1) |
