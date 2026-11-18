@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 79 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 80 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
@@ -51,6 +51,7 @@
         "./skills/web-engines/threejs-gltf-loading",
         "./skills/web-engines/threejs-materials-lighting",
         "./skills/other-engines/bevy-ecs",
+        "./skills/other-engines/bevy-video-capture",
         "./skills/other-engines/pygame-core",
         "./skills/other-engines/love2d-core",
         "./skills/other-engines/defold-core",
@@ -184,9 +185,10 @@
       "name": "other-engines",
       "source": "./",
       "strict": false,
-      "description": "Bevy 0.20, pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.1, and Roblox skills (Luau, DataStores, UI, networking, characters, physics, Studio, simulator economy).",
+      "description": "Bevy 0.20 (ECS and video capture), pygame-ce 2.5.8, LÖVE 11.5, Defold 1.14.1, and Roblox skills (Luau, DataStores, UI, networking, characters, physics, Studio, simulator economy).",
       "skills": [
         "./skills/other-engines/bevy-ecs",
+        "./skills/other-engines/bevy-video-capture",
         "./skills/other-engines/pygame-core",
         "./skills/other-engines/love2d-core",
         "./skills/other-engines/defold-core",

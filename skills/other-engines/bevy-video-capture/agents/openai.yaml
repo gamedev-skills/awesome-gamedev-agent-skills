@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bevy Video Capture"
+  short_description: "Record Bevy scenes frame by frame into MP4, GIF or WebP"
+  default_prompt: "Use $bevy-video-capture to record this Bevy scene as a looping clip."

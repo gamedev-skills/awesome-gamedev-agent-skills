@@ -62,7 +62,7 @@ Check the target's build and runtime entry point before treating a bundled libra
 | 2 | Unreal | `*.uproject` | `skills/unreal/` |
 | 3 | Unity | `Assets/` **and** `ProjectSettings/ProjectVersion.txt` | `skills/unity/` |
 | 4 | Ebitengine | `go.mod` requiring `github.com/hajimehoshi/ebiten/v2` | `skills/ebitengine/` |
-| 5 | Bevy | `Cargo.toml` with a `bevy` dependency | `skills/other-engines/bevy-ecs/` |
+| 5 | Bevy | `Cargo.toml` with a `bevy` dependency | `skills/other-engines/bevy-*` |
 | 6 | Phaser | `package.json` dep `phaser` | `skills/web-engines/phaser-*` |
 | 7 | PixiJS | `package.json` dep `pixi.js` **in a game** (not a dashboard or chart) | `skills/web-engines/pixijs-rendering/` |
 | 8 | three.js | `package.json` dep `three` | `skills/web-engines/threejs-*` |
@@ -132,7 +132,8 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
 - **Web** (`skills/web-engines/`): `phaser-core`, `phaser-arcade-physics`; `pixijs-rendering`
   (games and playable ads only); `threejs-scene-setup`, `threejs-gltf-loading`,
   `threejs-materials-lighting`. No React Three Fiber skill (§7).
-- **Other** (`skills/other-engines/`): `bevy-ecs`, `pygame-core`, `love2d-core`; Defold
+- **Other** (`skills/other-engines/`): `bevy-ecs`; recording a Bevy scene to video, GIF or WebP
+  `bevy-video-capture`; `pygame-core`, `love2d-core`; Defold
   `defold-core` (collections, game objects, scripts, input, messages, factories, proxies,
   Bob builds); Roblox language and module structure `roblox-luau`, persistence
   `roblox-datastores`, UI `roblox-ui`, remotes/replication/server authority/hit validation

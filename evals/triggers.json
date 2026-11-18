@@ -1508,6 +1508,42 @@
     "notes": "near-miss for bevy-ecs. near-miss: ECS but not Bevy; custom engine architecture, no skill"
   },
   {
+    "id": "bevy-video-capture.s1",
+    "prompt": "how do i record my bevy game to an mp4? want a smooth 1080p clip of the boss fight scene for the trailer, real time recording with OBS keeps dropping frames",
+    "expected": [
+      "bevy-video-capture"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-video-capture. direct: Bevy scene to MP4, frame drops with live capture"
+  },
+  {
+    "id": "bevy-video-capture.s2",
+    "prompt": "need a looping gif of my rust bevy particle effect for the github readme, but every time it loops theres a little jump",
+    "expected": [
+      "bevy-video-capture"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-video-capture. casual: README GIF, seamless loop seam"
+  },
+  {
+    "id": "bevy-video-capture.s3",
+    "prompt": "spawning Screenshot::primary_window() every frame to export png frames, but after ~200 frames they all come out solid black and the first few are missing the meshes",
+    "expected": [
+      "bevy-video-capture"
+    ],
+    "kind": "should",
+    "notes": "should-trigger bevy-video-capture. symptom only: black and empty captured frames"
+  },
+  {
+    "id": "bevy-video-capture.nm",
+    "prompt": "in my bevy game i spawn bullets with Commands but the collision system doesnt see them until next frame, and i get a B0001 panic when i add a second Transform query",
+    "expected": [
+      "bevy-ecs"
+    ],
+    "kind": "near-miss",
+    "notes": "near-miss for bevy-video-capture: Bevy frame timing words, but ECS command and query bugs belong to bevy-ecs"
+  },
+  {
     "id": "defold-core.s1",
     "prompt": "defold: msg.post to another game object's script never arrives, url is \"enemy#script\" and on_message is never called",
     "expected": [
