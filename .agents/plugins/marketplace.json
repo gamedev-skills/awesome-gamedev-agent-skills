@@ -1,0 +1,20 @@
+{
+  "name": "awesome-gamedev-agent-skills",
+  "interface": {
+    "displayName": "Awesome GameDev Agent Skills"
+  },
+  "plugins": [
+    {
+      "name": "gamedev",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
