@@ -1150,10 +1150,30 @@ class Project:
         if rel in self.unreadable:
             self.add_unreadable(rel)
             return
+        in_process_fn = False
+        has_arabic = bool(re.search(r"[\u0600-\u06FF]", text))
+        has_shaping_guard = bool(re.search(r"\b(VC_CHARS_AFTER_SHAPING|visible_characters_behavior\s*=\s*1)\b", text))
+        typewriter_line: int | None = None
         for lineno, line in enumerate(text.split("\n"), start=1):
+            code = strip_comment(line)
+            if re.match(r"^func\s+_?(?:physics_)?process\s*\(", code.strip()) and not line.startswith((" ", "\t")):
+                in_process_fn = True
+            elif re.match(r"^func\s+", code.strip()) and not line.startswith((" ", "\t")):
+                in_process_fn = False
+            if in_process_fn and ".pop_front(" in code:
+                self.add(
+                    "warning",
+                    "pop-front-in-process",
+                    rel,
+                    lineno,
+                    "Array.pop_front() inside _process/_physics_process shifts remaining elements in O(n) time.",
+                    "Use a head-index cursor (head += 1), ring buffer, or pop_back() for O(1) queue draining.",
+                )
+            if has_arabic and not has_shaping_guard and typewriter_line is None:
+                if re.search(r"\b(visible_characters|visible_ratio)\b", code):
+                    typewriter_line = lineno
             if "://" not in line:
                 continue
-            code = strip_comment(line)
             m = EXTENDS_RE.match(code)
             if m:
                 self._check_plain_path(rel, lineno, m.group(2), base_dir, "warning", "script-path-missing",
@@ -1161,6 +1181,15 @@ class Project:
             for m in SCRIPT_CALL_RE.finditer(code):
                 self._check_plain_path(rel, lineno, m.group(3), base_dir, "warning", "script-path-missing",
                                        f"{m.group(1)}()")
+        if typewriter_line is not None:
+            self.add(
+                "warning",
+                "arabic-shaping-behavior",
+                rel,
+                typewriter_line,
+                "Arabic text animated with visible_characters/visible_ratio without VC_CHARS_AFTER_SHAPING disconnects ligatures.",
+                "Set label.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING (1) before animating.",
+            )
 
     def read_project_settings(self) -> None:
         text = self.load("project.godot")
