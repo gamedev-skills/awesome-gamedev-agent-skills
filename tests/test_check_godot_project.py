@@ -623,6 +623,24 @@ other = ExtResource("9_nope")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("WARNING caf\\xe9.gd:2:", result.stdout)
 
+    def test_arabic_shaping_and_pop_front_in_process_warnings(self) -> None:
+        self.write(
+            "hud.gd",
+            (
+                "extends Node\n"
+                "var queue := []\n"
+                'var msg := "مرحباً بك في المختبر"\n'
+                "func _physics_process(delta: float) -> void:\n"
+                "    var item = queue.pop_front()\n"
+                "    $Label.visible_characters += 1\n"
+            ),
+        )
+        code, payload = self.report()
+        self.assertEqual(code, 0)
+        warn_codes = set(self.codes(payload, "warnings"))
+        self.assertIn("pop-front-in-process", warn_codes)
+        self.assertIn("arabic-shaping-behavior", warn_codes)
+
 
 if __name__ == "__main__":
     unittest.main()
