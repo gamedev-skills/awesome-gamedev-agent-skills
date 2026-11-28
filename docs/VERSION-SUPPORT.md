@@ -15,6 +15,7 @@ their manifest, lockfile, or engine metadata unless the user explicitly asks for
 | Phaser | 4.2 (4.2.1) | 2026-11-11 | `package.json` + lockfile; [v4.2.1 release](https://github.com/phaserjs/phaser/releases/tag/v4.2.1) and [3→4 migration](https://phaser.io/news/2026/04/migrating-from-phaser-3-to-phaser-4-what-you-need-to-know) |
 | PixiJS | 8.22 (8.22.0) | 2026-11-11 | `package.json` + lockfile; [v8.22.0 release](https://github.com/pixijs/pixijs/releases/tag/v8.22.0) |
 | three.js | r187 (npm 0.187.0) | 2026-11-11 | `package.json` + lockfile; [r187 release](https://github.com/mrdoob/three.js/releases/tag/r187) |
+| RPGJS | v5 (`@rpgjs/server` 5.4.2, `@rpgjs/client` 5.5.2) | 2026-11-28 | `package.json` + lockfile; [v5 docs](https://v5.rpgjs.dev/guide/quick-start) and [starter `v5` branch](https://github.com/rpgjs/starter/tree/v5) |
 | Bevy | 0.20 (0.20.1) | 2026-11-11 | `Cargo.toml` + `Cargo.lock`; [v0.20.1 release](https://github.com/bevyengine/bevy/releases/tag/v0.20.1), [Bevy 0.20](https://bevy.org/news/bevy-0-20/) and [migration guide](https://bevy.org/learn/migration-guides/0-19-to-0-20/) |
 | pygame-ce | 2.5.8 | 2026-11-11 | Python dependency/lockfile; [2.5.8 release](https://github.com/pygame-community/pygame-ce/releases/tag/2.5.8) |
 | LÖVE | 11.5 (12.0 not yet released) | 2026-11-11 | `conf.lua` / `main.lua`; [11.5 release](https://github.com/love2d/love/releases/tag/11.5) and [version history](https://love2d.org/wiki/Version_History) |

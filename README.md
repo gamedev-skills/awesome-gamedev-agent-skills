@@ -4,10 +4,10 @@
 
 <p align="center">
   <img src="docs/assets/awesome-gamedev-agent-skills-banner.png" width="820"
-       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 79 skills and a router across 12 engines, including an art-direction and asset-production workflow.">
+       alt="awesome-gamedev-agent-skills — game-dev skills for AI coding agents. 82 skills and a router across 13 engines, including an art-direction and asset-production workflow.">
 </p>
 
-**Make games with your AI coding agent, in the engine you already use.** 79 skills for 12
+**Make games with your AI coding agent, in the engine you already use.** 82 skills for 13
 engines: say what you're building, and a router loads the right 2 or 3 skills before your agent
 writes code.
 
@@ -19,13 +19,13 @@ npx skills add gamedev-skills/awesome-gamedev-agent-skills
 [![skills.sh installs](https://skills.sh/b/gamedev-skills/awesome-gamedev-agent-skills)](https://skills.sh/gamedev-skills/awesome-gamedev-agent-skills)
 [![Engines checked](https://img.shields.io/badge/engines%20checked-2026--11--11-brightgreen)](docs/VERSION-SUPPORT.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-79%20%2B%20router-brightgreen)](skills/)
+[![Skills](https://img.shields.io/badge/skills-82%20%2B%20router-brightgreen)](skills/)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-informational)](docs/SKILL-FORMAT.md)
 [![Last commit](https://img.shields.io/github/last-commit/gamedev-skills/awesome-gamedev-agent-skills)](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/commits/main)
 [![Sponsor](https://img.shields.io/badge/sponsor-this%20project-ea4aaa)](#sponsors)
 
 [Agent Skills](docs/SKILL-FORMAT.md) are small capability files an AI agent loads only when it
-needs them. This repo gives your agent **79 game-dev skills** and a **router** that picks the
+needs them. This repo gives your agent **82 game-dev skills** and a **router** that picks the
 right ones for you. You describe what you're building; the agent loads the matching engine and
 task skills before it writes code.
 
@@ -36,7 +36,7 @@ task skills before it writes code.
 - **Checked on the real engines.** Every skill is written from official engine docs and pinned to
   a current release (Godot 4.7.2, Unity 6.3 LTS, Unreal 5.8, Phaser 4.2.1, three.js r187 and
   more, checked 2026-11-11). Code examples were run or compiled on the real toolchains for 10 of
-  the 12 engines, and in 366 blind test prompts the right skill loaded for 98.7% of the requests
+  the 13 engines, and in 366 blind test prompts the right skill loaded for 98.7% of the requests
   that needed one. [Results, method and limits](evals/RESULTS.md) ·
   [version support](docs/VERSION-SUPPORT.md).
 
@@ -81,7 +81,7 @@ skills the router picks.
 ## Quick start
 
 **One command, any agent.** The [`skills`](https://www.npmjs.com/package/skills) CLI detects the
-coding agent you already use and installs the router plus all 79 skills into the right place:
+coding agent you already use and installs the router plus all 82 skills into the right place:
 
 ```bash
 npx skills add gamedev-skills/awesome-gamedev-agent-skills
@@ -168,7 +168,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 
 ## Catalog
 
-79 skills across 9 categories — each links to its `SKILL.md` below.
+82 skills across 9 categories — each links to its `SKILL.md` below.
 
 ### Engines
 
@@ -224,7 +224,7 @@ engine), while disciplines, genres, and workflows are additive on top.
 |-------|-------|
 | [`ebitengine-game`](skills/ebitengine/ebitengine-game/SKILL.md) | Go 2D games: play-and-retry loop, input, pixel-art scaling, text, audio, tests, desktop, WASM and mobile builds |
 
-#### Web engines — 6 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r187
+#### Web engines — 9 ([`skills/web-engines/`](skills/web-engines/)) · Phaser 4.2 · PixiJS 8.22 · three.js r187 · RPGJS v5
 
 | Skill | Scope |
 |-------|-------|
@@ -234,6 +234,9 @@ engine), while disciplines, genres, and workflows are additive on top.
 | [`threejs-scene-setup`](skills/web-engines/threejs-scene-setup/SKILL.md) | three.js r187 scene, camera, renderer, `setAnimationLoop`, resize, `OrbitControls`, `WebGPURenderer` |
 | [`threejs-gltf-loading`](skills/web-engines/threejs-gltf-loading/SKILL.md) | glTF/GLB loading with DRACO, Meshopt and KTX2, `AnimationMixer` cross-fades, `SkeletonUtils` clones |
 | [`threejs-materials-lighting`](skills/web-engines/threejs-materials-lighting/SKILL.md) | Standard, physical and unlit materials, lights, shadows, HDR environments, tone mapping |
+| [`rpgjs-core`](skills/web-engines/rpgjs-core/SKILL.md) | RPGJS v5 (TypeScript RPG/MMORPG framework): starter, entry points, providers, modules, player spawn, synchronized `props` |
+| [`rpgjs-events-maps`](skills/web-engines/rpgjs-events-maps/SKILL.md) | RPGJS v5 events and maps: NPCs and chests, `onAction`/`onChanges`, player variables, Tiled maps, database items |
+| [`rpgjs-testing`](skills/web-engines/rpgjs-testing/SKILL.md) | `@rpgjs/testing` with Vitest: fixtures, fake clients, hooks, variables and map changes |
 
 #### Other engines — 12 ([`skills/other-engines/`](skills/other-engines/)) · Bevy · pygame · LÖVE · Defold · Roblox
 
@@ -373,7 +376,7 @@ func _physics_process(delta: float) -> void:
 ## Repository layout
 
 ```
-skills/        79 specialized skills, grouped by engine / discipline / genre / workflow
+skills/        82 specialized skills, grouped by engine / discipline / genre / workflow
 router/        the master router skill (+ references/)
 docs/          authoring standard, installation, compatibility
 templates/     SKILL.md template

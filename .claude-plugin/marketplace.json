@@ -8,7 +8,7 @@
     {
       "name": "gamedev",
       "source": "./",
-      "description": "Everything: the master router plus all 79 game-dev skills across every engine, discipline, genre, and workflow.",
+      "description": "Everything: the master router plus all 82 game-dev skills across every engine, discipline, genre, and workflow.",
       "strict": false,
       "skills": [
         "./router",
@@ -50,6 +50,9 @@
         "./skills/web-engines/threejs-scene-setup",
         "./skills/web-engines/threejs-gltf-loading",
         "./skills/web-engines/threejs-materials-lighting",
+        "./skills/web-engines/rpgjs-core",
+        "./skills/web-engines/rpgjs-events-maps",
+        "./skills/web-engines/rpgjs-testing",
         "./skills/other-engines/bevy-ecs",
         "./skills/other-engines/pygame-core",
         "./skills/other-engines/love2d-core",
@@ -170,14 +173,17 @@
       "name": "web-engines",
       "source": "./",
       "strict": false,
-      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r187.",
+      "description": "Web game frameworks: Phaser 4.2, PixiJS 8.22, three.js r187, RPGJS v5.",
       "skills": [
         "./skills/web-engines/phaser-core",
         "./skills/web-engines/phaser-arcade-physics",
         "./skills/web-engines/pixijs-rendering",
         "./skills/web-engines/threejs-scene-setup",
         "./skills/web-engines/threejs-gltf-loading",
-        "./skills/web-engines/threejs-materials-lighting"
+        "./skills/web-engines/threejs-materials-lighting",
+        "./skills/web-engines/rpgjs-core",
+        "./skills/web-engines/rpgjs-events-maps",
+        "./skills/web-engines/rpgjs-testing"
       ]
     },
     {

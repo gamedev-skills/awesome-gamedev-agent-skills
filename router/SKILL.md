@@ -70,6 +70,7 @@ Check the target's build and runtime entry point before treating a bundled libra
 | 10 | LÖVE | `conf.lua` / `main.lua` calling `love.*` | `skills/other-engines/love2d-core/` |
 | 11 | pygame | `*.py` with `import pygame` | `skills/other-engines/pygame-core/` |
 | 12 | Roblox | `*.rbxl(x)` / `*.project.json` (Rojo) | `skills/other-engines/roblox-*` |
+| 13 | RPGJS | `package.json` dep `@rpgjs/server` or `@rpgjs/client` | `skills/web-engines/rpgjs-*` |
 
 For secondary signals, the Godot-C#/Unity/Bevy, Defold/LÖVE/Lua and multi-web disambiguation
 rules, monorepos, and plain-text engine mentions, read `references/engine-detection.md`.
@@ -131,7 +132,7 @@ File signals sharpen this: `*.yarn`/`*.ink` → `dialogue-systems`/`visual-novel
   references; generating the starter is optional for an existing project.
 - **Web** (`skills/web-engines/`): `phaser-core`, `phaser-arcade-physics`; `pixijs-rendering`
   (games and playable ads only); `threejs-scene-setup`, `threejs-gltf-loading`,
-  `threejs-materials-lighting`. No React Three Fiber skill (§7).
+  `threejs-materials-lighting`; RPGJS v5 `rpgjs-core`, `rpgjs-events-maps`, `rpgjs-testing`. No React Three Fiber skill (§7).
 - **Other** (`skills/other-engines/`): `bevy-ecs`, `pygame-core`, `love2d-core`; Defold
   `defold-core` (collections, game objects, scripts, input, messages, factories, proxies,
   Bob builds); Roblox language and module structure `roblox-luau`, persistence

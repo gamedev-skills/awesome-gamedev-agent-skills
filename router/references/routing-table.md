@@ -83,6 +83,9 @@ When two skills both match, the router's ownership table (§3c) decides who lead
 | `pixijs-rendering` | PixiJS **game or playable ad**, async `Application.init`, `Assets`, blank canvas, clicks not firing, drag stops at the sprite edge, v7 → v8 migration; dep `pixi.js`. Not for dashboards or charts. |
 | `threejs-scene-setup` | plain three.js, import maps, "Failed to resolve module specifier three", black canvas, `setAnimationLoop`, `OrbitControls`, `WebGPURenderer`, DOM overlay; dep `three` |
 | `threejs-gltf-loading` | `GLTFLoader`, DRACO/Meshopt/KTX2 decoder 404, model invisible or tiny, `AnimationMixer`, cloned skeletons, `gltf-transform optimize`; `*.gltf`/`*.glb` |
+| `rpgjs-core` | RPGJS v5 / RPG.js project setup, `client.ts`/`server.ts`/`standalone.ts`, `defineModule`, `onConnected`, `provideTiledMap`, spritesheets, synchronized `props`; dep `@rpgjs/server` |
+| `rpgjs-events-maps` | RPGJS events and maps: NPC or chest, `onAction`, `onChanges`, `setVariable`, `showText`, Tiled `.tmx`, `start` point, database items |
+| `rpgjs-testing` | `@rpgjs/testing`, Vitest for an RPGJS module, `createClient`, `waitForMapChange`, WebGL mock errors |
 | `threejs-materials-lighting` | `MeshStandardMaterial`, lights, shadows or shadow acne, HDR environment, tone mapping, EffectComposer darkens the image, context loss |
 
 ### Other engines (`skills/other-engines/`)
