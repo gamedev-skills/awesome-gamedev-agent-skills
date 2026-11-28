@@ -3262,5 +3262,111 @@
     "expected": [],
     "kind": "none",
     "notes": "'level up'/'game studio' trap"
+  },
+  {
+    "id": "rpgjs-core.s1",
+    "prompt": "starting a new rpgjs v5 project, where do client.ts server.ts and standalone.ts fit, and how do i switch to mmorpg mode",
+    "expected": [
+      "rpgjs-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-core. entry points, direct"
+  },
+  {
+    "id": "rpgjs-core.s2",
+    "prompt": "my player spawns on the map but hp and maxhp are 0 in the ui, using rpg.js onConnected and changeMap",
+    "expected": [
+      "rpgjs-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-core. initializeDefaultStats symptom"
+  },
+  {
+    "id": "rpgjs-core.s3",
+    "prompt": "how do i add a custom wood counter to the player in @rpgjs/server so it syncs to the client and survives map change",
+    "expected": [
+      "rpgjs-core"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-core. synchronized props"
+  },
+  {
+    "id": "rpgjs-core.nm",
+    "prompt": "phaser scene boots but my assets are undefined in create and the hero never loads",
+    "expected": [
+      "phaser-core"
+    ],
+    "kind": "near-miss",
+    "notes": "shares hero/spritesheet words, belongs to phaser-core"
+  },
+  {
+    "id": "rpgjs-events-maps.s1",
+    "prompt": "make a chest npc in rpgjs that gives a potion once, onAction and a variable so it stays open after reload",
+    "expected": [
+      "rpgjs-events-maps"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-events-maps. chest with variable"
+  },
+  {
+    "id": "rpgjs-events-maps.s2",
+    "prompt": "my rpg.js event graphic doesnt switch after player.setVariable, only changes on map reload",
+    "expected": [
+      "rpgjs-events-maps"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-events-maps. onChanges symptom"
+  },
+  {
+    "id": "rpgjs-events-maps.s3",
+    "prompt": "added simplemap.tmx in tiled for my rpgjs game but the map is blank and the start point is ignored",
+    "expected": [
+      "rpgjs-events-maps"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-events-maps. Tiled map and start point"
+  },
+  {
+    "id": "rpgjs-events-maps.nm",
+    "prompt": "how should i design a branching quest log and journal ui for my rpg, no engine decided yet",
+    "expected": [
+      "rpg"
+    ],
+    "kind": "near-miss",
+    "notes": "uses rpg/npc words, genre design belongs to the rpg skill"
+  },
+  {
+    "id": "rpgjs-testing.s1",
+    "prompt": "write a vitest test for my rpgjs server module that checks onConnected sets a variable, using @rpgjs/testing",
+    "expected": [
+      "rpgjs-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-testing. direct"
+  },
+  {
+    "id": "rpgjs-testing.s2",
+    "prompt": "vitest crashes with WebGL / HTMLCanvasElement not implemented in my rpg.js project",
+    "expected": [
+      "rpgjs-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-testing. setup file symptom"
+  },
+  {
+    "id": "rpgjs-testing.s3",
+    "prompt": "test hangs after the first case when i call testing() and createClient in rpgjs, waitForMapChange never resolves",
+    "expected": [
+      "rpgjs-testing"
+    ],
+    "kind": "should",
+    "notes": "should-trigger rpgjs-testing. fixture cleanup symptom"
+  },
+  {
+    "id": "rpgjs-testing.nm",
+    "prompt": "set up unit tests for my godot gdscript inventory with gut",
+    "expected": [],
+    "kind": "near-miss",
+    "notes": "tests keyword for another engine; expected may be a godot skill"
   }
 ]

@@ -21,6 +21,7 @@ Scan for the highest-confidence signal and stop at the first match in this prece
 | 10 | LÖVE | `conf.lua`, or `main.lua` calling `love.*` | `*.love` | `skills/other-engines/love2d-core/` |
 | 11 | pygame | `*.py` with `import pygame` | `pygame.init()`, `pygame.display.set_mode` | `skills/other-engines/pygame-core/` |
 | 12 | Roblox | `*.rbxl` / `*.rbxlx`, or `*.project.json` (Rojo) | `*.luau`, `DataStoreService`, `game:GetService` | `skills/other-engines/roblox-*` (`roblox-luau` first, then the focused Roblox skill) |
+| 13 | RPGJS | `package.json` dep `@rpgjs/server` or `@rpgjs/client` | `client.ts`, `server.ts`, `standalone.ts`, `*.ce` files | `skills/web-engines/rpgjs-core`, `rpgjs-events-maps`, `rpgjs-testing` |
 
 ## Detect the installed version
 
